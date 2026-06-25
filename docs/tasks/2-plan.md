@@ -2,7 +2,8 @@
 
 ## Current State
 
-Эта задача — продолжение `docs/tasks/init-and-discover.md`. Задача 1 закладывает фундамент: каркас CLI, пакеты `config/`, `fs/`, `git/`, `llm/`, `domain/openapi/`, `domain/traceability/`, и команды `init` + `discover`.
+Эта задача — продолжение `docs/tasks/1-init-and-discover.md` (`docs/propose/project.md` — полное ТЗ продукта)
+Задача 1 закладывает фундамент: каркас CLI, пакеты `config/`, `fs/`, `git/`, `llm/`, `openapi/`, `traceability/`, и команды `commands/init` + `commands/discover`.
 
 К моменту начала Задачи 2 уже доступны:
 - Локальный каталог со спецификациями (загружен через `init`)
@@ -24,9 +25,9 @@
 
 Логика команды:
 1. Клонировать репозиторий во временный каталог (через существующий пакет `git/`)
-2. Распарсить свежие спецификации из репозитория (через `domain/openapi/`)
-3. Загрузить локальные базовые спецификации (через `domain/openapi/`)
-4. Вычислить структурный diff между базовой и текущей спецификациями (новый пакет `domain/openapi/diff/`)
+2. Распарсить свежие спецификации из репозитория (через `openapi/`)
+3. Загрузить локальные базовые спецификации (через `openapi/`)
+4. Вычислить структурный diff между базовой и текущей спецификациями (новый пакет `openapi/diff`)
 5. Классифицировать изменения в эндпоинтах: добавленные / изменённые / удалённые (плюс изменения схем под этими эндпоинтами)
 6. Отобразить изменённые эндпоинты на граф отслеживаемости — определить затронутые эндпоинты
 7. Отправить в LLM: изменённые + затронутые эндпоинты + контекст (граф и diff) → сформировать Impact Report
@@ -37,9 +38,9 @@
 ## Scope
 
 **In scope:**
-- Пакет `domain/openapi/diff/`: структурный diff спецификаций через `deepdiff`, классификация изменений (added/modified/removed эндпоинты + детали схем)
+- Пакет `openapi/diff`: структурный diff спецификаций через `deepdiff`, классификация изменений (added/modified/removed эндпоинты + детали схем)
 - Маппинг изменений на граф отслеживаемости: какие узлы затронуты (прямое изменение + транзитивные зависимости по рёбрам графа)
-- Команда `plan` (CLI handler в `cli/plan.py`)
+- Команда `plan` (CLI handler в `commnads/plan`)
 - LLM-промпт для генерации Impact Report (Summary, Risk, Modified, Affected, Requirements, Checklist) в `llm/prompts.py`
 - Рендеринг отчёта в Markdown в stdout
 - Модели pydantic для diff-результата и Impact Report
@@ -98,7 +99,7 @@
 ## Scope Estimate
 
 **Задача 2 (текущая) — средняя по объёму.** Состоит из:
-- 1 нового пакета (`domain/openapi/diff/`)
+- 1 нового пакета (`openapi/diff`)
 - 1 новой команды (`plan`)
 - 1 новой LLM-задачи (промпт для Impact Report)
 - 1 новой зависимости (`deepdiff`)
@@ -112,27 +113,8 @@
 
 ## Existing Architecture
 
-Задача опирается на архитектуру, заложенную в Задаче 1. Новые компоненты:
-
-```
-swax/
-├── domain/
-│   └── openapi/
-│       └── diff/                      # НОВОЕ
-│           ├── __init__.py
-│           ├── differ.py              # DeepDiff-обёртка
-│           ├── classifier.py          # классификация изменений
-│           └── models.py              # EndpointDiff, ChangeDetail
-├── llm/
-│   └── prompts.py                     # НОВЫЕ ПРОМПТЫ: impact_report
-├── cli/
-│   └── plan.py                        # НОВОЕ: команда plan
-└── domain/
-    └── traceability/
-        └── impact.py                  # НОВОЕ: маппинг изменений на граф
-```
-
-Структура тестов зеркалит исходники: `tests/domain/openapi/diff/test_classifier.py`, `tests/cli/test_plan.py` и т.д.
+Задача опирается на архитектуру, заложенную в Задаче 1.
+Структура тестов зеркалит исходники: `tests/openapi/diff/test_classifier.py`, `tests/commands/plan/test_plan.py` и т.д.
 
 ## Notes
 
