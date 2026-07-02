@@ -465,19 +465,19 @@ Routine-функции в одном `location` `storage.py`. Round-trip с `Con
 11. (cleanup by TemporaryDirectory on exit)
 ```
 
-- [ ] **Contract tests** (`tests/git/test_git_contract.py`): `from swax.git import clone_specs, RepositoryCloneError, SpecsNotFoundError` успешен; `clone_specs` — callable, возвращает `Iterator`/contextmanager (`contextlib.contextmanager`); исключения kw_only.
-- [ ] **Code**: создать `swax/git/__init__.py`, `swax/git/clone_specs.py` (с `@contextlib.contextmanager`), `swax/git/errors.py`. Использовать `from git import Repo, GitCommandError` (absolute import SDK).
-- [ ] **Interface verification**: `pytest tests/git/test_git_contract.py -v`
-- [ ] **Logic tests** (`tests/git/test_git_logic.py`):
+- [x] **Contract tests** (`tests/git/test_git_contract.py`): `from swax.git import clone_specs, RepositoryCloneError, SpecsNotFoundError` успешен; `clone_specs` — callable, возвращает `Iterator`/contextmanager (`contextlib.contextmanager`); исключения kw_only.
+- [x] **Code**: создать `swax/git/__init__.py`, `swax/git/clone_specs.py` (с `@contextlib.contextmanager`), `swax/git/errors.py`. Использовать `from git import Repo, GitCommandError` (absolute import SDK).
+- [x] **Interface verification**: `pytest tests/git/test_git_contract.py -v`
+- [x] **Logic tests** (`tests/git/test_git_logic.py`):
   - `test_clone_specs_yields_specs_path_on_success` — `mocker.patch("swax.git.clone_specs.Repo.clone_from")` no-op; создать `<tmp>/specs/api.yaml` вручную перед вызовом; `with clone_specs(url, "specs") as p: assert p.name == "specs"`.
   - `test_clone_specs_raises_repository_clone_error_on_git_error` — `Repo.clone_from.side_effect = GitCommandError("clone", "auth")` → `pytest.raises(RepositoryCloneError)`.
   - `test_clone_specs_raises_specs_not_found_when_subdir_missing` — successful clone, но `specs_location="missing/"` → `SpecsNotFoundError`.
   - `test_clone_specs_cleans_up_tempdir_on_clone_failure` (design-doc edge case) — spy на `tempfile.TemporaryDirectory` через `mocker.spy(tempfile, "TemporaryDirectory")`, затем `with pytest.raises(RepositoryCloneError): with clone_specs(url, "specs/"): pass`. Assert: `mock_tmp.return_value.__exit__.assert_called_once()` — корректно, поскольку spy оборачивает класс, и единственный вызов `TemporaryDirectory()` фиксируется. Дополнительно: проверить, что tempdir, на который ссылался `tmp_path` до raise, не существует на диске (через сохранённый path в side_effect).
-- [ ] **Debugging**: `pytest tests/git/ -v`
-- [ ] **Contract re-verification**: cleanup гарантирован, depth=1, без cred в URL.
-- [ ] **Facade**: добавить все 3 имени в `swax/git/__init__.py.__all__`.
-- [ ] Verify facade: `python -c "from swax.git import clone_specs, RepositoryCloneError, SpecsNotFoundError"`
-- [ ] Lint: `ruff check swax/git tests/git`
+- [x] **Debugging**: `pytest tests/git/ -v`
+- [x] **Contract re-verification**: cleanup гарантирован, depth=1, без cred в URL.
+- [x] **Facade**: добавить все 3 имени в `swax/git/__init__.py.__all__`.
+- [x] Verify facade: `python -c "from swax.git import clone_specs, RepositoryCloneError, SpecsNotFoundError"`
+- [x] Lint: `ruff check swax/git tests/git`
 
 ---
 
