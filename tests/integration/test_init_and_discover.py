@@ -64,7 +64,12 @@ components:
 """
 
 # First-pass (ask) and refine (ask_multi_turn) LLM responses — both valid JSON.
-FIRST_PASS_RESPONSE = '{"dependencies": {"/users": ["/users/{id}"]}, "uncertain": []}'
+# The two responses are deliberately DIFFERENT so the persisted graph is proven
+# to come from the refine pass: the first pass proposes /users/{id} -> /users,
+# the refine pass revises it to /users -> /users/{id}. If run_discover ever
+# persisted the first-pass dependency map instead of the refined result, the
+# graph assertion below would fail.
+FIRST_PASS_RESPONSE = '{"dependencies": {"/users/{id}": ["/users"]}, "uncertain": []}'
 REFINE_RESPONSE = '{"/users": ["/users/{id}"]}'
 EXPECTED_GRAPH = {"/users": ["/users/{id}"]}
 

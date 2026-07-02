@@ -38,7 +38,6 @@ class TestLLMErrorsLogic:
     def test_all_errors_inherit_exception(self):
         for error_cls in (LLMCallError, LLMRateLimitedError, LLMResponseParseError, UnsupportedLLMProtocolError):
             assert issubclass(error_cls, Exception)
-            assert not issubclass(error_cls, BaseException) or issubclass(error_cls, Exception)
 
     def test_response_parse_error_stores_both_fields(self):
         exc = LLMResponseParseError(reason="x", excerpt="y")

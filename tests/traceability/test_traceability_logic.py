@@ -65,6 +65,16 @@ class TestStorageLogic:
 
         assert graph.edges == {}
 
+    def test_load_traceability_treats_non_mapping_content_as_empty(self, tmp_path):
+        # A corrupt file holding a bare scalar (not a mapping) must not crash
+        # on .items(); it is treated like an empty graph, matching the docstring.
+        path = tmp_path / "traceability.yml"
+        path.write_text("just a scalar string\n", encoding="utf-8")
+
+        graph = load_traceability(path)
+
+        assert graph.edges == {}
+
     def test_load_traceability_normalizes_values_to_list(self, tmp_path):
         path = tmp_path / "traceability.yml"
         path.write_text("/a: /b\n", encoding="utf-8")

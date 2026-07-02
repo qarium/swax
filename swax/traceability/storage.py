@@ -27,6 +27,10 @@ def load_traceability(path: pathlib.Path) -> TraceabilityGraph:
     """
     raw_text = path.read_text(encoding="utf-8") if path.exists() else ""
     data = yaml.safe_load(raw_text) or {}
+    if not isinstance(data, dict):
+        # A non-mapping payload (e.g. a bare scalar in a corrupt file) is treated
+        # like an empty/missing file rather than crashing on .items() below.
+        data = {}
     normalized: dict[str, list[str]] = {}
     for key, value in data.items():
         normalized[key] = list(value) if isinstance(value, list) else [value]

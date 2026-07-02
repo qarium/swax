@@ -128,3 +128,26 @@ class TestDiscoverSpecs:
         result = discover_specs(tmp_path)
 
         assert [path.name for path in result] == ["alpha.yaml", "beta.yaml"]
+
+    def test_discover_specs_detects_pretty_printed_json_spec(self, tmp_path):
+        # A standard pretty-printed JSON spec puts '{' alone on line 1; a
+        # single-line head read cannot locate the key and crashes the loader.
+        # The whole-file cheap parse must still find it.
+        _write(
+            tmp_path / "api.json",
+            '{\n  "openapi": "3.0.0",\n  "paths": {}\n}\n',
+        )
+
+        result = discover_specs(tmp_path)
+
+        assert [path.name for path in result] == ["api.json"]
+
+    def test_discover_specs_skips_unparseable_file_without_raising(self, tmp_path):
+        # A .yaml/.json file whose content is not valid YAML/JSON must be
+        # skipped, not crash the whole discovery run.
+        _write(tmp_path / "broken.json", "{ not closed")
+        _write(tmp_path / "api.yaml", "openapi: 3.0.0\npaths: {}\n")
+
+        result = discover_specs(tmp_path)
+
+        assert [path.name for path in result] == ["api.yaml"]

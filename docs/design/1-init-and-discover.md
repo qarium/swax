@@ -394,7 +394,7 @@
 **`parse_spec(spec_path: pathlib.Path) -> spec: dict`** (Routine).
 ```
 1. try:
-2.   parser = ResolvingParser(str(spec_path), backend="openapi-spec-validator", strict=False, resolve_types=True)
+2.   parser = ResolvingParser(str(spec_path), backend="openapi-spec-validator", strict=False, resolve_types=RESOLVE_ALL)
 3.   RETURN parser.specification
 4. except Exception as exc:
 5.   raise SpecParseError(path=spec_path, reason=str(exc)) from exc
@@ -418,11 +418,13 @@
 2. FOR path IN root.rglob("*"):
 3.   IF path.suffix.lower() NOT IN (".yaml", ".yml", ".json"):
 4.     continue
-5.   head_text = path.read_text(encoding="utf-8").splitlines()[0] if exists else "{}"
-6.   head = yaml.safe_load(head_text)
+5.   TRY: head = yaml.safe_load(path.read_text(encoding="utf-8"))
+6.   EXCEPT yaml.YAMLError: continue   # unparseable candidate — skip, not crash
 7.   IF isinstance(head, dict) AND ("openapi" IN head OR "swagger" IN head):
 8.     result.append(path)
 9. RETURN sorted(result)
+```
+*Note:* Парсится содержимое целиком (PyYAML — надмножество JSON), а не только первая строка, чтобы находить ключи и в YAML, и в JSON с `{` на первой строке. Полное дереференсирование `$ref` остаётся задачей `parse_spec`.
 ```
 
 ### `swax/traceability/`
@@ -799,7 +801,7 @@ Edge cases:
 - **What**: OpenAPI/Swagger parsing.
 - **Where**: `swax/openapi/` (parse_spec, extract_paths, extract_schemas, discover_specs).
 - **Why**: Dereferencing `$ref` in memory, transparent Swagger 2.0 + OpenAPI 3.x support.
-- **How**: `ResolvingParser(str(path), backend="openapi-spec-validator", strict=False, resolve_types=True)`, `parser.specification`.
+- **How**: `ResolvingParser(str(path), backend="openapi-spec-validator", strict=False, resolve_types=RESOLVE_ALL)`, `parser.specification`.
 
 **`anthropic`** (`cooks/anthropic.md`)
 - **What**: Anthropic SDK call patterns.
