@@ -1011,9 +1011,9 @@ ELSE:
 
 Фасад-агрегатор с re-export-ами `run_init_handler`, `run_discover_handler`.
 
-- [ ] Создать `swax/applications/__init__.py` с `from swax.applications.init import run_init as run_init_handler`, `from swax.applications.discover import run_discover as run_discover_handler`, `__all__ = ["run_init_handler", "run_discover_handler"]`.
-- [ ] Verify facade: `python -c "from swax.applications import run_init_handler, run_discover_handler; assert callable(run_init_handler) and callable(run_discover_handler)"`
-- [ ] Lint: `ruff check swax/applications/__init__.py`
+- [x] Создать `swax/applications/__init__.py` с `from swax.applications.init import run_init as run_init_handler`, `from swax.applications.discover import run_discover as run_discover_handler`, `__all__ = ["run_init_handler", "run_discover_handler"]`.
+- [x] Verify facade: `python -c "from swax.applications import run_init_handler, run_discover_handler; assert callable(run_init_handler) and callable(run_discover_handler)"`
+- [x] Lint: `ruff check swax/applications/__init__.py`
 
 ---
 
