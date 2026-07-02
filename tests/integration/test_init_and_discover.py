@@ -81,6 +81,13 @@ def _make_remote_repo(path: pathlib.Path) -> str:
     clone a local working repository directly with ``depth=1``.
     """
     repo = Repo.init(path)
+    # Set a repo-local committer identity so the commit does not depend on a
+    # global/system git identity or ambient GIT_AUTHOR_*/GIT_COMMITTER_* env
+    # vars (absent in many CI containers, which would make index.commit raise
+    # GitCommandError "Author identity unknown").
+    with repo.config_writer() as writer:
+        writer.set_value("user", "name", "swax-test")
+        writer.set_value("user", "email", "swax-test@example.local")
     specs_dir = path / "specs"
     specs_dir.mkdir()
     (specs_dir / "api.yaml").write_text(OPENAPI_SPEC, encoding="utf-8")

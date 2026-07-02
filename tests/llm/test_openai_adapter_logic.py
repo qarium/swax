@@ -22,6 +22,13 @@ def _mock_response(mocker, content):
     return response
 
 
+def _mock_empty_choices_response(mocker):
+    """Build a mock OpenAI chat completion response with an empty choices list."""
+    response = mocker.MagicMock()
+    response.choices = []
+    return response
+
+
 def _rate_limit_error(message: str = "rate limited") -> RateLimitError:
     request = httpx.Request("POST", "https://api.openai.com/v1/chat/completions")
     response = httpx.Response(429, request=request)
@@ -46,6 +53,15 @@ class TestOpenAIAdapterAsk:
     def test_ask_returns_empty_string_when_no_content(self, mocker):
         sdk_client = mocker.MagicMock(spec=OpenAI)
         sdk_client.chat.completions.create.return_value = _mock_response(mocker, None)
+        adapter = OpenAIAdapter(client=sdk_client)
+
+        assert adapter.ask(system="sys", user="hi") == ""
+
+    def test_ask_returns_empty_string_when_choices_empty(self, mocker):
+        # A 200 response with no choices (some gateways/proxies return this)
+        # must yield "" per the docstring, not an unhandled IndexError.
+        sdk_client = mocker.MagicMock(spec=OpenAI)
+        sdk_client.chat.completions.create.return_value = _mock_empty_choices_response(mocker)
         adapter = OpenAIAdapter(client=sdk_client)
 
         assert adapter.ask(system="sys", user="hi") == ""
@@ -138,6 +154,13 @@ class TestOpenAIAdapterAskMultiTurn:
     def test_ask_multi_turn_returns_empty_string_when_no_content(self, mocker):
         sdk_client = mocker.MagicMock(spec=OpenAI)
         sdk_client.chat.completions.create.return_value = _mock_response(mocker, None)
+        adapter = OpenAIAdapter(client=sdk_client)
+
+        assert adapter.ask_multi_turn(system="sys", messages=[{"role": "user", "content": "x"}]) == ""
+
+    def test_ask_multi_turn_returns_empty_string_when_choices_empty(self, mocker):
+        sdk_client = mocker.MagicMock(spec=OpenAI)
+        sdk_client.chat.completions.create.return_value = _mock_empty_choices_response(mocker)
         adapter = OpenAIAdapter(client=sdk_client)
 
         assert adapter.ask_multi_turn(system="sys", messages=[{"role": "user", "content": "x"}]) == ""

@@ -10,6 +10,7 @@ of an existing traceability.yml, propagation of the five non-parse domain
 errors, and direct unit coverage of the _parse_llm_json helper.
 """
 
+import json
 import pathlib
 
 import pytest
@@ -209,5 +210,21 @@ class TestParseLlmJsonHelper:
     def test_parse_llm_json_helper_validates_shape(self):
         with pytest.raises(LLMResponseParseError) as exc_info:
             _parse_llm_json('{"a": "not_a_list"}', first_pass=False)
+
+        assert "shape mismatch" in exc_info.value.reason
+
+    @pytest.mark.parametrize(
+        "dependencies_value",
+        [42, ["/x"], "a string", None],
+        ids=["int", "list", "string", "null"],
+    )
+    def test_parse_llm_json_first_pass_non_dict_dependencies_raises_parse_error(self, dependencies_value):
+        # A first-pass response whose "dependencies" is not a dict must surface
+        # as LLMResponseParseError (mapped to a clean ClickException by the
+        # discover handler), not an unhandled AttributeError from .items().
+        raw = json.dumps({"dependencies": dependencies_value, "uncertain": []})
+
+        with pytest.raises(LLMResponseParseError) as exc_info:
+            _parse_llm_json(raw, first_pass=True)
 
         assert "shape mismatch" in exc_info.value.reason

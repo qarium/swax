@@ -50,10 +50,20 @@ def _strip_prose_and_fences(raw: str) -> str:
     return raw[first_brace : last_brace + 1]
 
 
-def _validate_dependency_shape(d: dict) -> None:
-    """Assert ``d`` matches dict[str, list[str]] or raise LLMResponseParseError."""
-    for key, value in d.items():
-        if not isinstance(key, str) or not isinstance(value, list) or not all(isinstance(item, str) for item in value):
+def _validate_dependency_shape(d: object) -> None:
+    """Assert ``d`` matches dict[str, list[str]] or raise LLMResponseParseError.
+
+    A non-dict (e.g. an int, list, string, or null returned by a misbehaving
+    model for ``dependencies``) is treated as a shape mismatch rather than
+    dereferencing ``.items()`` and raising an unhandled ``AttributeError``.
+    """
+    if not isinstance(d, dict):
+        raise LLMResponseParseError(
+            reason="shape mismatch: expected dict[str, list[str]]",
+            excerpt=str(d)[:_EXCERPT_LENGTH],
+        )
+    for value in d.values():
+        if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
             raise LLMResponseParseError(
                 reason="shape mismatch: expected dict[str, list[str]]",
                 excerpt=str(d)[:_EXCERPT_LENGTH],

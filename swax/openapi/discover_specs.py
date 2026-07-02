@@ -36,9 +36,12 @@ def discover_specs(root: pathlib.Path) -> list[pathlib.Path]:
             continue
         try:
             head = yaml.safe_load(path.read_text(encoding="utf-8"))
-        except yaml.YAMLError:
-            # Not a cleanly parseable candidate — skip. Real spec parse errors
-            # are reported by parse_spec, not by this cheap filter.
+        except (yaml.YAMLError, UnicodeDecodeError, OSError):
+            # Not a cleanly readable/parseable candidate — skip. A binary or
+            # non-UTF-8 file (UnicodeDecodeError), a file that vanishes mid-scan
+            # (OSError), or malformed YAML/JSON (yaml.YAMLError) must not abort
+            # the whole discovery run. Real spec parse errors are reported by
+            # parse_spec, not by this cheap filter.
             continue
         if isinstance(head, dict) and ("openapi" in head or "swagger" in head):
             result.append(path)

@@ -151,3 +151,14 @@ class TestDiscoverSpecs:
         result = discover_specs(tmp_path)
 
         assert [path.name for path in result] == ["api.yaml"]
+
+    def test_discover_specs_skips_non_utf8_binary_file_without_raising(self, tmp_path):
+        # A binary or non-UTF-8 .json file (e.g. a stray UTF-16 BOM or random
+        # bytes) makes read_text(encoding="utf-8") raise UnicodeDecodeError,
+        # which is not a yaml.YAMLError and must not abort the whole run.
+        (tmp_path / "binary.json").write_bytes(b"\xff\xfe\x00\x01garbage\xab")
+        _write(tmp_path / "api.yaml", "openapi: 3.0.0\npaths: {}\n")
+
+        result = discover_specs(tmp_path)
+
+        assert [path.name for path in result] == ["api.yaml"]

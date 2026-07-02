@@ -56,6 +56,12 @@ class OpenAIAdapter:
         except APIError as exc:
             raise LLMCallError(reason=str(exc)) from exc
 
+        # A 200 response with no choices (some gateways/proxies do this) is
+        # treated as absent content rather than dereferencing an empty list and
+        # raising an unhandled IndexError; the caller's parser turns "" into a
+        # clean LLMResponseParseError.
+        if not response.choices:
+            return ""
         return response.choices[0].message.content or ""
 
     def ask_multi_turn(self, system: str, messages: list[dict[str, str]]) -> str:
@@ -86,6 +92,8 @@ class OpenAIAdapter:
         except APIError as exc:
             raise LLMCallError(reason=str(exc)) from exc
 
+        if not response.choices:
+            return ""
         return response.choices[0].message.content or ""
 
 
