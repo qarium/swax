@@ -1160,20 +1160,20 @@ def main(ctx, env_file):
   ctx.obj = SwaxContext(env_file=env_file)
 ```
 
-- [ ] **Contract tests** (`tests/cli/test_main_contract.py`): `from swax.cli import main, SwaxContext` успешен; `isinstance(main, click.Group)`; `SwaxContext(env_file=Path(".env"))` — kw_only, property `env_file` и `config` доступны; `config` по умолчанию `None`.
-- [ ] **Code**: создать `swax/cli/__init__.py` (`__all__ = ["main", "SwaxContext"]`), `swax/cli/main.py`, `swax/cli/SwaxContext.py`, `swax/cli/__main__.py`. Cross-cell импорт `from swax.config import load_env, load_config, Config` (контрактный). Логирование `load_env` не нужно.
-- [ ] **Interface verification**: `pytest tests/cli/test_main_contract.py -v`
-- [ ] **Logic tests** (`tests/cli/test_main_logic.py`):
+- [x] **Contract tests** (`tests/cli/test_main_contract.py`): `from swax.cli import main, SwaxContext` успешен; `isinstance(main, click.Group)`; `SwaxContext(env_file=Path(".env"))` — kw_only, property `env_file` и `config` доступны; `config` по умолчанию `None`.
+- [x] **Code**: создать `swax/cli/__init__.py` (`__all__ = ["main", "SwaxContext"]`), `swax/cli/main.py`, `swax/cli/SwaxContext.py`, `swax/cli/__main__.py`. Cross-cell импорт `from swax.config import load_env, load_config, Config` (контрактный). Логирование `load_env` не нужно.
+- [x] **Interface verification**: `pytest tests/cli/test_main_contract.py -v`
+- [x] **Logic tests** (`tests/cli/test_main_logic.py`):
   - `test_main_loads_env_file_when_exists` — `tmp_path/.env` с `SWAX_LLM_TOKEN=fromfile`, `monkeypatch.delenv` (если есть), `CliRunner().invoke(main, ["--env-file", str(tmp_path/".env"), "--help"])` — invoke только для группы; проверить `os.environ["SWAX_LLM_TOKEN"] == "fromfile"` после invocation (group callback исполняется).
   - `test_main_silent_on_missing_env_file` — несуществующий `--env-file` → exit_code 0 (с `--help` или без подкоманды).
   - `test_main_sets_swax_context_with_env_file` — invoke через CliRunner с подкомандой (mock-ой), проверка `ctx.obj.env_file` через custom command.
   - `test_main_registers_init_and_discover_lazily` — invoke `python -m swax.cli --help` или `CliRunner` + импорт `__main__`, verify `init` и `discover` присутствуют в `main.commands`.
   - `test_swax_context_default_config_is_none` — `SwaxContext(env_file=Path(".env")).config is None`.
   - `test_entry_point_registered` — `pyproject.toml` `[project.scripts]` содержит `swax = "swax.cli.__main__:main"` (парсить через `tomllib`).
-- [ ] **Debugging**: `pytest tests/cli/ -v`
-- [ ] **Contract re-verification**: `exists=False`, lazy registration в `__main__.py`, не в `__init__.py`.
-- [ ] Verify facade: `python -c "from swax.cli import main, SwaxContext"`
-- [ ] Lint: `ruff check swax/cli tests/cli`
+- [x] **Debugging**: `pytest tests/cli/ -v`
+- [x] **Contract re-verification**: `exists=False`, lazy registration в `__main__.py`, не в `__init__.py`.
+- [x] Verify facade: `python -c "from swax.cli import main, SwaxContext"`
+- [x] Lint: `ruff check swax/cli tests/cli`
 
 ---
 
