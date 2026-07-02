@@ -830,21 +830,21 @@ IF protocol == "openai": RETURN OpenAIAdapter(build_openai_client())
 raise UnsupportedLLMProtocolError(protocol=protocol)
 ```
 
-- [ ] **Contract tests** (`tests/llm/test_build_client_contract.py`): импорт 3 имён успешен; сигнатуры соответствуют.
-- [ ] **Code**: создать 3 routine-модуля. Импорт `require_vars` через `from swax.config import require_vars` (абсолютный, поскольку это cross-cell). Импорт адаптеров relative.
-- [ ] **Interface verification**: `pytest tests/llm/test_build_client_contract.py -v`
-- [ ] **Logic tests** (`tests/llm/test_build_client_logic.py`):
+- [x] **Contract tests** (`tests/llm/test_build_client_contract.py`): импорт 3 имён успешен; сигнатуры соответствуют.
+- [x] **Code**: создать 3 routine-модуля. Импорт `require_vars` через `from swax.config import require_vars` (абсолютный, поскольку это cross-cell). Импорт адаптеров relative.
+- [x] **Interface verification**: `pytest tests/llm/test_build_client_contract.py -v`
+- [x] **Logic tests** (`tests/llm/test_build_client_logic.py`):
   - `test_build_anthropic_client_reads_env` — `monkeypatch.setenv` 3 переменных, `mocker.patch("swax.llm.build_anthropic_client.Anthropic")` → verify вызван с `api_key=token, base_url=base_url`.
   - `test_build_anthropic_client_calls_require_vars_first` — без env → `MissingEnvironmentVariablesError`.
   - `test_build_openai_client_analogous` — аналогично.
   - `test_build_llm_client_returns_anthropic_adapter` — `SWAX_LLM_PROTOCOL=anthropic`, mock `build_anthropic_client` → возвращается `AnthropicAdapter` instance.
   - `test_build_llm_client_returns_openai_adapter` — аналогично для openai.
   - `test_build_llm_client_raises_on_unknown_protocol` — `SWAX_LLM_PROTOCOL=ftp` → `UnsupportedLLMProtocolError`.
-- [ ] **Debugging**: `pytest tests/llm/ -v`
-- [ ] **Contract re-verification**: `require_vars` вызывается первым (fail-fast); cred только из env.
-- [ ] **Facade**: добавить все 9 имён контракта в `swax/llm/__init__.py.__all__` (`LLMClient`, `AnthropicAdapter`, `OpenAIAdapter`, `LLMCallError`, `LLMRateLimitedError`, `LLMResponseParseError`, `UnsupportedLLMProtocolError`, `build_anthropic_client`, `build_openai_client`, `build_llm_client`).
-- [ ] Verify facade: `python -c "from swax.llm import LLMClient, AnthropicAdapter, OpenAIAdapter, LLMCallError, LLMRateLimitedError, LLMResponseParseError, UnsupportedLLMProtocolError, build_anthropic_client, build_openai_client, build_llm_client"`
-- [ ] Lint: `ruff check swax/llm tests/llm`
+- [x] **Debugging**: `pytest tests/llm/ -v`
+- [x] **Contract re-verification**: `require_vars` вызывается первым (fail-fast); cred только из env.
+- [x] **Facade**: добавить все 9 имён контракта в `swax/llm/__init__.py.__all__` (`LLMClient`, `AnthropicAdapter`, `OpenAIAdapter`, `LLMCallError`, `LLMRateLimitedError`, `LLMResponseParseError`, `UnsupportedLLMProtocolError`, `build_anthropic_client`, `build_openai_client`, `build_llm_client`).
+- [x] Verify facade: `python -c "from swax.llm import LLMClient, AnthropicAdapter, OpenAIAdapter, LLMCallError, LLMRateLimitedError, LLMResponseParseError, UnsupportedLLMProtocolError, build_anthropic_client, build_openai_client, build_llm_client"`
+- [x] Lint: `ruff check swax/llm tests/llm`
 
 ---
 
