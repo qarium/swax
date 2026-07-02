@@ -1116,9 +1116,9 @@ def discover(ctx):  # SwaxContext, intentionally unused
 
 Фасад-агрегатор с re-export-ами `init_handler`, `discover_handler`.
 
-- [ ] Создать `swax/commands/__init__.py` с `from swax.commands.init import init as init_handler`, `from swax.commands.discover import discover as discover_handler`, `__all__ = ["init_handler", "discover_handler"]`.
-- [ ] Verify facade: `python -c "from swax.commands import init_handler, discover_handler; assert isinstance(init_handler, click.Command) and isinstance(discover_handler, click.Command)"`
-- [ ] Lint: `ruff check swax/commands/__init__.py`
+- [x] Создать `swax/commands/__init__.py` с `from swax.commands.init import init as init_handler`, `from swax.commands.discover import discover as discover_handler`, `__all__ = ["init_handler", "discover_handler"]`.
+- [x] Verify facade: `python -c "from swax.commands import init_handler, discover_handler; assert isinstance(init_handler, click.Command) and isinstance(discover_handler, click.Command)"`
+- [x] Lint: `ruff check swax/commands/__init__.py`
 
 ---
 
