@@ -331,10 +331,10 @@ Greenfield-реализация фундамента CLI Swax. После вып
 2. IF `stripped.endswith(("/v1", "/v2"))`: raise `InvalidLLMBaseURLError(value=value)`
 3. RETURN stripped
 
-- [ ] **Contract tests** (`tests/config/test_env_contract.py`): `from swax.config import load_env, require_vars, parse_protocol, parse_base_url` успешен; сигнатуры (через `inspect`) соответствуют контракту.
-- [ ] **Code**: создать `swax/config/env.py` с 4 функциями. Определить `REQUIRED_VARS` и `ALLOWED_PROTOCOLS` как module-level константы. Импорты внутри клетки — relative (`from .errors import ...`).
-- [ ] **Interface verification**: `pytest tests/config/test_env_contract.py -v`
-- [ ] **Logic tests** (`tests/config/test_env_logic.py`):
+- [x] **Contract tests** (`tests/config/test_env_contract.py`): `from swax.config import load_env, require_vars, parse_protocol, parse_base_url` успешен; сигнатуры (через `inspect`) соответствуют контракту.
+- [x] **Code**: создать `swax/config/env.py` с 4 функциями. Определить `REQUIRED_VARS` и `ALLOWED_PROTOCOLS` как module-level константы. Импорты внутри клетки — relative (`from .errors import ...`).
+- [x] **Interface verification**: `pytest tests/config/test_env_contract.py -v`
+- [x] **Logic tests** (`tests/config/test_env_logic.py`):
   - `test_load_env_silent_on_missing_file` (см. design-doc, edge case) — `load_env(tmp_path / ".env")` не падает.
   - `test_load_env_does_not_override_shell_var` — `monkeypatch.setenv("SWAX_LLM_TOKEN", "shell")`, записать `.env` с другим значением, `load_env(path)` → shell var unchanged.
   - `test_require_vars_raises_on_missing_token` (см. design-doc, negative test) — `monkeypatch.delenv("SWAX_LLM_TOKEN")`, остальные установлены → raises.
@@ -344,9 +344,9 @@ Greenfield-реализация фундамента CLI Swax. После вып
   - `test_parse_protocol_rejects_unsupported` — `"ftp"` → `InvalidLLMProtocolError`.
   - `test_parse_base_url_rejects_versioned_segments` (parametrize `[".../v1", ".../v2/", ".../v1/"]`, design-doc edge case).
   - `test_parse_base_url_strips_trailing_slash` — `"https://x.com/"` → `"https://x.com"`.
-- [ ] **Debugging**: `pytest tests/config/ -v`
-- [ ] **Contract re-verification**: `SWAX_LLM_TOKEN` не появляется в логах; `require_vars` — lazy (не вызывается автоматически).
-- [ ] **Lint**: `ruff check swax/config/env.py tests/config/test_env_*.py`
+- [x] **Debugging**: `pytest tests/config/ -v`
+- [x] **Contract re-verification**: `SWAX_LLM_TOKEN` не появляется в логах; `require_vars` — lazy (не вызывается автоматически).
+- [x] **Lint**: `ruff check swax/config/env.py tests/config/test_env_*.py`
 
 ---
 

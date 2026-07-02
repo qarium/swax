@@ -7,6 +7,12 @@ in task 6.
 """
 
 from .Config import Config
+from .env import (
+    load_env,
+    parse_base_url,
+    parse_protocol,
+    require_vars,
+)
 from .errors import (
     InvalidLLMBaseURLError,
     InvalidLLMProtocolError,
@@ -22,4 +28,8 @@ __all__: list[str] = [
     "InvalidLLMProtocolError",
     "MissingEnvironmentVariablesError",
     "SpecsConfig",
+    "load_env",
+    "parse_base_url",
+    "parse_protocol",
+    "require_vars",
 ]
