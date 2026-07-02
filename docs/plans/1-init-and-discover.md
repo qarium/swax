@@ -987,10 +987,10 @@ ELSE:
 
 **Errors propagated (без catch):** `MissingEnvironmentVariablesError`, `SpecParseError`, `LLMCallError`, `LLMRateLimitedError`, `UnsupportedLLMProtocolError`, `LLMResponseParseError`.
 
-- [ ] **Contract tests** (`tests/applications/discover/test_run_discover_contract.py`): `from swax.applications.discover import run_discover` успешен; сигнатура `run_discover(project_root: pathlib.Path)`.
-- [ ] **Code**: создать `swax/applications/discover/__init__.py` (пустой), `swax/applications/discover/run_discover.py` с `run_discover` + 3 private helper-ами. Cross-cell импорты абсолютные (`from swax.config import ...`, и т.д.). `json` — stdlib-импорт (inline Usages из CODEMANIFEST, не cross-cell).
-- [ ] **Interface verification**: `pytest tests/applications/discover/test_run_discover_contract.py -v`
-- [ ] **Logic tests** (`tests/applications/discover/test_run_discover_logic.py`) — критически важно покрыть все сценарии из design-doc:
+- [x] **Contract tests** (`tests/applications/discover/test_run_discover_contract.py`): `from swax.applications.discover import run_discover` успешен; сигнатура `run_discover(project_root: pathlib.Path)`.
+- [x] **Code**: создать `swax/applications/discover/__init__.py` (пустой), `swax/applications/discover/run_discover.py` с `run_discover` + 3 private helper-ами. Cross-cell импорты абсолютные (`from swax.config import ...`, и т.д.). `json` — stdlib-импорт (inline Usages из CODEMANIFEST, не cross-cell).
+- [x] **Interface verification**: `pytest tests/applications/discover/test_run_discover_contract.py -v`
+- [x] **Logic tests** (`tests/applications/discover/test_run_discover_logic.py`) — критически важно покрыть все сценарии из design-doc:
   - `test_run_discover_builds_graph_with_two_llm_passes` (design-doc positive test, verbatim assertions — включая messages structure `[user, assistant, user]`).
   - `test_run_discover_raises_llm_response_parse_error_on_invalid_first_pass` (design-doc Р6a, verbatim — `"Sorry, here is my answer: {...}"` без ключа `uncertain`, asserts `ask_multi_turn.assert_not_called()`).
   - `test_run_discover_passes_uncertain_pairs_to_refine` (design-doc Р6b, verbatim — uncertain `["/users -> /orders"]` попадает в refine message).
@@ -999,11 +999,11 @@ ELSE:
   - `test_parse_llm_json_helper_strips_prose_around_json` — unit-test на `_parse_llm_json`: `'text {"a": ["b"]} more'` → `({"a": ["b"]}, [])` при `first_pass=False`.
   - `test_parse_llm_json_helper_rejects_non_dict` — `'[1, 2]'` → `LLMResponseParseError(reason="not a dict")`.
   - `test_parse_llm_json_helper_validates_shape` — `{"a": "not_a_list"}` → `LLMResponseParseError(reason="shape mismatch")`.
-- [ ] **Debugging**: `pytest tests/applications/discover/ -v`
-- [ ] **Contract re-verification**: paths only в графе; defensive parsing активен; `SWAX_LLM_TOKEN` не в логах.
-- [ ] **Facade**: добавить `run_discover` в `__all__`.
-- [ ] Verify facade: `python -c "from swax.applications.discover import run_discover"`
-- [ ] Lint: `ruff check swax/applications/discover tests/applications/discover`
+- [x] **Debugging**: `pytest tests/applications/discover/ -v`
+- [x] **Contract re-verification**: paths only в графе; defensive parsing активен; `SWAX_LLM_TOKEN` не в логах.
+- [x] **Facade**: добавить `run_discover` в `__all__`.
+- [x] Verify facade: `python -c "from swax.applications.discover import run_discover"`
+- [x] Lint: `ruff check swax/applications/discover tests/applications/discover`
 
 ---
 
