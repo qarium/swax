@@ -137,6 +137,18 @@ Annotations: |
 
     `reason`: original error message from the SDK.
 
+"LLMResponseParseError(reason: str, excerpt: str)":
+  location: errors.py
+  annotations: |
+    Raised by LLM consumers when defensive JSON parsing of an LLM response fails.
+
+    `reason`: short diagnostic reason (e.g. "JSONDecodeError", "not a dict", "shape mismatch").
+
+    `excerpt`: raw payload excerpt (first 200 chars) for diagnostics; never contains credentials.
+
+    Constraints:
+    - Raised by the consumer (e.g. run_discover helper), not by the adapters themselves.
+
 "UnsupportedLLMProtocolError(protocol: str)":
   location: errors.py
   annotations: |

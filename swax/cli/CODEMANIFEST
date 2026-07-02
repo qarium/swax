@@ -1,8 +1,11 @@
 Imports:
   - Types:
       - load_env
+      - load_config
+      - Config
     Usages:
       - environment
+      - project-config
     From: swax/config
 
 Usages:
@@ -19,6 +22,7 @@ Annotations: |
   Use `conventions` for code writing rules and testing.
   Use `click` for the entry-point group, the --env-file option, and the pass-object pattern.
   Use `environment` for `load_env` semantics.
+  Use `project-config` for `load_config` and the `Config` shape exposed via SwaxContext.config.
 
 ---
 
@@ -62,7 +66,7 @@ Annotations: |
       Path to the environment file. Read-only after construction — passed as input to `load_env`.
     "config -> Config | None": |
       Cached project configuration, defaults to None. Subcommands may populate it lazily via
-      load_config; optional because init writes config rather than reading it.
+      `load_config`; optional because init writes config rather than reading it.
 
 ---
 

@@ -22,6 +22,7 @@ Imports:
   - Types:
       - LLMCallError
       - LLMRateLimitedError
+      - LLMResponseParseError
       - UnsupportedLLMProtocolError
     Usages:
       - llm-transport
@@ -40,7 +41,7 @@ Annotations: |
   Use `discover-usage` for `run_discover` semantics.
   Use `environment` for `MissingEnvironmentVariablesError` semantics.
   Use `parsing` for `SpecParseError` semantics.
-  Use `llm-transport` for `LLMCallError`, `LLMRateLimitedError`, and `UnsupportedLLMProtocolError` semantics.
+  Use `llm-transport` for `LLMCallError`, `LLMRateLimitedError`, `LLMResponseParseError`, and `UnsupportedLLMProtocolError` semantics.
   Use `cli-facade` for the `SwaxContext` access pattern.
 
 ---
@@ -57,7 +58,9 @@ Annotations: |
     1. Resolve ctx.obj as `SwaxContext` via @click.pass_obj.
     2. Resolve project_root from the current working directory.
     3. Delegate to `run_discover` inside a try.
-    4. Map every documented domain exception to click.ClickException.
+    4. Map every documented domain exception to click.ClickException:
+       `MissingEnvironmentVariablesError`, `SpecParseError`, `LLMRateLimitedError`,
+       `LLMCallError`, `UnsupportedLLMProtocolError`, `LLMResponseParseError`.
 
     Requirements:
     - No interactive prompts — discover reads everything from .swax/config.yml and the environment.

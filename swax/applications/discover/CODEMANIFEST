@@ -21,6 +21,7 @@ Imports:
       - build_llm_client
       - LLMCallError
       - LLMRateLimitedError
+      - LLMResponseParseError
     Usages:
       - llm-transport
     From: swax/llm
@@ -40,6 +41,10 @@ Imports:
 
 Usages:
   conventions: .goga/usages/conventions.md
+  json: |
+    Python stdlib json module. Use json.loads for parsing LLM responses and
+    catch json.JSONDecodeError to wrap into a domain error. Defensive parsing only —
+    never trust LLM output structure without schema validation.
 
 Annotations: |
   Application-layer use-case: full rebuild of the traceability graph via a two-pass LLM analysis.
@@ -49,9 +54,11 @@ Annotations: |
 
   LLM responses are parsed defensively (provider-agnostic):
   - Any prose or code fences around the JSON payload are stripped before parsing.
-  - json.JSONDecodeError is wrapped into a meaningful domain error carrying a raw payload
-    excerpt for diagnostics.
-  - The parsed shape is validated as dict[str, list[str]]; mismatched shapes are rejected.
+  - json.JSONDecodeError is wrapped into `LLMResponseParseError` carrying a raw payload
+    excerpt for diagnostics. `LLMResponseParseError` propagates uncaught — the CLI handler
+    maps it like the other LLM errors.
+  - The parsed shape is validated as dict[str, list[str]]; mismatched shapes are rejected
+    via `LLMResponseParseError`.
   - LLM output structure is never trusted — schema-validate before consuming.
 
   Use `conventions` for code writing rules and testing.
@@ -59,9 +66,10 @@ Annotations: |
   Use `environment` for `require_vars` (lazy LLM credential validation).
   Use `parsing` for `discover_specs` and `parse_spec`.
   Use `extraction` for `extract_paths` and `extract_schemas`.
-  Use `llm-transport` for `build_llm_client` and `LLMClient` calls.
+  Use `llm-transport` for `build_llm_client`, `LLMClient` calls, and `LLMResponseParseError`.
   Use `traceability-llm-prompts` for prompt assembly.
   Use `graph-lifecycle` for `TraceabilityGraph` and `save_traceability`.
+  Use `json` for defensive parsing of LLM JSON responses.
 
 ---
 

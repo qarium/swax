@@ -39,13 +39,17 @@ Annotations: |
 
     Algorithm:
     1. Render `endpoints` as a JSON array.
-    2. Instruct the LLM to return only a JSON object {source_path: [dependent_paths]}.
-    3. Allow the LLM to flag uncertain pairs so the consumer can route them to the refine pass.
+    2. Instruct the LLM to return a JSON object with two keys: dependencies (mapping
+       source_path to list of dependent_paths) and uncertain (list of uncertain dependency
+       pairs as "/source -> /target" strings).
+    3. The consumer routes uncertain pairs into the refine pass via build_refine_user_prompt.
 
     Requirements:
-    - Output format matches what the consumer's JSON parser expects.
+    - Output format matches what the consumer's first-pass JSON parser expects: a dict
+      with exactly two keys dependencies (dict[str, list[str]]) and uncertain (list[str]).
     - Endpoint order in the prompt follows the sorted order from extract_paths for determinism.
-    - The LLM may flag uncertain pairs so the consumer can route them to the refine pass.
+    - The LLM flags uncertain pairs in the uncertain array so the consumer can route them
+      to the refine pass.
 
     Constraints:
     - Do not inline schemas here — they belong to the refine pass.
