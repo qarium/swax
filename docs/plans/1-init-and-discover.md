@@ -680,8 +680,8 @@ Do not introduce paths outside the provided endpoint universe."""
 - `LLMClient` — Protocol, `LLMClient.py`
 - `LLMCallError(reason)`, `LLMRateLimitedError(reason)`, `LLMResponseParseError(reason, excerpt)`, `UnsupportedLLMProtocolError(protocol)` — `errors.py`
 
-- [ ] **Contract tests** (`tests/llm/test_llm_contract.py`): `from swax.llm import LLMClient, LLMCallError, LLMRateLimitedError, LLMResponseParseError, UnsupportedLLMProtocolError` успешен; `LLMClient` — `typing.Protocol`; сигнатуры `ask`/`ask_multi_turn` извлекаются через `inspect.signature`.
-- [ ] **Code**: создать `swax/llm/__init__.py` (пустой), `swax/llm/LLMClient.py` с `class LLMClient(Protocol)`. Контракт `LLMClient()` — без параметров конструктора; методы объявляются как protocol-методы с `self` и телом `...` (ellipsis, без реализации):
+- [x] **Contract tests** (`tests/llm/test_llm_contract.py`): `from swax.llm import LLMClient, LLMCallError, LLMRateLimitedError, LLMResponseParseError, UnsupportedLLMProtocolError` успешен; `LLMClient` — `typing.Protocol`; сигнатуры `ask`/`ask_multi_turn` извлекаются через `inspect.signature`.
+- [x] **Code**: создать `swax/llm/__init__.py` (пустой), `swax/llm/LLMClient.py` с `class LLMClient(Protocol)`. Контракт `LLMClient()` — без параметров конструктора; методы объявляются как protocol-методы с `self` и телом `...` (ellipsis, без реализации):
   ```python
   from typing import Protocol
 
@@ -690,11 +690,11 @@ Do not introduce paths outside the provided endpoint universe."""
       def ask_multi_turn(self, system: str, messages: list[dict[str, str]]) -> str: ...
   ```
   Не использовать `@runtime_checkable` — контракт требует structural typing без runtime checks. `self` исключается из сигнатуры контракта (правило goga-cell-python). Создать `swax/llm/errors.py` с 4 исключениями.
-- [ ] **Interface verification**: `pytest tests/llm/test_llm_contract.py -v`
-- [ ] **Logic tests**: `LLMResponseParseError(reason="x", excerpt="y")` → поля сохранены; все ошибки наследуют `Exception`.
-- [ ] **Debugging**: `pytest tests/llm/ -v`
-- [ ] **Contract re-verification**: Protocol structural, без наследования.
-- [ ] **Lint**: `ruff check swax/llm/LLMClient.py swax/llm/errors.py tests/llm`
+- [x] **Interface verification**: `pytest tests/llm/test_llm_contract.py -v`
+- [x] **Logic tests**: `LLMResponseParseError(reason="x", excerpt="y")` → поля сохранены; все ошибки наследуют `Exception`.
+- [x] **Debugging**: `pytest tests/llm/ -v`
+- [x] **Contract re-verification**: Protocol structural, без наследования.
+- [x] **Lint**: `ruff check swax/llm/LLMClient.py swax/llm/errors.py tests/llm`
 
 ---
 
