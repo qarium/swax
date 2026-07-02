@@ -782,18 +782,18 @@ prepended = [{"role": "system", "content": system}] + messages
 # далее как ask, но messages=prepended
 ```
 
-- [ ] **Contract tests** (`tests/llm/test_openai_adapter_contract.py`): импорт, сигнатуры, property `client`.
-- [ ] **Code**: создать `swax/llm/OpenAIAdapter.py`. `DEFAULT_MODEL` — module-level (gpt-4o). `from openai import OpenAI, APIError, RateLimitError`.
-- [ ] **Interface verification**: `pytest tests/llm/test_openai_adapter_contract.py -v`
-- [ ] **Logic tests** (`tests/llm/test_openai_adapter_logic.py`):
+- [x] **Contract tests** (`tests/llm/test_openai_adapter_contract.py`): импорт, сигнатуры, property `client`.
+- [x] **Code**: создать `swax/llm/OpenAIAdapter.py`. `DEFAULT_MODEL` — module-level (gpt-4o). `from openai import OpenAI, APIError, RateLimitError`.
+- [x] **Interface verification**: `pytest tests/llm/test_openai_adapter_contract.py -v`
+- [x] **Logic tests** (`tests/llm/test_openai_adapter_logic.py`):
   - `test_ask_returns_first_choice_content` — mock response с `choices[0].message.content = "hello"` → `"hello"`.
   - `test_ask_returns_empty_string_when_no_content` — `choices[0].message.content = None` → `""`.
   - `test_ask_prepends_system_message` — verify `messages=[{system}, {user}]`.
   - `test_ask_maps_rate_limit_and_api_errors` — parametrize двух side_effects.
   - `test_ask_multi_turn_prepends_system_to_history` — `messages=[{user}, {assistant}, {user}]` → SDK получает `[{system}, {user}, {assistant}, {user}]`.
-- [ ] **Debugging**: `pytest tests/llm/ -v`
-- [ ] **Contract re-verification**: сигнатуры идентичны protocol.
-- [ ] **Lint**: `ruff check swax/llm/OpenAIAdapter.py tests/llm/test_openai_adapter_*.py`
+- [x] **Debugging**: `pytest tests/llm/ -v`
+- [x] **Contract re-verification**: сигнатуры идентичны protocol.
+- [x] **Lint**: `ruff check swax/llm/OpenAIAdapter.py tests/llm/test_openai_adapter_*.py`
 
 ---
 
