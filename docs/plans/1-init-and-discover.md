@@ -1048,18 +1048,18 @@ def init(ctx):  # ctx is SwaxContext
     raise click.ClickException(f"Specs not found at {exc.path}") from exc
 ```
 
-- [ ] **Contract tests** (`tests/commands/init/test_init_contract.py`): `from swax.commands.init import init` успешен; `init` — Click command (`isinstance(init, click.Command)` или `init.callback` существует).
-- [ ] **Code**: создать `swax/commands/init/__init__.py` (пустой), `swax/commands/init/init.py`. Импорты: `from swax.applications import run_init_handler as run_init` (facade `swax.applications` экспортирует alias `run_init_handler` через embedding); `from swax.git import RepositoryCloneError, SpecsNotFoundError`; `from swax.cli import SwaxContext` (для type hint, не используется в логике).
-- [ ] **Interface verification**: `pytest tests/commands/init/test_init_contract.py -v`
-- [ ] **Logic tests** (`tests/commands/init/test_init_logic.py`):
+- [x] **Contract tests** (`tests/commands/init/test_init_contract.py`): `from swax.commands.init import init` успешен; `init` — Click command (`isinstance(init, click.Command)` или `init.callback` существует).
+- [x] **Code**: создать `swax/commands/init/__init__.py` (пустой), `swax/commands/init/init.py`. Импорты: `from swax.applications import run_init_handler as run_init` (facade `swax.applications` экспортирует alias `run_init_handler` через embedding); `from swax.git import RepositoryCloneError, SpecsNotFoundError`; `from swax.cli import SwaxContext` (для type hint, не используется в логике).
+- [x] **Interface verification**: `pytest tests/commands/init/test_init_contract.py -v`
+- [x] **Logic tests** (`tests/commands/init/test_init_logic.py`):
   - `test_init_invokes_run_init_with_prompted_values` — `CliRunner`, mock `run_init`, `input="u\nl\n./p\n"`, asserts mock вызван с `("u", "l", Path("./p"), Path.cwd())`.
   - `test_init_handler_maps_repository_clone_error` (design-doc negative test, verbatim) — exit_code == 1, output содержит `"Failed to clone"` и `"auth failed"`.
   - `test_init_handler_maps_specs_not_found_error` — `run_init.side_effect = SpecsNotFoundError(Path("/x"))` → exit_code 1, output содержит `"Specs not found at"`.
-- [ ] **Debugging**: `pytest tests/commands/init/ -v`
-- [ ] **Contract re-verification**: только 2 documented exceptions мапятся, generic Exception не ловится.
-- [ ] **Facade**: добавить `init` в `__all__`.
-- [ ] Verify facade: `python -c "from swax.commands.init import init"`
-- [ ] Lint: `ruff check swax/commands/init tests/commands/init`
+- [x] **Debugging**: `pytest tests/commands/init/ -v`
+- [x] **Contract re-verification**: только 2 documented exceptions мапятся, generic Exception не ловится.
+- [x] **Facade**: добавить `init` в `__all__`.
+- [x] Verify facade: `python -c "from swax.commands.init import init"`
+- [x] Lint: `ruff check swax/commands/init tests/commands/init`
 
 ---
 
