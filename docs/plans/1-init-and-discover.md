@@ -227,12 +227,12 @@ Greenfield-реализация фундамента CLI Swax. После вып
 **Usages relevant to this task:**
 - `conventions`: тестовый слой `tests/` зеркалит `swax/`, `tmp_path`/`monkeypatch`/`mocker` fixtures; для `mocker` требуется `pytest-mock`.
 
-- [ ] В `[project].dependencies` добавить: `click>=8.0`, `pydantic>=2.0`, `pyyaml>=6.0`, `gitpython>=3.1`, `prance>=23.0`, `anthropic>=0.40`, `openai>=1.50`, `python-dotenv>=1.0`
-- [ ] В `[project.optional-dependencies].test` добавить `pytest-mock>=3.10`
-- [ ] Добавить секцию `[project.scripts]` с записью `swax = "swax.cli.__main__:main"`
-- [ ] Создать `tests/__init__.py` и `tests/conftest.py` (пустые, для shared fixtures позже)
-- [ ] Установить пакет в editable-режиме с тестовыми зависимостями: `pip install -e '.[test]'`
-- [ ] Smoke: `python -c "import swax"` пока падает — это ожидаемо (пакет пуст), фиксится последующими задачами
+- [x] В `[project].dependencies` добавить: `click>=8.0`, `pydantic>=2.0`, `pyyaml>=6.0`, `gitpython>=3.1`, `prance>=23.0`, `anthropic>=0.40`, `openai>=1.50`, `python-dotenv>=1.0`
+- [x] В `[project.optional-dependencies].test` добавить `pytest-mock>=3.10`
+- [x] Добавить секцию `[project.scripts]` с записью `swax = "swax.cli.__main__:main"`
+- [x] Создать `tests/__init__.py` и `tests/conftest.py` (пустые, для shared fixtures позже)
+- [x] Установить пакет в editable-режиме с тестовыми зависимостями: `pip install -e '.[test]'`
+- [x] Smoke: `python -c "import swax"` пока падает — это ожидаемо (пакет пуст), фиксится последующими задачами
 
 ---
 
