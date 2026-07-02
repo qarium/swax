@@ -243,10 +243,10 @@ Greenfield-реализация фундамента CLI Swax. После вып
 **Usages relevant to this task:**
 - `conventions`: relative imports внутри клетки, pydantic kw_only.
 
-- [ ] Создать `swax/config/__init__.py` (пока `__all__: list[str] = []`, заполняется в задаче 6 после реализации всех сущностей)
-- [ ] Создать `swax/config/errors.py` с пустым `__all__: list[str] = []` (заполняется в задаче 3)
-- [ ] Убедиться, что `python -c "import swax.config"` работает
-- [ ] Lint: `ruff check swax/config` — должен быть чистым
+- [x] Создать `swax/config/__init__.py` (пока `__all__: list[str] = []`, заполняется в задаче 6 после реализации всех сущностей)
+- [x] Создать `swax/config/errors.py` с пустым `__all__: list[str] = []` (заполняется в задаче 3)
+- [x] Убедиться, что `python -c "import swax.config"` работает
+- [x] Lint: `ruff check swax/config` — должен быть чистым
 
 ---
 
