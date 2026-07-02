@@ -519,10 +519,10 @@ Routine-функции в одном `location` `storage.py`. Round-trip с `Con
    - IF `isinstance(head, dict)` AND (`"openapi" IN head` OR `"swagger" IN head`): result.append(path)
 3. RETURN `sorted(result)`
 
-- [ ] **Contract tests** (`tests/openapi/test_openapi_contract.py`): импорты 5 имён успешны; сигнатуры соответствуют.
-- [ ] **Code**: создать `swax/openapi/__init__.py`, 4 routine-модуля, `errors.py`.
-- [ ] **Interface verification**: `pytest tests/openapi/test_openapi_contract.py -v`
-- [ ] **Logic tests** (`tests/openapi/test_openapi_logic.py`):
+- [x] **Contract tests** (`tests/openapi/test_openapi_contract.py`): импорты 5 имён успешны; сигнатуры соответствуют.
+- [x] **Code**: создать `swax/openapi/__init__.py`, 4 routine-модуля, `errors.py`.
+- [x] **Interface verification**: `pytest tests/openapi/test_openapi_contract.py -v`
+- [x] **Logic tests** (`tests/openapi/test_openapi_logic.py`):
   - `test_parse_spec_returns_dereferenced_dict` — `tmp_path/spec.yaml` с минимальной OpenAPI 3.x spec (с `$ref` внутри); `parse_spec` возвращает dict с резолвленным ref.
   - `test_parse_spec_raises_on_invalid_yaml` (design-doc negative test, verbatim) — `: not valid yaml:` → `SpecParseError`, `exc.path` совпадает, `exc.reason` — строка.
   - `test_extract_paths_returns_sorted_paths` — spec с `paths: {/b: ..., /a: ...}` → `["/a", "/b"]`.
@@ -531,11 +531,11 @@ Routine-функции в одном `location` `storage.py`. Round-trip с `Con
   - `test_extract_schemas_returns_components_schemas_for_openapi_3` — spec с `components.schemas` → возвращает её.
   - `test_discover_specs_filters_by_extension_and_head` — `tmp_path` с `api.yaml` (`openapi: 3.0.0` в head), `readme.md`, `data.json` (`{}` без ключа openapi/swagger) → возвращается только `api.yaml`.
   - `test_discover_specs_returns_sorted` — несколько файлов возвращаются в sorted-порядке.
-- [ ] **Debugging**: `pytest tests/openapi/ -v`
-- [ ] **Contract re-verification**: `$ref` резолвится (prance), paths sorted, swagger/openapi transparent.
-- [ ] **Facade**: 5 имён в `__all__`.
-- [ ] Verify facade: `python -c "from swax.openapi import parse_spec, extract_paths, extract_schemas, discover_specs, SpecParseError"`
-- [ ] Lint: `ruff check swax/openapi tests/openapi`
+- [x] **Debugging**: `pytest tests/openapi/ -v`
+- [x] **Contract re-verification**: `$ref` резолвится (prance), paths sorted, swagger/openapi transparent.
+- [x] **Facade**: 5 имён в `__all__`.
+- [x] Verify facade: `python -c "from swax.openapi import parse_spec, extract_paths, extract_schemas, discover_specs, SpecParseError"`
+- [x] Lint: `ruff check swax/openapi tests/openapi`
 
 ---
 

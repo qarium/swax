@@ -25,6 +25,7 @@ dependencies = [
     "pyyaml>=6.0",
     "gitpython>=3.1",
     "prance>=23.0",
+    "openapi-spec-validator>=0.5",
     "anthropic>=0.40",
     "openai>=1.50",
     "python-dotenv>=1.0",
