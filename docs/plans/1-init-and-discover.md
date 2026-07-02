@@ -392,10 +392,10 @@ Routine-функции в одном `location` `storage.py`. Round-trip с `Con
 
 Закрыть фасад клетки: `__all__` содержит все 12 имён контракта.
 
-- [ ] В `swax/config/__init__.py` импортировать все 12 имён из соответствующих location-модулей и объявить `__all__` = `["Config", "GitConfig", "SpecsConfig", "MissingEnvironmentVariablesError", "InvalidLLMProtocolError", "InvalidLLMBaseURLError", "load_env", "require_vars", "parse_protocol", "parse_base_url", "load_config", "save_config"]`.
-- [ ] Verify facade accessibility: `python -c "from swax.config import Config, GitConfig, SpecsConfig, MissingEnvironmentVariablesError, InvalidLLMProtocolError, InvalidLLMBaseURLError, load_env, require_vars, parse_protocol, parse_base_url, load_config, save_config"`
-- [ ] Запустить все тесты клетки: `pytest tests/config/ -v`
-- [ ] Lint: `ruff check swax/config/__init__.py`
+- [x] В `swax/config/__init__.py` импортировать все 12 имён из соответствующих location-модулей и объявить `__all__` = `["Config", "GitConfig", "SpecsConfig", "MissingEnvironmentVariablesError", "InvalidLLMProtocolError", "InvalidLLMBaseURLError", "load_env", "require_vars", "parse_protocol", "parse_base_url", "load_config", "save_config"]`.
+- [x] Verify facade accessibility: `python -c "from swax.config import Config, GitConfig, SpecsConfig, MissingEnvironmentVariablesError, InvalidLLMProtocolError, InvalidLLMBaseURLError, load_env, require_vars, parse_protocol, parse_base_url, load_config, save_config"`
+- [x] Запустить все тесты клетки: `pytest tests/config/ -v` (55 passed)
+- [x] Lint: `ruff check swax/config/__init__.py`
 
 ---
 
