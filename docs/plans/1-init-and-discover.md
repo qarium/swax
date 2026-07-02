@@ -1098,17 +1098,17 @@ def discover(ctx):  # SwaxContext, intentionally unused
     raise click.ClickException(f"LLM response parse failed: {exc.reason}") from exc
 ```
 
-- [ ] **Contract tests** (`tests/commands/discover/test_discover_contract.py`): импорт `discover` успешен; `isinstance(discover, click.Command)`.
-- [ ] **Code**: создать `swax/commands/discover/__init__.py` (пустой), `swax/commands/discover/discover.py`. Импорты: `from swax.applications import run_discover_handler as run_discover` (facade alias через embedding); доменные исключения из `swax.config`, `swax.openapi`, `swax.llm` напрямую (не через facade). Cross-cell импорты абсолютные.
-- [ ] **Interface verification**: `pytest tests/commands/discover/test_discover_contract.py -v`
-- [ ] **Logic tests** (`tests/commands/discover/test_discover_logic.py`):
+- [x] **Contract tests** (`tests/commands/discover/test_discover_contract.py`): импорт `discover` успешен; `isinstance(discover, click.Command)`.
+- [x] **Code**: создать `swax/commands/discover/__init__.py` (пустой), `swax/commands/discover/discover.py`. Импорты: `from swax.applications import run_discover_handler as run_discover` (facade alias через embedding); доменные исключения из `swax.config`, `swax.openapi`, `swax.llm` напрямую (не через facade). Cross-cell импорты абсолютные.
+- [x] **Interface verification**: `pytest tests/commands/discover/test_discover_contract.py -v`
+- [x] **Logic tests** (`tests/commands/discover/test_discover_logic.py`):
   - `test_discover_handler_maps_domain_errors` (design-doc Р8, parametrized × 6, verbatim) — все 6 исключений маппятся в `click.ClickException` с ожидаемой подстрокой.
   - `test_discover_handler_no_prompts` — invoke без stdin input, mock `run_discover` успехом → exit_code 0.
-- [ ] **Debugging**: `pytest tests/commands/discover/ -v`
-- [ ] **Contract re-verification**: 6 documented exceptions; `SWAX_LLM_TOKEN` не в сообщениях.
-- [ ] **Facade**: добавить `discover` в `__all__`.
-- [ ] Verify facade: `python -c "from swax.commands.discover import discover"`
-- [ ] Lint: `ruff check swax/commands/discover tests/commands/discover`
+- [x] **Debugging**: `pytest tests/commands/discover/ -v`
+- [x] **Contract re-verification**: 6 documented exceptions; `SWAX_LLM_TOKEN` не в сообщениях.
+- [x] **Facade**: добавить `discover` в `__all__`.
+- [x] Verify facade: `python -c "from swax.commands.discover import discover"`
+- [x] Lint: `ruff check swax/commands/discover tests/commands/discover`
 
 ---
 
