@@ -1,7 +1,13 @@
 """Project configuration, environment variables, and SWAX_* validation.
 
-Facade is intentionally empty at this stage. Contract entities are added in
-tasks 2-5 and exposed here in task 6.
+The facade exposes contract entities incrementally. The three config models
+are exposed here in task 2; the remaining entities (errors, env routines,
+storage routines) are added in tasks 3-5 and the full surface is re-verified
+in task 6.
 """
 
-__all__: list[str] = []
+from .Config import Config
+from .GitConfig import GitConfig
+from .SpecsConfig import SpecsConfig
+
+__all__: list[str] = ["Config", "GitConfig", "SpecsConfig"]

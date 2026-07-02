@@ -265,13 +265,13 @@ Greenfield-реализация фундамента CLI Swax. После вып
 
 Примечание: эта задача НЕ модифицирует `errors.py` (он остаётся пустым до Task 3).
 
-- [ ] **Contract tests** (`tests/config/test_models_contract.py`): для каждой модели — `from swax.config import Config, GitConfig, SpecsConfig` успешен; конструктор требует keyword args (kw_only — `TypeError` на позиционный); `Config(git=..., specs=...)` round-trip через `model_dump()`. (Ожидаемый fail — `ImportError`.)
-- [ ] **Code**: создать `swax/config/Config.py`, `swax/config/GitConfig.py`, `swax/config/SpecsConfig.py` — каждый файл объявляет pydantic-модель с `model_config = ConfigDict(kw_only=True)`. `SpecsConfig.type: Literal["swagger", "openapi"]`.
-- [ ] **Interface verification**: `pytest tests/config/test_models_contract.py -v` — все должны пройти.
-- [ ] **Logic tests** (`tests/config/test_models_logic.py`): `Config` с валидными данными возвращается через `model_validate(dict)`; `SpecsConfig(type="invalid")` поднимает `ValidationError`; `GitConfig` принимает произвольные строки (no URL validation per contract).
-- [ ] **Debugging**: `pytest tests/config/ -v` — фиксить только код (не тесты), пока все тесты не пройдут.
-- [ ] **Contract re-verification**: kw_only enforced, type hints соответствуют сигнатурам контракта.
-- [ ] **Lint**: `ruff check swax/config/Config.py swax/config/GitConfig.py swax/config/SpecsConfig.py tests/config/test_models_*.py` — фиксить форматирование.
+- [x] **Contract tests** (`tests/config/test_models_contract.py`): для каждой модели — `from swax.config import Config, GitConfig, SpecsConfig` успешен; конструктор требует keyword args (kw_only — `TypeError` на позиционный); `Config(git=..., specs=...)` round-trip через `model_dump()`. (Ожидаемый fail — `ImportError`.)
+- [x] **Code**: создать `swax/config/Config.py`, `swax/config/GitConfig.py`, `swax/config/SpecsConfig.py` — каждый файл объявляет pydantic-модель с `model_config = ConfigDict(kw_only=True)`. `SpecsConfig.type: Literal["swagger", "openapi"]`.
+- [x] **Interface verification**: `pytest tests/config/test_models_contract.py -v` — все должны пройти.
+- [x] **Logic tests** (`tests/config/test_models_logic.py`): `Config` с валидными данными возвращается через `model_validate(dict)`; `SpecsConfig(type="invalid")` поднимает `ValidationError`; `GitConfig` принимает произвольные строки (no URL validation per contract).
+- [x] **Debugging**: `pytest tests/config/ -v` — фиксить только код (не тесты), пока все тесты не пройдут.
+- [x] **Contract re-verification**: kw_only enforced, type hints соответствуют сигнатурам контракта.
+- [x] **Lint**: `ruff check swax/config/Config.py swax/config/GitConfig.py swax/config/SpecsConfig.py tests/config/test_models_*.py` — фиксить форматирование.
 
 ---
 

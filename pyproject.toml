@@ -81,6 +81,7 @@ select = [
 
 ignore = [
     "UP045", # `X | None` — not compatible with Python 3.10 dataclass fields, use `typing.Optional`
+    "N999",  # PascalCase module names — cell `location` contract mandates entity-named files (Config.py, GitConfig.py, ...)
 ]
 
 [tool.ruff.lint.mccabe]
