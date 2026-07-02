@@ -1,20 +1,22 @@
-"""Provider-agnostic LLM transport: protocol and domain errors.
+"""Provider-agnostic LLM transport: protocol, adapters, and domain errors.
 
-The facade is built incrementally. This task (12) exposes the LLMClient
-protocol and the four error entities. The adapters (AnthropicAdapter,
-OpenAIAdapter) and the factory routines are added in tasks 13-15, at which
-point the full surface is re-verified.
+The facade is built incrementally. Task 12 exposed the LLMClient protocol and
+the four error entities; task 13 adds the AnthropicAdapter. The OpenAIAdapter
+and the factory routines follow in tasks 14-15, at which point the full surface
+is re-verified.
 """
 
-from .LLMClient import LLMClient
+from .AnthropicAdapter import AnthropicAdapter
 from .errors import (
     LLMCallError,
     LLMRateLimitedError,
     LLMResponseParseError,
     UnsupportedLLMProtocolError,
 )
+from .LLMClient import LLMClient
 
 __all__: list[str] = [
+    "AnthropicAdapter",
     "LLMCallError",
     "LLMClient",
     "LLMRateLimitedError",

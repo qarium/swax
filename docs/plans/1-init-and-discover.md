@@ -729,18 +729,18 @@ except APIError as exc:
 
 `ask_multi_turn`: идентично, но `messages=messages` вместо single-user list.
 
-- [ ] **Contract tests** (`tests/llm/test_anthropic_adapter_contract.py`): `from swax.llm import AnthropicAdapter` успешен; сигнатуры `ask`/`ask_multi_turn`/`__init__(client)` kw_only; `client` доступен как property.
-- [ ] **Code**: создать `swax/llm/AnthropicAdapter.py`. `DEFAULT_MODEL` — module-level константа (актуальный идентификатор модели Anthropic). Использовать `from anthropic import Anthropic, APIError, RateLimitError`.
-- [ ] **Interface verification**: `pytest tests/llm/test_anthropic_adapter_contract.py -v`
-- [ ] **Logic tests** (`tests/llm/test_anthropic_adapter_logic.py`) — все через `mocker.patch` на mock SDK client:
+- [x] **Contract tests** (`tests/llm/test_anthropic_adapter_contract.py`): `from swax.llm import AnthropicAdapter` успешен; сигнатуры `ask`/`ask_multi_turn`/`__init__(client)` kw_only; `client` доступен как property.
+- [x] **Code**: создать `swax/llm/AnthropicAdapter.py`. `DEFAULT_MODEL` — module-level константа (актуальный идентификатор модели Anthropic). Использовать `from anthropic import Anthropic, APIError, RateLimitError`.
+- [x] **Interface verification**: `pytest tests/llm/test_anthropic_adapter_contract.py -v`
+- [x] **Logic tests** (`tests/llm/test_anthropic_adapter_logic.py`) — все через `mocker.patch` на mock SDK client:
   - `test_ask_returns_concatenated_text_blocks` — mock client возвращает response с content=[text_block(type="text", text="hello "), text_block(type="text", text="world"), non_text_block(type="tool_use")] → `"hello world"`.
   - `test_ask_passes_system_and_user_to_sdk` — verify `messages.create` вызван с `system=...`, `messages=[{role:"user", content:user}]`, `model=DEFAULT_MODEL`, `max_tokens=4096`.
   - `test_ask_maps_rate_limit_error` — `messages.create.side_effect = RateLimitError(...)` → `pytest.raises(LLMRateLimitedError)`.
   - `test_ask_maps_api_error` — side_effect `APIError(...)` → `pytest.raises(LLMCallError)`.
   - `test_ask_multi_turn_preserves_messages_order` — verify `messages` kwarg передан как есть.
-- [ ] **Debugging**: `pytest tests/llm/ -v`
-- [ ] **Contract re-verification**: сигнатуры идентичны LLMClient protocol.
-- [ ] **Lint**: `ruff check swax/llm/AnthropicAdapter.py tests/llm/test_anthropic_adapter_*.py`
+- [x] **Debugging**: `pytest tests/llm/ -v`
+- [x] **Contract re-verification**: сигнатуры идентичны LLMClient protocol.
+- [x] **Lint**: `ruff check swax/llm/AnthropicAdapter.py tests/llm/test_anthropic_adapter_*.py`
 
 ---
 
