@@ -421,19 +421,19 @@ Routine-функции в одном `location` `storage.py`. Round-trip с `Con
 1. `destination.parent.mkdir(parents=True, exist_ok=True)`
 2. `shutil.copytree(source, destination, dirs_exist_ok=True)`
 
-- [ ] **Contract tests** (`tests/fs/test_fs_contract.py`): `from swax.fs import ensure_swax_dir, copy_specs` успешен; сигнатуры соответствуют.
-- [ ] **Code**: создать `swax/fs/__init__.py` (пустой `__all__`), `swax/fs/ensure_swax_dir.py`, `swax/fs/copy_specs.py`.
-- [ ] **Interface verification**: `pytest tests/fs/test_fs_contract.py -v`
-- [ ] **Logic tests** (`tests/fs/test_fs_logic.py`):
+- [x] **Contract tests** (`tests/fs/test_fs_contract.py`): `from swax.fs import ensure_swax_dir, copy_specs` успешен; сигнатуры соответствуют.
+- [x] **Code**: создать `swax/fs/__init__.py` (пустой `__all__`), `swax/fs/ensure_swax_dir.py`, `swax/fs/copy_specs.py`.
+- [x] **Interface verification**: `pytest tests/fs/test_fs_contract.py -v`
+- [x] **Logic tests** (`tests/fs/test_fs_logic.py`):
   - `test_ensure_swax_dir_creates_directory_idempotent` — дважды вызвать, dir существует, возвращается путь `<root>/.swax`.
   - `test_copy_specs_merges_into_existing` — `tmp_path/src/a.yaml`, `tmp_path/dst/b.yaml` (pre-existing); после `copy_specs(src, dst)` — оба файла в dst.
   - `test_copy_specs_creates_destination_parent` — destination.parent не существует → создаётся.
   - `test_copy_specs_treats_symlinks_as_regular_files` — symlink в source копируется как regular file (проверить через `not (dst / "link").is_symlink()`).
-- [ ] **Debugging**: `pytest tests/fs/ -v`
-- [ ] **Contract re-verification**: `dirs_exist_ok=True`, symlinks копируются как regular files.
-- [ ] **Facade**: добавить `ensure_swax_dir, copy_specs` в `swax/fs/__init__.py.__all__`.
-- [ ] Verify facade: `python -c "from swax.fs import ensure_swax_dir, copy_specs"`
-- [ ] Lint: `ruff check swax/fs tests/fs`
+- [x] **Debugging**: `pytest tests/fs/ -v`
+- [x] **Contract re-verification**: `dirs_exist_ok=True`, symlinks копируются как regular files.
+- [x] **Facade**: добавить `ensure_swax_dir, copy_specs` в `swax/fs/__init__.py.__all__`.
+- [x] Verify facade: `python -c "from swax.fs import ensure_swax_dir, copy_specs"`
+- [x] Lint: `ruff check swax/fs tests/fs`
 
 ---
 
