@@ -585,20 +585,20 @@ FOR source IN list(self.edges.keys()):
 4. `yaml_text = yaml.safe_dump(ordered, sort_keys=False, allow_unicode=True, default_flow_style=False)`
 5. `path.write_text(yaml_text, encoding="utf-8")`
 
-- [ ] **Contract tests** (`tests/traceability/test_traceability_contract.py`): импорт 3 имён успешен; `TraceabilityGraph` имеет методы `add_edge`, `deduplicate` и property `edges`; kw_only.
-- [ ] **Code**: создать `swax/traceability/__init__.py`, `TraceabilityGraph.py` (pydantic model; `edges: dict[str, list[str]] = Field(default_factory=dict)`), `storage.py`.
-- [ ] **Interface verification**: `pytest tests/traceability/test_traceability_contract.py -v`
-- [ ] **Logic tests** (`tests/traceability/test_traceability_logic.py`):
+- [x] **Contract tests** (`tests/traceability/test_traceability_contract.py`): импорт 3 имён успешен; `TraceabilityGraph` имеет методы `add_edge`, `deduplicate` и property `edges`; kw_only.
+- [x] **Code**: создать `swax/traceability/__init__.py`, `TraceabilityGraph.py` (pydantic model; `edges: dict[str, list[str]] = Field(default_factory=dict)`), `storage.py`.
+- [x] **Interface verification**: `pytest tests/traceability/test_traceability_contract.py -v`
+- [x] **Logic tests** (`tests/traceability/test_traceability_logic.py`):
   - `test_add_edge_appends_to_adjacency` — `g = TraceabilityGraph(edges={})`, `g.add_edge("/a", "/b")` дважды → `g.edges["/a"] == ["/b", "/b"]`.
   - `test_deduplicate_removes_duplicates_and_self_loops` — design-doc edge case `test_traceability_graph_deduplicate_idempotent_and_removes_self_loops` (verbatim).
   - `test_save_traceability_writes_sorted_yaml` — `g = TraceabilityGraph(edges={"/b": ["/a"], "/a": ["/b", "/a"]})`, `g.deduplicate()`, `save_traceability(g, p)` — content deterministic; повторный `save_traceability` → идентичный файл.
   - `test_load_traceability_handles_empty_file` — `path.write_text("")` → возвращается пустой graph.
   - `test_load_traceability_normalizes_values_to_list` — YAML с `/a: /b` (string вместо list) → `graph.edges["/a"] == ["/b"]`.
-- [ ] **Debugging**: `pytest tests/traceability/ -v`
-- [ ] **Contract re-verification**: idempotent deduplicate, deterministic dump.
-- [ ] **Facade**: 3 имени в `__all__`.
-- [ ] Verify facade: `python -c "from swax.traceability import TraceabilityGraph, load_traceability, save_traceability"`
-- [ ] Lint: `ruff check swax/traceability tests/traceability`
+- [x] **Debugging**: `pytest tests/traceability/ -v`
+- [x] **Contract re-verification**: idempotent deduplicate, deterministic dump.
+- [x] **Facade**: 3 имени в `__all__`.
+- [x] Verify facade: `python -c "from swax.traceability import TraceabilityGraph, load_traceability, save_traceability"`
+- [x] Lint: `ruff check swax/traceability tests/traceability`
 
 ---
 
