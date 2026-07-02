@@ -375,16 +375,16 @@ Routine-функции в одном `location` `storage.py`. Round-trip с `Con
 3. `yaml_text = yaml.safe_dump(payload, sort_keys=False, allow_unicode=True, default_flow_style=False)`
 4. `path.write_text(yaml_text, encoding="utf-8")`
 
-- [ ] **Contract tests** (`tests/config/test_storage_contract.py`): `from swax.config import load_config, save_config` успешен; сигнатуры соответствуют.
-- [ ] **Code**: создать `swax/config/storage.py`. Импорт `Config` через relative.
-- [ ] **Interface verification**: `pytest tests/config/test_storage_contract.py -v`
-- [ ] **Logic tests** (`tests/config/test_storage_logic.py`):
+- [x] **Contract tests** (`tests/config/test_storage_contract.py`): `from swax.config import load_config, save_config` успешен; сигнатуры соответствуют.
+- [x] **Code**: создать `swax/config/storage.py`. Импорт `Config` через relative.
+- [x] **Interface verification**: `pytest tests/config/test_storage_contract.py -v`
+- [x] **Logic tests** (`tests/config/test_storage_logic.py`):
   - `test_load_config_parses_valid_yaml` (design-doc positive test, verbatim assertions).
   - `test_save_config_creates_parents_and_writes_deterministic_yaml` (design-doc positive test, включая повторный `save_config` → идентичный файл).
   - `test_save_load_round_trip` — `save_config(c, p)` then `load_config(p)` → equal Config.
-- [ ] **Debugging**: `pytest tests/config/ -v`
-- [ ] **Contract re-verification**: `sort_keys=False`, `allow_unicode=True`, `default_flow_style=False`.
-- [ ] **Lint**: `ruff check swax/config/storage.py tests/config/test_storage_*.py`
+- [x] **Debugging**: `pytest tests/config/ -v`
+- [x] **Contract re-verification**: `sort_keys=False`, `allow_unicode=True`, `default_flow_style=False`.
+- [x] **Lint**: `ruff check swax/config/storage.py tests/config/test_storage_*.py`
 
 ---
 

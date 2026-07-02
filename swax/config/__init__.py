@@ -20,6 +20,7 @@ from .errors import (
 )
 from .GitConfig import GitConfig
 from .SpecsConfig import SpecsConfig
+from .storage import load_config, save_config
 
 __all__: list[str] = [
     "Config",
@@ -28,8 +29,10 @@ __all__: list[str] = [
     "InvalidLLMProtocolError",
     "MissingEnvironmentVariablesError",
     "SpecsConfig",
+    "load_config",
     "load_env",
     "parse_base_url",
     "parse_protocol",
     "require_vars",
+    "save_config",
 ]
