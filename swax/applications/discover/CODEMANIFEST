@@ -1,0 +1,102 @@
+Imports:
+  - Types:
+      - load_config
+      - require_vars
+      - Config
+    Usages:
+      - project-config
+      - environment
+    From: swax/config
+  - Types:
+      - discover_specs
+      - parse_spec
+      - extract_paths
+      - extract_schemas
+    Usages:
+      - parsing
+      - extraction
+    From: swax/openapi
+  - Types:
+      - LLMClient
+      - build_llm_client
+      - LLMCallError
+      - LLMRateLimitedError
+    Usages:
+      - llm-transport
+    From: swax/llm
+  - Types:
+      - build_graph_system_prompt
+      - build_graph_user_prompt
+      - build_refine_user_prompt
+    Usages:
+      - traceability-llm-prompts
+    From: swax/prompts
+  - Types:
+      - TraceabilityGraph
+      - save_traceability
+    Usages:
+      - graph-lifecycle
+    From: swax/traceability
+
+Usages:
+  conventions: .goga/usages/conventions.md
+
+Annotations: |
+  Application-layer use-case: full rebuild of the traceability graph via a two-pass LLM analysis.
+  The graph stores paths only. Edge deduplication is mandatory before saving.
+  `LLMCallError` and `LLMRateLimitedError` propagate uncaught — the CLI handler maps them.
+  Logs INFO at start/end, DEBUG for intermediate steps; SWAX_LLM_TOKEN never in logs.
+
+  LLM responses are parsed defensively (provider-agnostic):
+  - Any prose or code fences around the JSON payload are stripped before parsing.
+  - json.JSONDecodeError is wrapped into a meaningful domain error carrying a raw payload
+    excerpt for diagnostics.
+  - The parsed shape is validated as dict[str, list[str]]; mismatched shapes are rejected.
+  - LLM output structure is never trusted — schema-validate before consuming.
+
+  Use `conventions` for code writing rules and testing.
+  Use `project-config` for `load_config` and the `Config` shape.
+  Use `environment` for `require_vars` (lazy LLM credential validation).
+  Use `parsing` for `discover_specs` and `parse_spec`.
+  Use `extraction` for `extract_paths` and `extract_schemas`.
+  Use `llm-transport` for `build_llm_client` and `LLMClient` calls.
+  Use `traceability-llm-prompts` for prompt assembly.
+  Use `graph-lifecycle` for `TraceabilityGraph` and `save_traceability`.
+
+---
+
+"run_discover(project_root: pathlib.Path)":
+  location: run_discover.py
+  annotations: |
+    Use-case "build traceability graph": full rebuild from scratch, ignoring any existing graph.
+
+    `project_root`: root of the Swax project — .swax/config.yml describes the specs,
+      .swax/traceability.yml is overwritten.
+
+    Algorithm:
+    1. Validate LLM credentials via `require_vars`.
+    2. Read `Config` via `load_config` and locate the local specs root.
+    3. Discover spec files and extract endpoints + schema context from each.
+    4. First LLM pass: build a system prompt via `build_graph_system_prompt` and a user
+       prompt via `build_graph_user_prompt`, then ask for dependency hypotheses across
+       all endpoints.
+    5. Refine pass: build a refine prompt via `build_refine_user_prompt` with schemas
+       attached for the ambiguous pairs, then re-ask in multi-turn mode.
+    6. Build the `TraceabilityGraph` from the final dependencies, deduplicate, persist.
+
+    Requirements:
+    - Always builds a fresh graph — existing .swax/traceability.yml is ignored.
+    - Endpoint order is deterministic across runs (discover_specs returns sorted output).
+    - LLM responses are parsed defensively per the global rule above.
+
+    Constraints:
+    - Do not catch `LLMCallError` / `LLMRateLimitedError` — let them propagate.
+    - Do not store schemas in the graph — paths only.
+    - Do not embed filesystem paths or credentials into prompts — the prompts cell already enforces this.
+
+---
+
+Author: Goga
+CreatedAt: 25/06/26
+Description: |
+  Application-layer use-case for a full traceability graph rebuild (two-pass LLM analysis scenario).

@@ -1,0 +1,55 @@
+Usages:
+  conventions: .goga/usages/conventions.md
+
+Annotations: |
+  Filesystem layout of a Swax project: the .swax/ directory and spec copying.
+
+  All paths are pathlib.Path. Relative imports inside the cell.
+  Tests exercise filesystem operations only through tmp_path.
+
+  Use `conventions` for code writing rules and testing.
+
+---
+
+"ensure_swax_dir(project_root: pathlib.Path) -> swax_dir: pathlib.Path":
+  location: ensure_swax_dir.py
+  annotations: |
+    Guarantees the .swax/ directory exists under the project root and returns its path.
+
+    `project_root`: root of the Swax project (where .swax/ lives).
+    `swax_dir`: the .swax/ directory, ready for config.yml and traceability.yml writes.
+
+    Algorithm:
+    1. Resolve .swax/ under `project_root`.
+    2. Create the directory (with parents, tolerating prior existence).
+    3. Return the resolved path.
+
+    Requirements:
+    - Idempotent — safe to call before every write.
+
+"copy_specs(source: pathlib.Path, destination: pathlib.Path)":
+  location: copy_specs.py
+  annotations: |
+    Copies downloaded specifications from the temporary clone into the local project path.
+
+    `source`: directory of specs inside the clone (output of clone_specs).
+    `destination`: local path declared in SpecsConfig.location.
+
+    Algorithm:
+    1. Ensure parent directories of `destination` exist.
+    2. Recursively merge `source` into `destination`, overwriting existing files.
+
+    Requirements:
+    - Parent directories of the destination are created as needed.
+    - Existing files are overwritten on re-runs (spec updates).
+    - Directory structure of the source is preserved.
+
+    Constraints:
+    - Symlinks in the clone are not dereferenced — copied as regular files.
+
+---
+
+Author: Goga
+CreatedAt: 25/06/26
+Description: |
+  Filesystem operations for the Swax project layout (.swax/ directory and spec copying).

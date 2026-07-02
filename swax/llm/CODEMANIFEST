@@ -1,0 +1,200 @@
+Imports:
+  - Types:
+      - require_vars
+      - MissingEnvironmentVariablesError
+    Usages:
+      - environment
+    From: swax/config
+
+Usages:
+  conventions: .goga/usages/conventions.md
+  anthropic: .goga/usages/cooks/anthropic.md
+  openai: .goga/usages/cooks/openai.md
+
+Annotations: |
+  Provider-agnostic LLM transport. Adapters wrap the Anthropic and OpenAI SDKs behind
+  a single protocol; the factory selects one by SWAX_LLM_PROTOCOL.
+
+  Adapters receive the SDK client via constructor injection — for testability via mock
+  at import point. DEFAULT_MODEL is fixed in code per adapter.
+  SWAX_LLM_TOKEN never appears in logs. Relative imports inside the cell.
+  `require_vars` is the entry point for credential validation; `MissingEnvironmentVariablesError`
+  propagates to the caller.
+
+  Use `conventions` for code writing rules and testing.
+  Use `anthropic` for the Anthropic SDK client and error mapping.
+  Use `openai` for the OpenAI SDK client and error mapping.
+  Use `environment` for `require_vars` (lazy credential validation).
+
+---
+
+"LLMClient()":
+  location: LLMClient.py
+  annotations: |
+    Structural protocol for LLM transports. Adapters satisfy it implicitly — no inheritance required.
+
+    The protocol is domain-agnostic: methods accept pre-built system/user strings and return
+    raw response text. Multi-step orchestration (dependency inference, schema refinement) lives
+    in the consumer, not here.
+
+  methods:
+    "ask(system: str, user: str) -> response: str": |
+      Single-turn transport: sends one system + one user message, returns raw response text.
+
+      `system`: system prompt (output of build_graph_system_prompt).
+      `user`: user payload (output of build_graph_user_prompt or build_refine_user_prompt).
+      `response`: concatenated text content returned by the provider.
+
+      Requirements:
+      - Returns the concatenated text content of the response.
+      - SDK errors are mapped to LLMCallError / LLMRateLimitedError.
+    "ask_multi_turn(system: str, messages: list[dict[str, str]]) -> response: str": |
+      Multi-turn transport: sends a system prompt plus an ordered message history,
+      returns raw response text.
+
+      `system`: system prompt reused across turns.
+      `messages`: ordered list of {"role": ..., "content": ...} dicts for the refinement pass.
+      `response`: concatenated text content returned by the provider.
+
+      Requirements:
+      - Message order is preserved — the SDK relies on it for context continuity.
+      - SDK errors are mapped to LLMCallError / LLMRateLimitedError.
+
+"LLMClient::AnthropicAdapter(client: Anthropic)":
+  location: AnthropicAdapter.py
+  annotations: |
+    LLMClient backed by the Anthropic SDK.
+
+    `client`: injected Anthropic SDK client, constructed by build_anthropic_client.
+
+    Requirements:
+    - Method signatures match the LLMClient protocol exactly — provider switching
+      requires no consumer code change.
+
+  properties:
+    "client -> Anthropic": |
+      The injected Anthropic SDK client instance.
+  methods:
+    "ask(system: str, user: str) -> response: str": |
+      Anthropic-backed single-turn call.
+
+      Algorithm:
+      1. Send a single user message together with the system prompt at the fixed model.
+      2. Concatenate text content blocks of the response.
+      3. Map rate-limit errors to LLMRateLimitedError and other API errors to LLMCallError.
+
+    "ask_multi_turn(system: str, messages: list[dict[str, str]]) -> response: str": |
+      Anthropic-backed multi-turn call.
+
+      Algorithm:
+      1. Send the message history together with the system prompt at the fixed model.
+      2. Concatenate text content blocks of the response.
+      3. Map errors as in ask.
+
+"LLMClient::OpenAIAdapter(client: OpenAI)":
+  location: OpenAIAdapter.py
+  annotations: |
+    LLMClient backed by the OpenAI SDK.
+
+    `client`: injected OpenAI SDK client, constructed by build_openai_client.
+
+    Requirements:
+    - Method signatures match the LLMClient protocol exactly — provider switching
+      requires no consumer code change.
+
+  properties:
+    "client -> OpenAI": |
+      The injected OpenAI SDK client instance.
+  methods:
+    "ask(system: str, user: str) -> response: str": |
+      OpenAI-backed single-turn call.
+
+      Algorithm:
+      1. Submit a system message followed by the user message at the fixed model.
+      2. Return the first choice's message content (empty string when absent).
+      3. Map rate-limit errors to LLMRateLimitedError and other API errors to LLMCallError.
+
+    "ask_multi_turn(system: str, messages: list[dict[str, str]]) -> response: str": |
+      OpenAI-backed multi-turn call.
+
+      Algorithm:
+      1. Prepend the system prompt to the message list.
+      2. Submit the combined messages at the fixed model.
+      3. Return the first choice's message content (empty string when absent).
+      4. Map errors as in ask.
+
+"LLMCallError(reason: str)":
+  location: errors.py
+  annotations: |
+    Raised by adapters on a generic LLM API error (non-rate-limit).
+
+    `reason`: original error message from the SDK.
+
+"LLMRateLimitedError(reason: str)":
+  location: errors.py
+  annotations: |
+    Raised by adapters when the LLM API returns a rate-limit error.
+
+    `reason`: original error message from the SDK.
+
+"UnsupportedLLMProtocolError(protocol: str)":
+  location: errors.py
+  annotations: |
+    Raised by build_llm_client when SWAX_LLM_PROTOCOL is neither anthropic nor openai.
+
+    `protocol`: offending value submitted by the user.
+
+"build_anthropic_client() -> client: Anthropic":
+  location: build_anthropic_client.py
+  annotations: |
+    Constructs an Anthropic SDK client from SWAX_LLM_* environment variables.
+
+    `client`: ready-to-use Anthropic instance for AnthropicAdapter.
+
+    Algorithm:
+    1. Call `require_vars` to fail fast on missing credentials.
+    2. Read the LLM token and base URL from the environment.
+    3. Construct and return the SDK client.
+
+    Requirements:
+    - Credentials are read from the environment, never hardcoded.
+    - Base URL is assumed already validated (no /v1).
+
+"build_openai_client() -> client: OpenAI":
+  location: build_openai_client.py
+  annotations: |
+    Constructs an OpenAI SDK client from SWAX_LLM_* environment variables.
+
+    `client`: ready-to-use OpenAI instance for OpenAIAdapter.
+
+    Algorithm:
+    1. Call `require_vars` to fail fast on missing credentials.
+    2. Read the LLM token and base URL from the environment.
+    3. Construct and return the SDK client.
+
+    Requirements:
+    - Credentials are read from the environment, never hardcoded.
+    - Base URL is assumed already validated (no /v1) — the SDK adds the version segment itself.
+
+"build_llm_client() -> client: LLMClient":
+  location: build_llm_client.py
+  annotations: |
+    Factory selecting the adapter based on SWAX_LLM_PROTOCOL.
+
+    `client`: an LLMClient-shaped adapter wrapping the chosen SDK client.
+
+    Algorithm:
+    1. Read SWAX_LLM_PROTOCOL from the environment.
+    2. Return the matching adapter wrapping its SDK client.
+    3. On an unknown value, raise UnsupportedLLMProtocolError.
+
+    Requirements:
+    - Switching providers requires no code change in consumers.
+    - Protocol value is validated upstream by parse_protocol in config/.
+
+---
+
+Author: Goga
+CreatedAt: 25/06/26
+Description: |
+  Provider-agnostic LLM transport: protocol, Anthropic/OpenAI adapters, factory by SWAX_LLM_PROTOCOL.

@@ -1,0 +1,34 @@
+Imports:
+  - Types:
+      - init AS init_handler
+    From: swax/commands/init
+  - Types:
+      - discover AS discover_handler
+    From: swax/commands/discover
+
+Usages:
+  conventions: .goga/usages/conventions.md
+  click: .goga/usages/cooks/click.md
+
+Annotations: |
+  Command layer of Swax. Single facade for CLI handlers — consumers register commands
+  and pull cell-level practices (init, discover) from here via Imports, not from the sub-cells.
+  The facade re-exports the `init_handler` and `discover_handler` from their sub-cells.
+
+  Handlers stay thin — only argument parsing and exception mapping to click.ClickException.
+  All orchestration lives in the application layer.
+
+  Use `conventions` for code writing rules and testing.
+  Use `click` for the command-decorator pattern shared by all handlers.
+
+---
+
+->init_handler: {}
+->discover_handler: {}
+
+---
+
+Author: Goga
+CreatedAt: 02/07/26
+Description: |
+  Command-layer facade re-exporting CLI handlers and their consumer practices.

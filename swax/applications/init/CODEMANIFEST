@@ -1,0 +1,72 @@
+Imports:
+  - Types:
+      - Config
+      - GitConfig
+      - SpecsConfig
+      - save_config
+    Usages:
+      - project-config
+    From: swax/config
+  - Types:
+      - clone_specs
+      - RepositoryCloneError
+      - SpecsNotFoundError
+    Usages:
+      - specs-repository
+    From: swax/git
+  - Types:
+      - ensure_swax_dir
+      - copy_specs
+    Usages:
+      - project-layout
+    From: swax/fs
+
+Usages:
+  conventions: .goga/usages/conventions.md
+
+Annotations: |
+  Application-layer use-case: orchestrates project initialization across three domain cells.
+  This cell contains no business logic — it only sequences calls.
+  `RepositoryCloneError` and `SpecsNotFoundError` propagate uncaught — the CLI handler
+  maps them to click.ClickException.
+  Logs INFO at start and end with project metadata; never logs credentials.
+
+  Use `conventions` for code writing rules and testing.
+  Use `project-config` for `Config` construction and `save_config` semantics.
+  Use `specs-repository` for `clone_specs` and propagated `RepositoryCloneError` / `SpecsNotFoundError`.
+  Use `project-layout` for `ensure_swax_dir` and `copy_specs` semantics.
+
+---
+
+"run_init(repo_url: str, specs_location: str, download_path: pathlib.Path, project_root: pathlib.Path)":
+  location: run_init.py
+  annotations: |
+    Use-case "initialize project": persist configuration, clone the source repository,
+    and copy specs into the local project path.
+
+    `repo_url`: clone URL of the source repository (collected by CLI prompts).
+    `specs_location`: subdirectory inside the repository holding the specs.
+    `download_path`: local destination for the copied specs (semantics of `SpecsConfig` .location).
+    `project_root`: root of the Swax project — .swax/ lives here.
+
+    Algorithm:
+    1. Assemble a `Config` from `GitConfig` and `SpecsConfig`.
+    2. Ensure .swax/ exists and persist the config there.
+    3. Enter the `clone_specs` context to obtain the cloned specs path.
+    4. Inside the context, `copy_specs` from the clone into the local download path.
+
+    Requirements:
+    - Configuration is written before cloning — on clone failure the user still has
+      .swax/config.yml to inspect.
+    - The `clone_specs` context guarantees temporary-directory cleanup on every outcome.
+
+    Constraints:
+    - Do not catch `RepositoryCloneError` / `SpecsNotFoundError` — let them propagate.
+    - Do not mutate `project_root` or `download_path` — treat as read-only inputs.
+
+---
+
+Author: Goga
+CreatedAt: 25/06/26
+Description: |
+  Application-layer use-case for project initialization (config -> clone -> copy orchestration).

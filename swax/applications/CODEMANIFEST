@@ -1,0 +1,34 @@
+Imports:
+  - Types:
+      - run_init AS run_init_handler
+    From: swax/applications/init
+  - Types:
+      - run_discover AS run_discover_handler
+    From: swax/applications/discover
+
+Usages:
+  conventions: .goga/usages/conventions.md
+
+Annotations: |
+  Application layer of Swax. Single facade for the project's use-cases — consumers
+  import types and cell-level practices (init, discover) from here via Imports,
+  not from the sub-cells. The facade re-exports `run_init_handler` and `run_discover_handler`
+  from their sub-cells.
+
+  Use-cases are hexagonal orchestrators — no business logic, no SDK calls beyond
+  delegated domain cells. Domain exceptions propagate uncaught; mapping to user-facing
+  errors belongs to the command layer.
+
+  Use `conventions` for code writing rules and testing.
+
+---
+
+->run_init_handler: {}
+->run_discover_handler: {}
+
+---
+
+Author: Goga
+CreatedAt: 02/07/26
+Description: |
+  Application-layer facade re-exporting the project's use-cases and their consumer practices.

@@ -1,0 +1,76 @@
+Imports:
+  - Types:
+      - SwaxContext
+    Usages:
+      - cli-facade
+    From: swax/cli
+  - Types:
+      - run_discover
+    Usages:
+      - discover AS discover-usage
+    From: swax/applications
+  - Types:
+      - MissingEnvironmentVariablesError
+    Usages:
+      - environment
+    From: swax/config
+  - Types:
+      - SpecParseError
+    Usages:
+      - parsing
+    From: swax/openapi
+  - Types:
+      - LLMCallError
+      - LLMRateLimitedError
+      - UnsupportedLLMProtocolError
+    Usages:
+      - llm-transport
+    From: swax/llm
+
+Usages:
+  conventions: .goga/usages/conventions.md
+  click: .goga/usages/cooks/click.md
+
+Annotations: |
+  Thin CLI handler: exception mapping only. All orchestration lives in `run_discover`.
+  Every domain exception is mapped to click.ClickException with a user-facing message.
+
+  Use `conventions` for code writing rules and testing.
+  Use `click` for the command decorator and error mapping.
+  Use `discover-usage` for `run_discover` semantics.
+  Use `environment` for `MissingEnvironmentVariablesError` semantics.
+  Use `parsing` for `SpecParseError` semantics.
+  Use `llm-transport` for `LLMCallError`, `LLMRateLimitedError`, and `UnsupportedLLMProtocolError` semantics.
+  Use `cli-facade` for the `SwaxContext` access pattern.
+
+---
+
+"discover(ctx: click.Context)":
+  location: discover.py
+  annotations: |
+    Click handler for the discover command: delegates to `run_discover` and maps domain
+    exceptions to user-facing errors.
+
+    `ctx`: Click context whose obj is a `SwaxContext`.
+
+    Algorithm:
+    1. Resolve ctx.obj as `SwaxContext` via @click.pass_obj.
+    2. Resolve project_root from the current working directory.
+    3. Delegate to `run_discover` inside a try.
+    4. Map every documented domain exception to click.ClickException.
+
+    Requirements:
+    - No interactive prompts — discover reads everything from .swax/config.yml and the environment.
+    - Exit code 0 on success, 1 on any ClickException.
+
+    Constraints:
+    - Do not catch generic Exception — only the documented domain exceptions.
+    - Do not retry rate-limited calls — surface them to the user.
+    - SWAX_LLM_TOKEN never appears in any error message.
+
+---
+
+Author: Goga
+CreatedAt: 25/06/26
+Description: |
+  Click handler for the discover command — exception mapping from domain errors to ClickException.

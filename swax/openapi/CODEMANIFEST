@@ -1,0 +1,100 @@
+Usages:
+  conventions: .goga/usages/conventions.md
+  prance: .goga/usages/cooks/prance.md
+  pyyaml: .goga/usages/cooks/pyyaml.md
+
+Annotations: |
+  Parsing of OpenAPI/Swagger specifications and extraction of paths and schemas
+  for the traceability graph.
+
+  The graph operates on paths only — no HTTP methods, no resource abstraction
+  (architectural rule: minimal abstraction).
+  Swagger 2.0 and OpenAPI 3.x are handled transparently — both store paths under paths.
+
+  Use `conventions` for code writing rules and testing.
+  Use `prance` for the resolving parser and path/schema extraction.
+  Use `pyyaml` for the lightweight spec-detection heuristic in discover_specs.
+
+---
+
+"parse_spec(spec_path: pathlib.Path) -> spec: dict":
+  location: parse_spec.py
+  annotations: |
+    Parses a specification file into a fully dereferenced dict (all $ref inlined).
+
+    `spec_path`: path to a .yaml/.yml/.json spec file.
+    `spec`: dereferenced specification containing paths and schemas.
+
+    Algorithm:
+    1. Construct a resolving parser over the file (strict mode off, type resolution on).
+    2. Return its dereferenced specification.
+    3. On any parser failure, raise SpecParseError with the path and the original reason.
+
+    Requirements:
+    - $ref is resolved in memory — downstream code never resolves references manually.
+
+    Constraints:
+    - RAM usage scales with spec size and reference count (known limitation, accepted).
+
+"extract_paths(spec: dict) -> paths: list[str]":
+  location: extract_paths.py
+  annotations: |
+    Collects API path templates from a parsed specification, discarding HTTP methods.
+
+    `spec`: dereferenced dict (output of parse_spec).
+    `paths`: sorted list of path templates (e.g. /users, /users/{id}).
+
+    Algorithm:
+    1. Read the paths mapping from `spec`.
+    2. Return its keys as a sorted list.
+
+    Requirements:
+    - Result feeds the traceability graph nodes directly — no method-level entries.
+
+"extract_schemas(spec: dict) -> schemas: dict":
+  location: extract_schemas.py
+  annotations: |
+    Collects schema definitions from a parsed specification for LLM context enrichment.
+
+    `spec`: dereferenced dict.
+    `schemas`: mapping of schema name to its definition (already inlined by the parser).
+
+    Algorithm:
+    1. If `spec` exposes OpenAPI 3.x components, return its schemas sub-mapping.
+    2. Otherwise return the Swagger 2.0 definitions sub-mapping.
+
+    Requirements:
+    - Transparently distinguishes OpenAPI 3.x (components.schemas) from Swagger 2.0 (definitions).
+    - Schemas are used only by build_refine_user_prompt — never stored in the graph.
+
+"discover_specs(root: pathlib.Path) -> specs: list[pathlib.Path]":
+  location: discover_specs.py
+  annotations: |
+    Enumerates spec files under `root` by extension and a lightweight content heuristic.
+
+    `root`: directory to search (typically the local specs path from SpecsConfig).
+    `specs`: sorted list of spec file paths.
+
+    Algorithm:
+    1. Walk `root` recursively.
+    2. Keep files with extension .yaml/.yml/.json.
+    3. Keep files whose head contains an openapi or swagger key.
+
+    Requirements:
+    - The heuristic is cheap — full parsing happens later via parse_spec.
+    - Returned order is deterministic (sorted).
+
+"SpecParseError(path: pathlib.Path, reason: str)":
+  location: errors.py
+  annotations: |
+    Raised by parse_spec when parsing or dereferencing a specification fails.
+
+    `path`: offending spec file path.
+    `reason`: original error message from Prance.
+
+---
+
+Author: Goga
+CreatedAt: 25/06/26
+Description: |
+  OpenAPI/Swagger parsing via Prance and extraction of paths and schemas for the traceability graph.
