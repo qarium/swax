@@ -650,21 +650,21 @@ Return consolidated JSON object {source_path: [dependent_paths]}.
 Do not introduce paths outside the provided endpoint universe."""
 ```
 
-- [ ] **Contract tests** (`tests/prompts/test_prompts_contract.py`): импорт 3 имён успешен; сигнатуры соответствуют.
-- [ ] **Code**: создать `swax/prompts/__init__.py` и 3 модуля. Использовать `json.dumps` (stdlib).
-- [ ] **Interface verification**: `pytest tests/prompts/test_prompts_contract.py -v`
-- [ ] **Logic tests** (`tests/prompts/test_prompts_logic.py`):
+- [x] **Contract tests** (`tests/prompts/test_prompts_contract.py`): импорт 3 имён успешен; сигнатуры соответствуют.
+- [x] **Code**: создать `swax/prompts/__init__.py` и 3 модуля. Использовать `json.dumps` (stdlib).
+- [x] **Interface verification**: `pytest tests/prompts/test_prompts_contract.py -v`
+- [x] **Logic tests** (`tests/prompts/test_prompts_logic.py`):
   - `test_system_prompt_mentions_role_and_constraints` — в строке есть "dependency", "JSON", "paths only", явное упоминание запрета prose вокруг JSON (например, "no prose" или "JSON only"), и явное упоминание, что graph operates on paths not HTTP methods.
   - `test_user_prompt_includes_endpoints_payload` — `build_graph_user_prompt(["/a", "/b"])` содержит `"/a"` и `"/b"`.
   - `test_user_prompt_states_two_keys_contract` — в строке упомянуты "dependencies" и "uncertain".
   - `test_refine_prompt_includes_pairs_and_schemas` — `build_refine_user_prompt(["/a -> /b"], {"User": {...}})` содержит `"/a -> /b"` и `"User"`.
   - `test_refine_prompt_forbids_external_paths` — в строке есть "Do not introduce paths".
   - `test_prompts_deterministic_for_same_input` — одинаковый input → идентичная строка.
-- [ ] **Debugging**: `pytest tests/prompts/ -v`
-- [ ] **Contract re-verification**: нет filesystem paths или credentials в выводе.
-- [ ] **Facade**: 3 имени в `__all__`.
-- [ ] Verify facade: `python -c "from swax.prompts import build_graph_system_prompt, build_graph_user_prompt, build_refine_user_prompt"`
-- [ ] Lint: `ruff check swax/prompts tests/prompts`
+- [x] **Debugging**: `pytest tests/prompts/ -v`
+- [x] **Contract re-verification**: нет filesystem paths или credentials в выводе.
+- [x] **Facade**: 3 имени в `__all__`.
+- [x] Verify facade: `python -c "from swax.prompts import build_graph_system_prompt, build_graph_user_prompt, build_refine_user_prompt"`
+- [x] Lint: `ruff check swax/prompts tests/prompts`
 
 ---
 
