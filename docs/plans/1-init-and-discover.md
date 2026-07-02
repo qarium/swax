@@ -1186,11 +1186,11 @@ def main(ctx, env_file):
 - `gitpython`: можно использовать локальный git-репозиторий в `tmp_path` (без mock) для реалистичности `init`.
 - Все cell-level usages, упомянутые в design-doc.
 
-- [ ] Создать `tests/integration/test_init_and_discover.py`.
-- [ ] `test_swax_init_end_to_end_with_local_repo` — создать локальный bare git-репозиторий в `tmp_path/remote` с `specs/api.yaml`, `CliRunner().invoke(main, ["--env-file", ".env", "init"], input="...")`, asserts: `.swax/config.yml` существует, `download_path/api.yaml` существует, exit_code 0.
-- [ ] `test_swax_discover_end_to_end_with_mocked_llm` — `tmp_path` с `.swax/config.yml`, `specs/api.yaml`; `mocker.patch("swax.applications.discover.build_llm_client")` returns mock; mock `ask`/`ask_multi_turn` возвращают валидные JSON; `monkeypatch.setenv` SWAX_LLM_*; `CliRunner().invoke(main, [...])` → asserts exit_code 0, `.swax/traceability.yml` существует с ожидаемым графом.
-- [ ] `test_swax_full_pipeline_init_then_discover` — объединить предыдущие два: после `init` (с local repo + mock build_llm_client) сразу `discover`, asserts файлы графа корректны.
-- [ ] Run validation: `pytest tests/integration/ -v`
+- [x] Создать `tests/integration/test_init_and_discover.py`.
+- [x] `test_swax_init_end_to_end_with_local_repo` — создать локальный bare git-репозиторий в `tmp_path/remote` с `specs/api.yaml`, `CliRunner().invoke(main, ["--env-file", ".env", "init"], input="...")`, asserts: `.swax/config.yml` существует, `download_path/api.yaml` существует, exit_code 0.
+- [x] `test_swax_discover_end_to_end_with_mocked_llm` — `tmp_path` с `.swax/config.yml`, `specs/api.yaml`; `mocker.patch("swax.applications.discover.build_llm_client")` returns mock; mock `ask`/`ask_multi_turn` возвращают валидные JSON; `monkeypatch.setenv` SWAX_LLM_*; `CliRunner().invoke(main, [...])` → asserts exit_code 0, `.swax/traceability.yml` существует с ожидаемым графом.
+- [x] `test_swax_full_pipeline_init_then_discover` — объединить предыдущие два: после `init` (с local repo + mock build_llm_client) сразу `discover`, asserts файлы графа корректны.
+- [x] Run validation: `pytest tests/integration/ -v`
 
 ---
 
@@ -1209,16 +1209,16 @@ def main(ctx, env_file):
 
 ## Completion Criteria
 
-- [ ] Каждое контрактное entity реализовано в правильном `location`.
-- [ ] Каждое контрактное entity доступно из фасада своей клетки (`__init__.py.__all__`).
-- [ ] Свойства и методы соответствуют объявленным сигнатурам.
-- [ ] Аннотации/Algorithm-ы отражены в поведении (verified логическими тестами).
-- [ ] Контрактные зависимости (Imports.Types/Usages) разрешены: cross-cell импорты работают.
-- [ ] Re-exports `run_init_handler`, `run_discover_handler`, `init_handler`, `discover_handler` доступны из соответствующих фасадов.
-- [ ] Каждая coding-задача прошла TDD-цикл (контракт-тесты → код → interface verification → logic-тесты → debugging → re-verification → lint).
-- [ ] Контракт-тесты и logic-тесты покрывают фасад, API и поведение в каждой coding-задаче.
-- [ ] Интеграционные тесты покрывают end-to-end сценарии `swax init` и `swax discover`.
-- [ ] Ни одна граница клетки не была расширена — новые клетки не создавались.
-- [ ] `CODEMANIFEST` файлы и `.usages/` не модифицировались (read-only).
-- [ ] Все команды валидации проходят.
-- [ ] Каждое Usages-указание упомянуто минимум в одной задаче (см. таблицу выше).
+- [x] Каждое контрактное entity реализовано в правильном `location`.
+- [x] Каждое контрактное entity доступно из фасада своей клетки (`__init__.py.__all__`).
+- [x] Свойства и методы соответствуют объявленным сигнатурам.
+- [x] Аннотации/Algorithm-ы отражены в поведении (verified логическими тестами).
+- [x] Контрактные зависимости (Imports.Types/Usages) разрешены: cross-cell импорты работают.
+- [x] Re-exports `run_init_handler`, `run_discover_handler`, `init_handler`, `discover_handler` доступны из соответствующих фасадов.
+- [x] Каждая coding-задача прошла TDD-цикл (контракт-тесты → код → interface verification → logic-тесты → debugging → re-verification → lint).
+- [x] Контракт-тесты и logic-тесты покрывают фасад, API и поведение в каждой coding-задаче.
+- [x] Интеграционные тесты покрывают end-to-end сценарии `swax init` и `swax discover`.
+- [x] Ни одна граница клетки не была расширена — новые клетки не создавались.
+- [x] `CODEMANIFEST` файлы и `.usages/` не модифицировались (read-only).
+- [x] Все команды валидации проходят.
+- [x] Каждое Usages-указание упомянуто минимум в одной задаче (см. таблицу выше).
