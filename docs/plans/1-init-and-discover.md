@@ -287,13 +287,13 @@ Greenfield-реализация фундамента CLI Swax. После вып
 - `InvalidLLMProtocolError(value: str, allowed: tuple[str, ...])` — `errors.py`
 - `InvalidLLMBaseURLError(value: str)` — `errors.py`
 
-- [ ] **Contract tests** (`tests/config/test_errors_contract.py`): `from swax.config import MissingEnvironmentVariablesError, InvalidLLMProtocolError, InvalidLLMBaseURLError` успешен; каждое исключение конструируется через kwargs и хранит поля как атрибуты (`exc.missing`, `exc.value`, `exc.allowed`).
-- [ ] **Code**: в `swax/config/errors.py` объявить 3 класса (наследники `Exception`), kw_only через `__init__` с keyword-only параметрами. Добавить их в `__all__` файла.
-- [ ] **Interface verification**: `pytest tests/config/test_errors_contract.py -v`
-- [ ] **Logic tests**: `MissingEnvironmentVariablesError(missing=["A"])` → `exc.missing == ["A"]`; `InvalidLLMProtocolError(value="ftp", allowed=("anthropic","openai"))` сохраняет кортеж; строковые repr включают значения полей (регрессия на будущий вывод в CLI).
-- [ ] **Debugging**: `pytest tests/config/ -v`
-- [ ] **Contract re-verification**: все 3 имени в `errors.py.__all__`; сигнатуры совпадают.
-- [ ] **Lint**: `ruff check swax/config/errors.py tests/config/test_errors_*.py`
+- [x] **Contract tests** (`tests/config/test_errors_contract.py`): `from swax.config import MissingEnvironmentVariablesError, InvalidLLMProtocolError, InvalidLLMBaseURLError` успешен; каждое исключение конструируется через kwargs и хранит поля как атрибуты (`exc.missing`, `exc.value`, `exc.allowed`).
+- [x] **Code**: в `swax/config/errors.py` объявить 3 класса (наследники `Exception`), kw_only через `__init__` с keyword-only параметрами. Добавить их в `__all__` файла.
+- [x] **Interface verification**: `pytest tests/config/test_errors_contract.py -v`
+- [x] **Logic tests**: `MissingEnvironmentVariablesError(missing=["A"])` → `exc.missing == ["A"]`; `InvalidLLMProtocolError(value="ftp", allowed=("anthropic","openai"))` сохраняет кортеж; строковые repr включают значения полей (регрессия на будущий вывод в CLI).
+- [x] **Debugging**: `pytest tests/config/ -v`
+- [x] **Contract re-verification**: все 3 имени в `errors.py.__all__`; сигнатуры совпадают.
+- [x] **Lint**: `ruff check swax/config/errors.py tests/config/test_errors_*.py`
 
 ---
 

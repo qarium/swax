@@ -7,7 +7,19 @@ in task 6.
 """
 
 from .Config import Config
+from .errors import (
+    InvalidLLMBaseURLError,
+    InvalidLLMProtocolError,
+    MissingEnvironmentVariablesError,
+)
 from .GitConfig import GitConfig
 from .SpecsConfig import SpecsConfig
 
-__all__: list[str] = ["Config", "GitConfig", "SpecsConfig"]
+__all__: list[str] = [
+    "Config",
+    "GitConfig",
+    "InvalidLLMBaseURLError",
+    "InvalidLLMProtocolError",
+    "MissingEnvironmentVariablesError",
+    "SpecsConfig",
+]
