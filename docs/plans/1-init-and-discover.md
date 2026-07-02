@@ -875,18 +875,18 @@ with clone_specs(repo_url, specs_location) as specs_path:
 logger.info("init completed", extra={"project_root": str(project_root)})
 ```
 
-- [ ] **Contract tests** (`tests/applications/init/test_run_init_contract.py`): `from swax.applications.init import run_init` успешен; сигнатура через `inspect.signature` соответствует (`repo_url, specs_location, download_path, project_root`).
-- [ ] **Code**: создать `swax/applications/init/__init__.py` (пустой), `swax/applications/init/run_init.py`. Импорты: `from swax.config import Config, GitConfig, SpecsConfig, save_config`; `from swax.git import clone_specs`; `from swax.fs import ensure_swax_dir, copy_specs`. Логирование через `logging.getLogger(__name__)`.
-- [ ] **Interface verification**: `pytest tests/applications/init/test_run_init_contract.py -v`
-- [ ] **Logic tests** (`tests/applications/init/test_run_init_logic.py`):
+- [x] **Contract tests** (`tests/applications/init/test_run_init_contract.py`): `from swax.applications.init import run_init` успешен; сигнатура через `inspect.signature` соответствует (`repo_url, specs_location, download_path, project_root`).
+- [x] **Code**: создать `swax/applications/init/__init__.py` (пустой), `swax/applications/init/run_init.py`. Импорты: `from swax.config import Config, GitConfig, SpecsConfig, save_config`; `from swax.git import clone_specs`; `from swax.fs import ensure_swax_dir, copy_specs`. Логирование через `logging.getLogger(__name__)`.
+- [x] **Interface verification**: `pytest tests/applications/init/test_run_init_contract.py -v`
+- [x] **Logic tests** (`tests/applications/init/test_run_init_logic.py`):
   - `test_run_init_persists_config_then_copies_specs` (design-doc positive test, verbatim) — mocks `clone_specs`/`copy_specs`, asserts `config.yml` существует, `copy_specs` вызван ровно один раз, ordering через `mock_calls`.
   - `test_run_init_config_survives_clone_failure` (design-doc positive test Р7, verbatim) — `clone_specs.side_effect = RepositoryCloneError(...)`, asserts `config.yml` существует на диске, `copy_specs.assert_not_called()`.
   - `test_run_init_propagates_specs_not_found` — `clone_specs` поднимает `SpecsNotFoundError` → пробрасывается без catch.
-- [ ] **Debugging**: `pytest tests/applications/init/ -v`
-- [ ] **Contract re-verification**: config пишется ДО clone; cleanup гарантирован context manager-ом.
-- [ ] **Facade**: добавить `run_init` в `swax/applications/init/__init__.py.__all__`.
-- [ ] Verify facade: `python -c "from swax.applications.init import run_init"`
-- [ ] Lint: `ruff check swax/applications/init tests/applications/init`
+- [x] **Debugging**: `pytest tests/applications/init/ -v`
+- [x] **Contract re-verification**: config пишется ДО clone; cleanup гарантирован context manager-ом.
+- [x] **Facade**: добавить `run_init` в `swax/applications/init/__init__.py.__all__`.
+- [x] Verify facade: `python -c "from swax.applications.init import run_init"`
+- [x] Lint: `ruff check swax/applications/init tests/applications/init`
 
 ---
 
