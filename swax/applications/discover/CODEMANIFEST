@@ -57,6 +57,9 @@ Annotations: |
   - json.JSONDecodeError is wrapped into `LLMResponseParseError` carrying a raw payload
     excerpt for diagnostics. `LLMResponseParseError` propagates uncaught — the CLI handler
     maps it like the other LLM errors.
+  - The refine pass additionally unwraps a single-key dependencies envelope
+    ({"dependencies": {...}}) — the model occasionally emits this form under multi-turn
+    context despite the prompt contract — before applying the shape rule below.
   - The parsed shape is validated as dict[str, list[str]]; mismatched shapes are rejected
     via `LLMResponseParseError`.
   - LLM output structure is never trusted — schema-validate before consuming.

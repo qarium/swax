@@ -6,7 +6,7 @@ storage routines) are added in tasks 3-5 and the full surface is re-verified
 in task 6.
 """
 
-from .Config import Config
+from .config import Config
 from .env import (
     load_env,
     parse_base_url,

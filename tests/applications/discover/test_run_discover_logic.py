@@ -151,6 +151,20 @@ class TestRunDiscoverTwoPass:
         assert data == {"/users": ["/users/{id}"]}
         assert "/old" not in data
 
+    def test_run_discover_normalizes_wrapped_refine_response(self, discover_project, mocker):
+        # The refine pass sometimes returns {"dependencies": {...}} (the model
+        # drags the first-pass envelope into the multi-turn response despite the
+        # prompt contract). run_discover must unwrap it and persist the graph.
+        mock_build = mocker.patch(BUILD_CLIENT)
+        mock_client = mock_build.return_value
+        mock_client.ask.return_value = '{"uncertain": [], "dependencies": {"/users": ["/users/{id}"]}}'
+        mock_client.ask_multi_turn.return_value = '{"dependencies": {"/users": ["/users/{id}"]}}'
+
+        run_discover(project_root=discover_project)
+
+        data = yaml.safe_load(_trace_path(discover_project).read_text(encoding="utf-8"))
+        assert data == {"/users": ["/users/{id}"]}
+
 
 class TestRunDiscoverErrorPropagation:
     @pytest.mark.parametrize(
@@ -226,5 +240,27 @@ class TestParseLlmJsonHelper:
 
         with pytest.raises(LLMResponseParseError) as exc_info:
             _parse_llm_json(raw, first_pass=True)
+
+        assert "shape mismatch" in exc_info.value.reason
+
+    def test_parse_llm_json_refine_unwraps_wrapped_dependencies(self):
+        # The refine-pass prompt asks for a flat {path: [deps]} map, but the
+        # model occasionally reuses the first-pass envelope {"dependencies": {...}}
+        # under multi-turn context. The refine parser unwraps this single-key
+        # envelope before shape validation.
+        raw = json.dumps({"dependencies": {"/users": ["/users/{id}"]}})
+
+        result = _parse_llm_json(raw, first_pass=False)
+
+        assert result == ({"/users": ["/users/{id}"]}, [])
+
+    def test_parse_llm_json_refine_does_not_unwrap_when_extra_keys_present(self):
+        # The unwrap is narrow: only a single "dependencies" key is normalized.
+        # Extra keys mean the model produced genuine garbage; the shape validator
+        # catches it as before.
+        raw = json.dumps({"dependencies": {"/users": ["/x"]}, "extra": "noise"})
+
+        with pytest.raises(LLMResponseParseError) as exc_info:
+            _parse_llm_json(raw, first_pass=False)
 
         assert "shape mismatch" in exc_info.value.reason

@@ -109,6 +109,8 @@ def _parse_llm_json(raw: str, *, first_pass: bool) -> tuple[dict[str, list[str]]
                 excerpt=stripped[:_EXCERPT_LENGTH],
             )
         return dependencies, uncertain
+    if set(parsed.keys()) == {"dependencies"} and isinstance(parsed["dependencies"], dict):
+        parsed = parsed["dependencies"]
     _validate_dependency_shape(parsed)
     return parsed, []
 

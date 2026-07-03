@@ -11,7 +11,7 @@ import pathlib
 
 import yaml
 
-from .Config import Config
+from .config import Config
 
 
 def load_config(path: pathlib.Path) -> Config:

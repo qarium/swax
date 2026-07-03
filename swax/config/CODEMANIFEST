@@ -18,7 +18,7 @@ Annotations: |
 ---
 
 "Config(git: GitConfig, specs: SpecsConfig)":
-  location: Config.py
+  location: config.py
   annotations: |
     Root configuration model of a Swax project, persisted to .swax/config.yml.
 
