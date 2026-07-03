@@ -31,7 +31,7 @@ If `SWAX_LLM_TOKEN` is missing, raise a domain exception before constructing the
 
 ## Synchronous Chat Call
 
-Use `messages.create` for single-shot inference. Pin a default model in code; allow override via env if needed later.
+Use `messages.create` for single-shot inference. In swax the model identifier is supplied by the caller (the LLM cell reads it from `SWAX_LLM_MODEL` and injects it into `AnthropicAdapter`); the SDK cookbook below pins a literal for clarity.
 
 ```python
 DEFAULT_MODEL = "claude-sonnet-4-6"

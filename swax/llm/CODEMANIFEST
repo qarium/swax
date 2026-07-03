@@ -15,8 +15,9 @@ Annotations: |
   Provider-agnostic LLM transport. Adapters wrap the Anthropic and OpenAI SDKs behind
   a single protocol; the factory selects one by SWAX_LLM_PROTOCOL.
 
-  Adapters receive the SDK client via constructor injection — for testability via mock
-  at import point. DEFAULT_MODEL is fixed in code per adapter.
+  Adapters receive the SDK client and the model identifier via constructor injection —
+  for testability via mock at import point. The model is read from SWAX_LLM_MODEL by
+  `build_llm_client` and forwarded to the chosen adapter.
   SWAX_LLM_TOKEN never appears in logs. Relative imports inside the cell.
   `require_vars` is the entry point for credential validation; `MissingEnvironmentVariablesError`
   propagates to the caller.
@@ -60,12 +61,14 @@ Annotations: |
       - Message order is preserved — the SDK relies on it for context continuity.
       - SDK errors are mapped to LLMCallError / LLMRateLimitedError.
 
-"LLMClient::AnthropicAdapter(client: Anthropic)":
+"LLMClient::AnthropicAdapter(client: Anthropic, model: str)":
   location: AnthropicAdapter.py
   annotations: |
     LLMClient backed by the Anthropic SDK.
 
     `client`: injected Anthropic SDK client, constructed by build_anthropic_client.
+    `model`: model identifier sent on every request, supplied by build_llm_client
+      from SWAX_LLM_MODEL.
 
     Requirements:
     - Method signatures match the LLMClient protocol exactly — provider switching
@@ -74,12 +77,14 @@ Annotations: |
   properties:
     "client -> Anthropic": |
       The injected Anthropic SDK client instance.
+    "model -> str": |
+      The injected model identifier sent on every request.
   methods:
     "ask(system: str, user: str) -> response: str": |
       Anthropic-backed single-turn call.
 
       Algorithm:
-      1. Send a single user message together with the system prompt at the fixed model.
+      1. Send a single user message together with the system prompt at the injected model.
       2. Concatenate text content blocks of the response.
       3. Map rate-limit errors to LLMRateLimitedError and other API errors to LLMCallError.
 
@@ -87,16 +92,18 @@ Annotations: |
       Anthropic-backed multi-turn call.
 
       Algorithm:
-      1. Send the message history together with the system prompt at the fixed model.
+      1. Send the message history together with the system prompt at the injected model.
       2. Concatenate text content blocks of the response.
       3. Map errors as in ask.
 
-"LLMClient::OpenAIAdapter(client: OpenAI)":
+"LLMClient::OpenAIAdapter(client: OpenAI, model: str)":
   location: OpenAIAdapter.py
   annotations: |
     LLMClient backed by the OpenAI SDK.
 
     `client`: injected OpenAI SDK client, constructed by build_openai_client.
+    `model`: model identifier sent on every request, supplied by build_llm_client
+      from SWAX_LLM_MODEL.
 
     Requirements:
     - Method signatures match the LLMClient protocol exactly — provider switching
@@ -105,12 +112,14 @@ Annotations: |
   properties:
     "client -> OpenAI": |
       The injected OpenAI SDK client instance.
+    "model -> str": |
+      The injected model identifier sent on every request.
   methods:
     "ask(system: str, user: str) -> response: str": |
       OpenAI-backed single-turn call.
 
       Algorithm:
-      1. Submit a system message followed by the user message at the fixed model.
+      1. Submit a system message followed by the user message at the injected model.
       2. Return the first choice's message content (empty string when absent).
       3. Map rate-limit errors to LLMRateLimitedError and other API errors to LLMCallError.
 
@@ -119,7 +128,7 @@ Annotations: |
 
       Algorithm:
       1. Prepend the system prompt to the message list.
-      2. Submit the combined messages at the fixed model.
+      2. Submit the combined messages at the injected model.
       3. Return the first choice's message content (empty string when absent).
       4. Map errors as in ask.
 
@@ -193,15 +202,20 @@ Annotations: |
   annotations: |
     Factory selecting the adapter based on SWAX_LLM_PROTOCOL.
 
-    `client`: an LLMClient-shaped adapter wrapping the chosen SDK client.
+    `client`: an LLMClient-shaped adapter wrapping the chosen SDK client and pinned
+      to the model named by SWAX_LLM_MODEL.
 
     Algorithm:
     1. Read SWAX_LLM_PROTOCOL from the environment.
-    2. Return the matching adapter wrapping its SDK client.
-    3. On an unknown value, raise UnsupportedLLMProtocolError.
+    2. Construct the matching SDK client via build_anthropic_client / build_openai_client
+       (which call require_vars first, so a missing SWAX_LLM_MODEL surfaces as
+       MissingEnvironmentVariablesError before it is read here).
+    3. Read SWAX_LLM_MODEL from the environment and forward it to the adapter.
+    4. On an unknown protocol value, raise UnsupportedLLMProtocolError.
 
     Requirements:
     - Switching providers requires no code change in consumers.
+    - Selecting a model requires no code change in consumers.
     - Protocol value is validated upstream by parse_protocol in config/.
 
 ---

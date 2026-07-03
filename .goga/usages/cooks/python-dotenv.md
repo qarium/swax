@@ -30,10 +30,15 @@ def load_env(env_file: pathlib.Path) -> None:
 
 ## Required Variables
 
-Validate required `SWAX_*` variables explicitly with a clear error message when missing.
+Validate required `SWAX_*` variables explicitly with a clear error message when missing. The mandatory set covers provider selection, model selection, base URL, and access token — all four must be present before any LLM call.
 
 ```python
-REQUIRED_VARS = ("SWAX_LLM_PROTOCOL", "SWAX_LLM_BASE_URL", "SWAX_LLM_TOKEN")
+REQUIRED_VARS = (
+    "SWAX_LLM_MODEL",
+    "SWAX_LLM_PROTOCOL",
+    "SWAX_LLM_BASE_URL",
+    "SWAX_LLM_TOKEN",
+)
 
 
 def require_vars() -> dict[str, str]:

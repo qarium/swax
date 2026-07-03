@@ -103,6 +103,7 @@ Annotations: |
     - Lazy validation — called only from use-cases that need LLM credentials
       (run_discover). run_init bypasses it.
     - Whitespace-only values count as missing.
+    - Mandatory set: SWAX_LLM_MODEL, SWAX_LLM_PROTOCOL, SWAX_LLM_BASE_URL, SWAX_LLM_TOKEN.
 
     Constraints:
     - If any variable is missing, raises MissingEnvironmentVariablesError.

@@ -3,15 +3,13 @@
 The adapter wraps an injected Anthropic SDK client and exposes the two-method
 LLMClient surface (ask / ask_multi_turn). It never stores SWAX_LLM_TOKEN (the
 SDK client owns the credential) and maps SDK errors onto the domain error
-entities so consumers stay provider-agnostic. DEFAULT_MODEL is pinned in code,
-not the environment.
+entities so consumers stay provider-agnostic. The model is injected via the
+constructor — selected by build_llm_client from SWAX_LLM_MODEL.
 """
 
 from anthropic import Anthropic, APIError, RateLimitError
 
 from .errors import LLMCallError, LLMRateLimitedError
-
-DEFAULT_MODEL = "claude-sonnet-4-6"
 
 
 class AnthropicAdapter:
@@ -19,15 +17,23 @@ class AnthropicAdapter:
 
     Args:
         client: injected Anthropic SDK client (constructed by build_anthropic_client).
+        model: model identifier to send on every request (read from SWAX_LLM_MODEL
+            by build_llm_client).
     """
 
-    def __init__(self, *, client: Anthropic) -> None:
+    def __init__(self, *, client: Anthropic, model: str) -> None:
         self._client = client
+        self._model = model
 
     @property
     def client(self) -> Anthropic:
         """The injected Anthropic SDK client instance."""
         return self._client
+
+    @property
+    def model(self) -> str:
+        """The injected model identifier sent on every request."""
+        return self._model
 
     def ask(self, system: str, user: str) -> str:
         """Single-turn Anthropic call: one system + one user message -> concatenated text.
@@ -45,7 +51,7 @@ class AnthropicAdapter:
         """
         try:
             response = self._client.messages.create(
-                model=DEFAULT_MODEL,
+                model=self._model,
                 max_tokens=4096,
                 system=system,
                 messages=[{"role": "user", "content": user}],
@@ -73,7 +79,7 @@ class AnthropicAdapter:
         """
         try:
             response = self._client.messages.create(
-                model=DEFAULT_MODEL,
+                model=self._model,
                 max_tokens=4096,
                 system=system,
                 messages=messages,

@@ -26,6 +26,7 @@ from git import Repo
 BUILD_CLIENT = "swax.applications.discover.run_discover.build_llm_client"
 
 ENV_VARS = {
+    "SWAX_LLM_MODEL": "claude-test-model",
     "SWAX_LLM_PROTOCOL": "anthropic",
     "SWAX_LLM_BASE_URL": "https://example.com",
     "SWAX_LLM_TOKEN": "test-token",

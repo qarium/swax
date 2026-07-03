@@ -17,7 +17,12 @@ from .errors import (
     MissingEnvironmentVariablesError,
 )
 
-REQUIRED_VARS: tuple[str, ...] = ("SWAX_LLM_PROTOCOL", "SWAX_LLM_BASE_URL", "SWAX_LLM_TOKEN")
+REQUIRED_VARS: tuple[str, ...] = (
+    "SWAX_LLM_MODEL",
+    "SWAX_LLM_PROTOCOL",
+    "SWAX_LLM_BASE_URL",
+    "SWAX_LLM_TOKEN",
+)
 ALLOWED_PROTOCOLS: tuple[str, ...] = ("anthropic", "openai")
 
 

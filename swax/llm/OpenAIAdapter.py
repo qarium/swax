@@ -3,15 +3,13 @@
 The adapter wraps an injected OpenAI SDK client and exposes the two-method
 LLMClient surface (ask / ask_multi_turn). It never stores SWAX_LLM_TOKEN (the
 SDK client owns the credential) and maps SDK errors onto the domain error
-entities so consumers stay provider-agnostic. DEFAULT_MODEL is pinned in code,
-not the environment.
+entities so consumers stay provider-agnostic. The model is injected via the
+constructor — selected by build_llm_client from SWAX_LLM_MODEL.
 """
 
 from openai import APIError, OpenAI, RateLimitError
 
 from .errors import LLMCallError, LLMRateLimitedError
-
-DEFAULT_MODEL = "gpt-4o"
 
 
 class OpenAIAdapter:
@@ -19,15 +17,23 @@ class OpenAIAdapter:
 
     Args:
         client: injected OpenAI SDK client (constructed by build_openai_client).
+        model: model identifier to send on every request (read from SWAX_LLM_MODEL
+            by build_llm_client).
     """
 
-    def __init__(self, *, client: OpenAI) -> None:
+    def __init__(self, *, client: OpenAI, model: str) -> None:
         self._client = client
+        self._model = model
 
     @property
     def client(self) -> OpenAI:
         """The injected OpenAI SDK client instance."""
         return self._client
+
+    @property
+    def model(self) -> str:
+        """The injected model identifier sent on every request."""
+        return self._model
 
     def ask(self, system: str, user: str) -> str:
         """Single-turn OpenAI call: one system + one user message -> first choice content.
@@ -45,7 +51,7 @@ class OpenAIAdapter:
         """
         try:
             response = self._client.chat.completions.create(
-                model=DEFAULT_MODEL,
+                model=self._model,
                 messages=[
                     {"role": "system", "content": system},
                     {"role": "user", "content": user},
@@ -84,7 +90,7 @@ class OpenAIAdapter:
         prepended = [{"role": "system", "content": system}, *messages]
         try:
             response = self._client.chat.completions.create(
-                model=DEFAULT_MODEL,
+                model=self._model,
                 messages=prepended,
             )
         except RateLimitError as exc:

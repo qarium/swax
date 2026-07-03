@@ -12,6 +12,7 @@
 
 | Variable | Назначение |
 |----------|-----------|
+| `SWAX_LLM_MODEL` | имя модели (например, `"claude-sonnet-4-6"` или `"gpt-4o"`) |
 | `SWAX_LLM_PROTOCOL` | `"anthropic"` или `"openai"` |
 | `SWAX_LLM_BASE_URL` | базовый URL **без** версионного сегмента (`/v1`) |
 | `SWAX_LLM_TOKEN` | токен доступа к LLM API |

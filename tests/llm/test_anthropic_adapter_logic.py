@@ -2,16 +2,17 @@
 
 All tests inject a mock SDK client (mocker.MagicMock(spec=Anthropic)) — no live
 Anthropic API is contacted. They cover text-block concatenation (filtering
-non-text blocks), the exact kwargs handed to messages.create, the two error
-mappings (RateLimitError -> LLMRateLimitedError, APIError -> LLMCallError), and
-multi-turn message-order preservation.
+non-text blocks), the exact kwargs handed to messages.create (incl. the injected
+model), the two error mappings (RateLimitError -> LLMRateLimitedError, APIError
+-> LLMCallError), and multi-turn message-order preservation.
 """
 
 import httpx
 import pytest
 from anthropic import Anthropic, APIError, RateLimitError
 from swax.llm import AnthropicAdapter, LLMCallError, LLMRateLimitedError
-from swax.llm.AnthropicAdapter import DEFAULT_MODEL
+
+MODEL = "claude-test-model"
 
 
 def _text_block(mocker, text: str):
@@ -46,7 +47,7 @@ class TestAnthropicAdapterAsk:
             _text_block(mocker, "world"),
             _non_text_block(mocker),
         ]
-        adapter = AnthropicAdapter(client=sdk_client)
+        adapter = AnthropicAdapter(client=sdk_client, model=MODEL)
 
         result = adapter.ask(system="sys", user="hi")
 
@@ -55,28 +56,44 @@ class TestAnthropicAdapterAsk:
     def test_ask_passes_system_and_user_to_sdk(self, mocker):
         sdk_client = mocker.MagicMock(spec=Anthropic)
         sdk_client.messages.create.return_value.content = []
-        adapter = AnthropicAdapter(client=sdk_client)
+        adapter = AnthropicAdapter(client=sdk_client, model=MODEL)
 
         adapter.ask(system="system prompt", user="user payload")
 
         sdk_client.messages.create.assert_called_once_with(
-            model=DEFAULT_MODEL,
+            model=MODEL,
             max_tokens=4096,
             system="system prompt",
             messages=[{"role": "user", "content": "user payload"}],
         )
 
+    def test_ask_uses_injected_model(self, mocker):
+        # Two adapters built with different models must hand different model=
+        # kwargs to the SDK on the same call.
+        sdk_client = mocker.MagicMock(spec=Anthropic)
+        sdk_client.messages.create.return_value.content = []
+        adapter = AnthropicAdapter(client=sdk_client, model="claude-other-model")
+
+        adapter.ask(system="sys", user="hi")
+
+        sdk_client.messages.create.assert_called_once_with(
+            model="claude-other-model",
+            max_tokens=4096,
+            system="sys",
+            messages=[{"role": "user", "content": "hi"}],
+        )
+
     def test_ask_returns_empty_string_when_no_text_blocks(self, mocker):
         sdk_client = mocker.MagicMock(spec=Anthropic)
         sdk_client.messages.create.return_value.content = [_non_text_block(mocker)]
-        adapter = AnthropicAdapter(client=sdk_client)
+        adapter = AnthropicAdapter(client=sdk_client, model=MODEL)
 
         assert adapter.ask(system="sys", user="hi") == ""
 
     def test_ask_maps_rate_limit_error(self, mocker):
         sdk_client = mocker.MagicMock(spec=Anthropic)
         sdk_client.messages.create.side_effect = _rate_limit_error("too many requests")
-        adapter = AnthropicAdapter(client=sdk_client)
+        adapter = AnthropicAdapter(client=sdk_client, model=MODEL)
 
         with pytest.raises(LLMRateLimitedError) as exc_info:
             adapter.ask(system="sys", user="hi")
@@ -86,7 +103,7 @@ class TestAnthropicAdapterAsk:
     def test_ask_maps_api_error(self, mocker):
         sdk_client = mocker.MagicMock(spec=Anthropic)
         sdk_client.messages.create.side_effect = _api_error("internal error")
-        adapter = AnthropicAdapter(client=sdk_client)
+        adapter = AnthropicAdapter(client=sdk_client, model=MODEL)
 
         with pytest.raises(LLMCallError) as exc_info:
             adapter.ask(system="sys", user="hi")
@@ -97,7 +114,7 @@ class TestAnthropicAdapterAsk:
         # RateLimitError subclasses APIError in the SDK, so it must be caught first.
         sdk_client = mocker.MagicMock(spec=Anthropic)
         sdk_client.messages.create.side_effect = _rate_limit_error()
-        adapter = AnthropicAdapter(client=sdk_client)
+        adapter = AnthropicAdapter(client=sdk_client, model=MODEL)
 
         with pytest.raises(LLMRateLimitedError):
             adapter.ask(system="sys", user="hi")
@@ -106,7 +123,7 @@ class TestAnthropicAdapterAsk:
         sdk_client = mocker.MagicMock(spec=Anthropic)
         original = _api_error("internal error")
         sdk_client.messages.create.side_effect = original
-        adapter = AnthropicAdapter(client=sdk_client)
+        adapter = AnthropicAdapter(client=sdk_client, model=MODEL)
 
         with pytest.raises(LLMCallError) as exc_info:
             adapter.ask(system="sys", user="hi")
@@ -118,7 +135,7 @@ class TestAnthropicAdapterAskMultiTurn:
     def test_ask_multi_turn_preserves_messages_order(self, mocker):
         sdk_client = mocker.MagicMock(spec=Anthropic)
         sdk_client.messages.create.return_value.content = [_text_block(mocker, "ok")]
-        adapter = AnthropicAdapter(client=sdk_client)
+        adapter = AnthropicAdapter(client=sdk_client, model=MODEL)
 
         history = [
             {"role": "user", "content": "first"},
@@ -129,7 +146,7 @@ class TestAnthropicAdapterAskMultiTurn:
         adapter.ask_multi_turn(system="sys", messages=history)
 
         sdk_client.messages.create.assert_called_once_with(
-            model=DEFAULT_MODEL,
+            model=MODEL,
             max_tokens=4096,
             system="sys",
             messages=history,
@@ -141,7 +158,7 @@ class TestAnthropicAdapterAskMultiTurn:
             _text_block(mocker, "refined "),
             _text_block(mocker, "graph"),
         ]
-        adapter = AnthropicAdapter(client=sdk_client)
+        adapter = AnthropicAdapter(client=sdk_client, model=MODEL)
 
         result = adapter.ask_multi_turn(system="sys", messages=[{"role": "user", "content": "x"}])
 
@@ -150,16 +167,23 @@ class TestAnthropicAdapterAskMultiTurn:
     def test_ask_multi_turn_maps_errors_like_ask(self, mocker):
         sdk_client = mocker.MagicMock(spec=Anthropic)
         sdk_client.messages.create.side_effect = _api_error("boom")
-        adapter = AnthropicAdapter(client=sdk_client)
+        adapter = AnthropicAdapter(client=sdk_client, model=MODEL)
 
         with pytest.raises(LLMCallError):
             adapter.ask_multi_turn(system="sys", messages=[])
 
 
-class TestAnthropicAdapterClientProperty:
+class TestAnthropicAdapterClientAndModelProperties:
     def test_client_property_returns_injected_instance(self, mocker):
         sdk_client = mocker.MagicMock(spec=Anthropic)
 
-        adapter = AnthropicAdapter(client=sdk_client)
+        adapter = AnthropicAdapter(client=sdk_client, model=MODEL)
 
         assert adapter.client is sdk_client
+
+    def test_model_property_returns_injected_model(self, mocker):
+        sdk_client = mocker.MagicMock(spec=Anthropic)
+
+        adapter = AnthropicAdapter(client=sdk_client, model="claude-pinned")
+
+        assert adapter.model == "claude-pinned"

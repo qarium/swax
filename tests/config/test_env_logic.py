@@ -1,9 +1,9 @@
 """Logic tests for the swax.config env routines.
 
 Covers the behavior of load_env (missing file, shell precedence), require_vars
-(missing, whitespace-only, all-present), parse_protocol (accept/reject), and
-parse_base_url (version rejection, slash stripping). Environment state is
-controlled via monkeypatch so no real .env file is required.
+(missing, whitespace-only, all-present — incl. SWAX_LLM_MODEL), parse_protocol
+(accept/reject), and parse_base_url (version rejection, slash stripping).
+Environment state is controlled via monkeypatch so no real .env file is required.
 """
 
 import os
@@ -19,7 +19,7 @@ from swax.config import (
     require_vars,
 )
 
-REQUIRED_VARS = ("SWAX_LLM_PROTOCOL", "SWAX_LLM_BASE_URL", "SWAX_LLM_TOKEN")
+REQUIRED_VARS = ("SWAX_LLM_MODEL", "SWAX_LLM_PROTOCOL", "SWAX_LLM_BASE_URL", "SWAX_LLM_TOKEN")
 
 
 @pytest.fixture(autouse=True)
@@ -27,6 +27,19 @@ def _clean_swax_env(monkeypatch):
     """Ensure a deterministic environment for every test in this module."""
     for name in REQUIRED_VARS:
         monkeypatch.delenv(name, raising=False)
+
+
+def _set_all_swax_vars(monkeypatch, **overrides):
+    """Set all four mandatory SWAX_LLM_* vars; tests override what they need."""
+    defaults = {
+        "SWAX_LLM_MODEL": "claude-test-model",
+        "SWAX_LLM_PROTOCOL": "anthropic",
+        "SWAX_LLM_BASE_URL": "https://example.com",
+        "SWAX_LLM_TOKEN": "tok",
+    }
+    defaults.update(overrides)
+    for name, value in defaults.items():
+        monkeypatch.setenv(name, value)
 
 
 class TestLoadEnv:
@@ -55,18 +68,25 @@ class TestLoadEnv:
 
 class TestRequireVars:
     def test_require_vars_raises_on_missing_token(self, monkeypatch):
-        monkeypatch.setenv("SWAX_LLM_PROTOCOL", "anthropic")
-        monkeypatch.setenv("SWAX_LLM_BASE_URL", "https://example.com")
+        _set_all_swax_vars(monkeypatch)
+        monkeypatch.delenv("SWAX_LLM_TOKEN", raising=False)
 
         with pytest.raises(MissingEnvironmentVariablesError) as exc_info:
             require_vars()
 
         assert "SWAX_LLM_TOKEN" in exc_info.value.missing
 
+    def test_require_vars_raises_on_missing_model(self, monkeypatch):
+        _set_all_swax_vars(monkeypatch)
+        monkeypatch.delenv("SWAX_LLM_MODEL", raising=False)
+
+        with pytest.raises(MissingEnvironmentVariablesError) as exc_info:
+            require_vars()
+
+        assert "SWAX_LLM_MODEL" in exc_info.value.missing
+
     def test_require_vars_whitespace_only_is_missing(self, monkeypatch):
-        monkeypatch.setenv("SWAX_LLM_PROTOCOL", "anthropic")
-        monkeypatch.setenv("SWAX_LLM_BASE_URL", "https://example.com")
-        monkeypatch.setenv("SWAX_LLM_TOKEN", "   ")
+        _set_all_swax_vars(monkeypatch, SWAX_LLM_TOKEN="   ")
 
         with pytest.raises(MissingEnvironmentVariablesError) as exc_info:
             require_vars()
@@ -74,9 +94,7 @@ class TestRequireVars:
         assert "SWAX_LLM_TOKEN" in exc_info.value.missing
 
     def test_require_vars_empty_string_is_missing(self, monkeypatch):
-        monkeypatch.setenv("SWAX_LLM_PROTOCOL", "anthropic")
-        monkeypatch.setenv("SWAX_LLM_BASE_URL", "")
-        monkeypatch.setenv("SWAX_LLM_TOKEN", "tok")
+        _set_all_swax_vars(monkeypatch, SWAX_LLM_BASE_URL="")
 
         with pytest.raises(MissingEnvironmentVariablesError) as exc_info:
             require_vars()
@@ -84,20 +102,19 @@ class TestRequireVars:
         assert "SWAX_LLM_BASE_URL" in exc_info.value.missing
 
     def test_require_vars_returns_mapping_when_all_present(self, monkeypatch):
-        monkeypatch.setenv("SWAX_LLM_PROTOCOL", "anthropic")
-        monkeypatch.setenv("SWAX_LLM_BASE_URL", "https://example.com")
-        monkeypatch.setenv("SWAX_LLM_TOKEN", "tok")
+        _set_all_swax_vars(monkeypatch)
 
         result = require_vars()
 
         assert result == {
+            "SWAX_LLM_MODEL": "claude-test-model",
             "SWAX_LLM_PROTOCOL": "anthropic",
             "SWAX_LLM_BASE_URL": "https://example.com",
             "SWAX_LLM_TOKEN": "tok",
         }
 
-    def test_require_vars_reports_all_missing_names(self, monkeypatch):
-        # Nothing set — all three must be reported.
+    def test_require_vars_reports_all_missing_names(self):
+        # Nothing set — all four must be reported.
         with pytest.raises(MissingEnvironmentVariablesError) as exc_info:
             require_vars()
 

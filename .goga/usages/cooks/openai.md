@@ -29,6 +29,8 @@ def build_client() -> OpenAI:
 
 ## Synchronous Chat Call
 
+In swax the model identifier is supplied by the caller (the LLM cell reads it from `SWAX_LLM_MODEL` and injects it into `OpenAIAdapter`); the SDK cookbook below pins a literal for clarity.
+
 ```python
 DEFAULT_MODEL = "gpt-4o"
 

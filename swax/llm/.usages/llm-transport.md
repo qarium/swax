@@ -10,7 +10,8 @@ Cell `llm/` инкапсулирует только транспорт — пр�
 
 ## Получение клиента
 
-`build_llm_client` выбирает адаптер на основе SWAX_LLM_PROTOCOL:
+`build_llm_client` выбирает адаптер на основе SWAX_LLM_PROTOCOL и пинит модель
+из SWAX_LLM_MODEL:
 
 ```python
 from swax.llm import build_llm_client, LLMClient
@@ -20,9 +21,10 @@ def get_llm() -> LLMClient:
 ```
 
 Соглашения потребителя:
-- Перед вызовом убедиться, что require_vars (cell `config/`) уже отработал — иначе MissingEnvironmentVariablesError вылетит изнутри build_*_client.
+- Перед вызовом убедиться, что require_vars (cell `config/`) уже отработал — иначе MissingEnvironmentVariablesError вылетит изнутри build_*_client (проверяет все четыре SWAX_LLM_* переменные, включая SWAX_LLM_MODEL).
 - При неизвестном protocol выбрасывает UnsupportedLLMProtocolError — CLI-handler маппит в click.ClickException.
 - Возвращает объект, удовлетворяющий протоколу LLMClient — конкретный тип адаптера скрыт.
+- Имя модели пользователь задаёт через SWAX_LLM_MODEL; потребителю не нужно знать или передавать модель — она зашита в адаптер на этапе конструирования.
 
 ---
 

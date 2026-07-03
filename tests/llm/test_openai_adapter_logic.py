@@ -3,16 +3,17 @@
 All tests inject a mock SDK client (mocker.MagicMock(spec=OpenAI)) — no live
 OpenAI API is contacted. They cover first-choice content extraction (incl. the
 None -> "" fallback), the exact messages list handed to chat.completions.create
-(system prepended in both methods), the two error mappings (RateLimitError ->
-LLMRateLimitedError, APIError -> LLMCallError), and multi-turn system-message
-prepending.
+(system prepended in both methods, plus the injected model), the two error
+mappings (RateLimitError -> LLMRateLimitedError, APIError -> LLMCallError), and
+multi-turn system-message prepending.
 """
 
 import httpx
 import pytest
 from openai import APIError, OpenAI, RateLimitError
 from swax.llm import LLMCallError, LLMRateLimitedError, OpenAIAdapter
-from swax.llm.OpenAIAdapter import DEFAULT_MODEL
+
+MODEL = "gpt-test-model"
 
 
 def _mock_response(mocker, content):
@@ -44,7 +45,7 @@ class TestOpenAIAdapterAsk:
     def test_ask_returns_first_choice_content(self, mocker):
         sdk_client = mocker.MagicMock(spec=OpenAI)
         sdk_client.chat.completions.create.return_value = _mock_response(mocker, "hello")
-        adapter = OpenAIAdapter(client=sdk_client)
+        adapter = OpenAIAdapter(client=sdk_client, model=MODEL)
 
         result = adapter.ask(system="sys", user="hi")
 
@@ -53,7 +54,7 @@ class TestOpenAIAdapterAsk:
     def test_ask_returns_empty_string_when_no_content(self, mocker):
         sdk_client = mocker.MagicMock(spec=OpenAI)
         sdk_client.chat.completions.create.return_value = _mock_response(mocker, None)
-        adapter = OpenAIAdapter(client=sdk_client)
+        adapter = OpenAIAdapter(client=sdk_client, model=MODEL)
 
         assert adapter.ask(system="sys", user="hi") == ""
 
@@ -62,22 +63,37 @@ class TestOpenAIAdapterAsk:
         # must yield "" per the docstring, not an unhandled IndexError.
         sdk_client = mocker.MagicMock(spec=OpenAI)
         sdk_client.chat.completions.create.return_value = _mock_empty_choices_response(mocker)
-        adapter = OpenAIAdapter(client=sdk_client)
+        adapter = OpenAIAdapter(client=sdk_client, model=MODEL)
 
         assert adapter.ask(system="sys", user="hi") == ""
 
     def test_ask_prepends_system_message(self, mocker):
         sdk_client = mocker.MagicMock(spec=OpenAI)
         sdk_client.chat.completions.create.return_value = _mock_response(mocker, "")
-        adapter = OpenAIAdapter(client=sdk_client)
+        adapter = OpenAIAdapter(client=sdk_client, model=MODEL)
 
         adapter.ask(system="system prompt", user="user payload")
 
         sdk_client.chat.completions.create.assert_called_once_with(
-            model=DEFAULT_MODEL,
+            model=MODEL,
             messages=[
                 {"role": "system", "content": "system prompt"},
                 {"role": "user", "content": "user payload"},
+            ],
+        )
+
+    def test_ask_uses_injected_model(self, mocker):
+        sdk_client = mocker.MagicMock(spec=OpenAI)
+        sdk_client.chat.completions.create.return_value = _mock_response(mocker, "")
+        adapter = OpenAIAdapter(client=sdk_client, model="gpt-other-model")
+
+        adapter.ask(system="sys", user="hi")
+
+        sdk_client.chat.completions.create.assert_called_once_with(
+            model="gpt-other-model",
+            messages=[
+                {"role": "system", "content": "sys"},
+                {"role": "user", "content": "hi"},
             ],
         )
 
@@ -92,7 +108,7 @@ class TestOpenAIAdapterAsk:
     def test_ask_maps_rate_limit_and_api_errors(self, mocker, error_factory, expected):
         sdk_client = mocker.MagicMock(spec=OpenAI)
         sdk_client.chat.completions.create.side_effect = error_factory()
-        adapter = OpenAIAdapter(client=sdk_client)
+        adapter = OpenAIAdapter(client=sdk_client, model=MODEL)
 
         with pytest.raises(expected):
             adapter.ask(system="sys", user="hi")
@@ -101,7 +117,7 @@ class TestOpenAIAdapterAsk:
         # RateLimitError subclasses APIError in the SDK, so it must be caught first.
         sdk_client = mocker.MagicMock(spec=OpenAI)
         sdk_client.chat.completions.create.side_effect = _rate_limit_error()
-        adapter = OpenAIAdapter(client=sdk_client)
+        adapter = OpenAIAdapter(client=sdk_client, model=MODEL)
 
         with pytest.raises(LLMRateLimitedError):
             adapter.ask(system="sys", user="hi")
@@ -110,7 +126,7 @@ class TestOpenAIAdapterAsk:
         sdk_client = mocker.MagicMock(spec=OpenAI)
         original = _api_error("internal error")
         sdk_client.chat.completions.create.side_effect = original
-        adapter = OpenAIAdapter(client=sdk_client)
+        adapter = OpenAIAdapter(client=sdk_client, model=MODEL)
 
         with pytest.raises(LLMCallError) as exc_info:
             adapter.ask(system="sys", user="hi")
@@ -122,7 +138,7 @@ class TestOpenAIAdapterAskMultiTurn:
     def test_ask_multi_turn_prepends_system_to_history(self, mocker):
         sdk_client = mocker.MagicMock(spec=OpenAI)
         sdk_client.chat.completions.create.return_value = _mock_response(mocker, "")
-        adapter = OpenAIAdapter(client=sdk_client)
+        adapter = OpenAIAdapter(client=sdk_client, model=MODEL)
 
         history = [
             {"role": "user", "content": "first"},
@@ -133,7 +149,7 @@ class TestOpenAIAdapterAskMultiTurn:
         adapter.ask_multi_turn(system="sys", messages=history)
 
         sdk_client.chat.completions.create.assert_called_once_with(
-            model=DEFAULT_MODEL,
+            model=MODEL,
             messages=[
                 {"role": "system", "content": "sys"},
                 {"role": "user", "content": "first"},
@@ -145,7 +161,7 @@ class TestOpenAIAdapterAskMultiTurn:
     def test_ask_multi_turn_returns_first_choice_content(self, mocker):
         sdk_client = mocker.MagicMock(spec=OpenAI)
         sdk_client.chat.completions.create.return_value = _mock_response(mocker, "refined graph")
-        adapter = OpenAIAdapter(client=sdk_client)
+        adapter = OpenAIAdapter(client=sdk_client, model=MODEL)
 
         result = adapter.ask_multi_turn(system="sys", messages=[{"role": "user", "content": "x"}])
 
@@ -154,21 +170,21 @@ class TestOpenAIAdapterAskMultiTurn:
     def test_ask_multi_turn_returns_empty_string_when_no_content(self, mocker):
         sdk_client = mocker.MagicMock(spec=OpenAI)
         sdk_client.chat.completions.create.return_value = _mock_response(mocker, None)
-        adapter = OpenAIAdapter(client=sdk_client)
+        adapter = OpenAIAdapter(client=sdk_client, model=MODEL)
 
         assert adapter.ask_multi_turn(system="sys", messages=[{"role": "user", "content": "x"}]) == ""
 
     def test_ask_multi_turn_returns_empty_string_when_choices_empty(self, mocker):
         sdk_client = mocker.MagicMock(spec=OpenAI)
         sdk_client.chat.completions.create.return_value = _mock_empty_choices_response(mocker)
-        adapter = OpenAIAdapter(client=sdk_client)
+        adapter = OpenAIAdapter(client=sdk_client, model=MODEL)
 
         assert adapter.ask_multi_turn(system="sys", messages=[{"role": "user", "content": "x"}]) == ""
 
     def test_ask_multi_turn_maps_errors_like_ask(self, mocker):
         sdk_client = mocker.MagicMock(spec=OpenAI)
         sdk_client.chat.completions.create.side_effect = _api_error("boom")
-        adapter = OpenAIAdapter(client=sdk_client)
+        adapter = OpenAIAdapter(client=sdk_client, model=MODEL)
 
         with pytest.raises(LLMCallError):
             adapter.ask_multi_turn(system="sys", messages=[])
@@ -178,7 +194,7 @@ class TestOpenAIAdapterAskMultiTurn:
         # prepended system message only appears in the call kwargs.
         sdk_client = mocker.MagicMock(spec=OpenAI)
         sdk_client.chat.completions.create.return_value = _mock_response(mocker, "")
-        adapter = OpenAIAdapter(client=sdk_client)
+        adapter = OpenAIAdapter(client=sdk_client, model=MODEL)
 
         history = [{"role": "user", "content": "only"}]
 
@@ -187,10 +203,17 @@ class TestOpenAIAdapterAskMultiTurn:
         assert history == [{"role": "user", "content": "only"}]
 
 
-class TestOpenAIAdapterClientProperty:
+class TestOpenAIAdapterClientAndModelProperties:
     def test_client_property_returns_injected_instance(self, mocker):
         sdk_client = mocker.MagicMock(spec=OpenAI)
 
-        adapter = OpenAIAdapter(client=sdk_client)
+        adapter = OpenAIAdapter(client=sdk_client, model=MODEL)
 
         assert adapter.client is sdk_client
+
+    def test_model_property_returns_injected_model(self, mocker):
+        sdk_client = mocker.MagicMock(spec=OpenAI)
+
+        adapter = OpenAIAdapter(client=sdk_client, model="gpt-pinned")
+
+        assert adapter.model == "gpt-pinned"

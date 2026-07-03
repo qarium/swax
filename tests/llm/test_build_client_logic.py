@@ -1,10 +1,11 @@
-"""Logic tests for the llm factory routines (task 15).
+"""Logic tests for the llm factory routines.
 
 All tests isolate SWAX_LLM_* from the real environment (autouse fixture clears
 them per test) and patch the SDK client constructors at their import point so
 no real credential is needed and no SDK call is made. They cover the env-read
 flow, the fail-fast ordering of require_vars, the per-protocol adapter
-selection, and the unknown-protocol error.
+selection (incl. propagation of the model from SWAX_LLM_MODEL into the
+adapter), and the unknown-protocol error.
 """
 
 import pytest
@@ -20,7 +21,7 @@ from swax.llm import (
     build_openai_client,
 )
 
-_SWAX_VARS = ("SWAX_LLM_PROTOCOL", "SWAX_LLM_BASE_URL", "SWAX_LLM_TOKEN")
+_SWAX_VARS = ("SWAX_LLM_MODEL", "SWAX_LLM_PROTOCOL", "SWAX_LLM_BASE_URL", "SWAX_LLM_TOKEN")
 
 
 @pytest.fixture(autouse=True)
@@ -35,6 +36,7 @@ class TestBuildAnthropicClient:
         monkeypatch.setenv("SWAX_LLM_PROTOCOL", "anthropic")
         monkeypatch.setenv("SWAX_LLM_BASE_URL", "https://api.example.com")
         monkeypatch.setenv("SWAX_LLM_TOKEN", "secret-token")
+        monkeypatch.setenv("SWAX_LLM_MODEL", "claude-test-model")
         mock_anthropic = mocker.patch("swax.llm.build_anthropic_client.Anthropic")
 
         result = build_anthropic_client()
@@ -57,6 +59,7 @@ class TestBuildOpenAIClient:
         monkeypatch.setenv("SWAX_LLM_PROTOCOL", "openai")
         monkeypatch.setenv("SWAX_LLM_BASE_URL", "https://api.openai.example")
         monkeypatch.setenv("SWAX_LLM_TOKEN", "openai-token")
+        monkeypatch.setenv("SWAX_LLM_MODEL", "gpt-test-model")
         mock_openai = mocker.patch("swax.llm.build_openai_client.OpenAI")
 
         result = build_openai_client()
@@ -73,8 +76,9 @@ class TestBuildOpenAIClient:
 
 
 class TestBuildLlmClient:
-    def test_build_llm_client_returns_anthropic_adapter(self, mocker, monkeypatch):
+    def test_build_llm_client_returns_anthropic_adapter_with_model(self, mocker, monkeypatch):
         monkeypatch.setenv("SWAX_LLM_PROTOCOL", "anthropic")
+        monkeypatch.setenv("SWAX_LLM_MODEL", "claude-test-model")
         mock_build = mocker.patch("swax.llm.build_llm_client.build_anthropic_client")
         mock_sdk_client = mocker.MagicMock(spec=Anthropic)
         mock_build.return_value = mock_sdk_client
@@ -84,9 +88,11 @@ class TestBuildLlmClient:
         mock_build.assert_called_once_with()
         assert isinstance(client, AnthropicAdapter)
         assert client.client is mock_sdk_client
+        assert client.model == "claude-test-model"
 
-    def test_build_llm_client_returns_openai_adapter(self, mocker, monkeypatch):
+    def test_build_llm_client_returns_openai_adapter_with_model(self, mocker, monkeypatch):
         monkeypatch.setenv("SWAX_LLM_PROTOCOL", "openai")
+        monkeypatch.setenv("SWAX_LLM_MODEL", "gpt-test-model")
         mock_build = mocker.patch("swax.llm.build_llm_client.build_openai_client")
         mock_sdk_client = mocker.MagicMock(spec=OpenAI)
         mock_build.return_value = mock_sdk_client
@@ -96,9 +102,11 @@ class TestBuildLlmClient:
         mock_build.assert_called_once_with()
         assert isinstance(client, OpenAIAdapter)
         assert client.client is mock_sdk_client
+        assert client.model == "gpt-test-model"
 
     def test_build_llm_client_raises_on_unknown_protocol(self, monkeypatch):
         monkeypatch.setenv("SWAX_LLM_PROTOCOL", "ftp")
+        monkeypatch.setenv("SWAX_LLM_MODEL", "any")
 
         with pytest.raises(UnsupportedLLMProtocolError) as exc_info:
             build_llm_client()
@@ -110,3 +118,16 @@ class TestBuildLlmClient:
             build_llm_client()
 
         assert exc_info.value.protocol is None
+
+    def test_build_llm_client_fails_fast_when_model_missing(self, mocker, monkeypatch):
+        # require_vars (called inside build_*_client) must catch the missing
+        # SWAX_LLM_MODEL before build_llm_client ever reads it from os.environ.
+        monkeypatch.setenv("SWAX_LLM_PROTOCOL", "anthropic")
+        monkeypatch.setenv("SWAX_LLM_BASE_URL", "https://api.example.com")
+        monkeypatch.setenv("SWAX_LLM_TOKEN", "secret-token")
+        # SWAX_LLM_MODEL intentionally unset.
+
+        with pytest.raises(MissingEnvironmentVariablesError) as exc_info:
+            build_llm_client()
+
+        assert "SWAX_LLM_MODEL" in exc_info.value.missing

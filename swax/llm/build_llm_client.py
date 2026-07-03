@@ -1,8 +1,13 @@
 """Factory: select the LLM adapter based on SWAX_LLM_PROTOCOL.
 
-Reads SWAX_LLM_PROTOCOL from the environment and returns the matching adapter
-wrapping its SDK client. Switching providers therefore needs no consumer code
-change. An unknown protocol value raises UnsupportedLLMProtocolError.
+Reads SWAX_LLM_PROTOCOL and SWAX_LLM_MODEL from the environment and returns the
+matching adapter wrapping its SDK client. Switching providers therefore needs
+no consumer code change; selecting a model needs no code change either. An
+unknown protocol value raises UnsupportedLLMProtocolError.
+
+The model is read AFTER build_*_client has invoked require_vars, so a missing
+SWAX_LLM_MODEL surfaces as MissingEnvironmentVariablesError rather than a bare
+KeyError.
 """
 
 import os
@@ -19,17 +24,26 @@ def build_llm_client() -> LLMClient:
     """Build an LLMClient adapter selected by SWAX_LLM_PROTOCOL.
 
     Returns:
-        An AnthropicAdapter or OpenAIAdapter wrapping the chosen SDK client.
+        An AnthropicAdapter or OpenAIAdapter wrapping the chosen SDK client and
+        pinned to the model named by SWAX_LLM_MODEL.
 
     Raises:
+        MissingEnvironmentVariablesError: when any SWAX_LLM_* variable is absent
+            (surfaced by require_vars inside build_*_client).
         UnsupportedLLMProtocolError: when SWAX_LLM_PROTOCOL is neither
             "anthropic" nor "openai".
     """
     protocol = os.environ.get("SWAX_LLM_PROTOCOL")
     if protocol == "anthropic":
-        return AnthropicAdapter(client=build_anthropic_client())
+        return AnthropicAdapter(
+            client=build_anthropic_client(),
+            model=os.environ["SWAX_LLM_MODEL"],
+        )
     if protocol == "openai":
-        return OpenAIAdapter(client=build_openai_client())
+        return OpenAIAdapter(
+            client=build_openai_client(),
+            model=os.environ["SWAX_LLM_MODEL"],
+        )
     raise UnsupportedLLMProtocolError(protocol=protocol)
 
 
