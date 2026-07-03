@@ -12,12 +12,12 @@ KeyError.
 
 import os
 
-from .AnthropicAdapter import AnthropicAdapter
+from .anthropic_adapter import AnthropicAdapter
 from .build_anthropic_client import build_anthropic_client
 from .build_openai_client import build_openai_client
 from .errors import UnsupportedLLMProtocolError
-from .LLMClient import LLMClient
-from .OpenAIAdapter import OpenAIAdapter
+from .llm_client import LLMClient
+from .openai_adapter import OpenAIAdapter
 
 
 def build_llm_client() -> LLMClient:

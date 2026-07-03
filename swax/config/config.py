@@ -2,8 +2,8 @@
 
 from pydantic import BaseModel, ConfigDict
 
-from .GitConfig import GitConfig
-from .SpecsConfig import SpecsConfig
+from .git_config import GitConfig
+from .specs_config import SpecsConfig
 
 
 class Config(BaseModel):

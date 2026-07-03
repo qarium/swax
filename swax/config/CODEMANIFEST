@@ -29,7 +29,7 @@ Annotations: |
     - Both fields are required — a project without git or specs is invalid.
 
 "GitConfig(url: str, location: str)":
-  location: GitConfig.py
+  location: git_config.py
   annotations: |
     Coordinates of the remote git repository holding API specifications.
 
@@ -41,7 +41,7 @@ Annotations: |
       git credential helpers.
 
 "SpecsConfig(type: Literal['swagger', 'openapi'], location: str)":
-  location: SpecsConfig.py
+  location: specs_config.py
   annotations: |
     Local layout of downloaded specifications.
 

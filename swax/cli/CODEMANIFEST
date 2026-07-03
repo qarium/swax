@@ -50,7 +50,7 @@ Annotations: |
     - Do not read SWAX_* variables here — validation happens lazily inside subcommands.
 
 "SwaxContext(env_file: pathlib.Path)":
-  location: SwaxContext.py
+  location: swax_context.py
   annotations: |
     Click pass object carrying CLI parameters between `main` and its subcommands.
 

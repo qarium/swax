@@ -15,7 +15,7 @@ import pathlib
 import click
 from swax.config import load_env
 
-from .SwaxContext import SwaxContext
+from .swax_context import SwaxContext
 
 
 @click.group()

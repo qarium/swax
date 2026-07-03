@@ -15,7 +15,7 @@ Annotations: |
 ---
 
 "TraceabilityGraph(edges: dict[str, list[str]])":
-  location: TraceabilityGraph.py
+  location: traceability_graph.py
   annotations: |
     In-memory model of the traceability graph: API path -> list of dependent paths.
 

@@ -30,7 +30,7 @@ Annotations: |
 ---
 
 "LLMClient()":
-  location: LLMClient.py
+  location: llm_client.py
   annotations: |
     Structural protocol for LLM transports. Adapters satisfy it implicitly — no inheritance required.
 
@@ -62,7 +62,7 @@ Annotations: |
       - SDK errors are mapped to LLMCallError / LLMRateLimitedError.
 
 "LLMClient::AnthropicAdapter(client: Anthropic, model: str)":
-  location: AnthropicAdapter.py
+  location: anthropic_adapter.py
   annotations: |
     LLMClient backed by the Anthropic SDK.
 
@@ -97,7 +97,7 @@ Annotations: |
       3. Map errors as in ask.
 
 "LLMClient::OpenAIAdapter(client: OpenAI, model: str)":
-  location: OpenAIAdapter.py
+  location: openai_adapter.py
   annotations: |
     LLMClient backed by the OpenAI SDK.
 

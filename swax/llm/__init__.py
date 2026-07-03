@@ -7,7 +7,7 @@ build_openai_client, build_llm_client). The full nine-name surface is now
 re-verified.
 """
 
-from .AnthropicAdapter import AnthropicAdapter
+from .anthropic_adapter import AnthropicAdapter
 from .build_anthropic_client import build_anthropic_client
 from .build_llm_client import build_llm_client
 from .build_openai_client import build_openai_client
@@ -17,8 +17,8 @@ from .errors import (
     LLMResponseParseError,
     UnsupportedLLMProtocolError,
 )
-from .LLMClient import LLMClient
-from .OpenAIAdapter import OpenAIAdapter
+from .llm_client import LLMClient
+from .openai_adapter import OpenAIAdapter
 
 __all__: list[str] = [
     "AnthropicAdapter",

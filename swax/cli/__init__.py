@@ -7,6 +7,6 @@ commands edge acyclic.
 """
 
 from .main import main
-from .SwaxContext import SwaxContext
+from .swax_context import SwaxContext
 
 __all__: list[str] = ["SwaxContext", "main"]

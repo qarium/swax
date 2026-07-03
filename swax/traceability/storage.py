@@ -12,7 +12,7 @@ import pathlib
 
 import yaml
 
-from .TraceabilityGraph import TraceabilityGraph
+from .traceability_graph import TraceabilityGraph
 
 
 def load_traceability(path: pathlib.Path) -> TraceabilityGraph:

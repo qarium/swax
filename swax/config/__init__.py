@@ -18,8 +18,8 @@ from .errors import (
     InvalidLLMProtocolError,
     MissingEnvironmentVariablesError,
 )
-from .GitConfig import GitConfig
-from .SpecsConfig import SpecsConfig
+from .git_config import GitConfig
+from .specs_config import SpecsConfig
 from .storage import load_config, save_config
 
 __all__: list[str] = [

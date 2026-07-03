@@ -7,7 +7,7 @@ serialized output stays deterministic and reviewable.
 """
 
 from .storage import load_traceability, save_traceability
-from .TraceabilityGraph import TraceabilityGraph
+from .traceability_graph import TraceabilityGraph
 
 __all__: list[str] = [
     "TraceabilityGraph",
