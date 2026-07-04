@@ -32,17 +32,15 @@ class TraceabilityGraph(BaseModel):
     def deduplicate(self) -> None:
         """Remove duplicate edges and self-loops in place.
 
-        Each adjacency list is replaced by its sorted set, each source is
-        removed from its own adjacency list, and sources left without any
-        target are dropped. The operation is idempotent — calling it again
-        produces no change.
+        Each adjacency list is replaced by its sorted set and each source is
+        removed from its own adjacency list. Sources left without any target
+        are preserved — a path without dependencies remains a graph node. The
+        operation is idempotent — calling it again produces no change.
         """
         for source in list(self.edges.keys()):
             self.edges[source] = sorted(set(self.edges[source]))
             if source in self.edges[source]:
                 self.edges[source] = [target for target in self.edges[source] if target != source]
-            if not self.edges[source]:
-                del self.edges[source]
 
 
 __all__: list[str] = [

@@ -30,14 +30,18 @@ class TestTraceabilityGraphLogic:
         graph.deduplicate()
         assert graph.edges == {"/a": ["/b"], "/b": ["/a"]}
 
-    def test_deduplicate_drops_sources_without_targets(self):
-        # A source that only points at itself collapses to an empty adjacency
-        # list and is dropped entirely.
+    def test_deduplicate_preserves_sources_without_targets(self):
+        # A source whose only edges were self-loops collapses to an empty
+        # adjacency list, but the source is preserved as a graph node — a path
+        # without dependencies still appears in the saved graph.
         graph = TraceabilityGraph(edges={"/a": ["/a", "/a"]})
 
         graph.deduplicate()
 
-        assert graph.edges == {}
+        assert graph.edges == {"/a": []}
+
+        graph.deduplicate()
+        assert graph.edges == {"/a": []}
 
 
 class TestStorageLogic:

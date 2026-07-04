@@ -49,6 +49,7 @@ Annotations: |
       Requirements:
       - Idempotent — safe to call multiple times.
       - Resulting edge lists are sorted for stable dump.
+      - Sources with empty adjacency lists are preserved — a path without dependencies remains a graph node.
 
 "load_traceability(path: pathlib.Path) -> graph: TraceabilityGraph":
   location: storage.py

@@ -48,9 +48,10 @@ Usages:
 
 Annotations: |
   Application-layer use-case: full rebuild of the traceability graph via a two-pass LLM analysis.
-  The graph stores paths only. Edge deduplication is mandatory before saving.
-  `LLMCallError` and `LLMRateLimitedError` propagate uncaught — the CLI handler maps them.
-  Logs INFO at start/end, DEBUG for intermediate steps; SWAX_LLM_TOKEN never in logs.
+  The graph stores paths only and contains every endpoint discovered in the parsed specs as a
+  node — including endpoints with no inferred dependencies. Edge deduplication is mandatory
+  before saving. `LLMCallError` and `LLMRateLimitedError` propagate uncaught — the CLI handler
+  maps them. Logs INFO at start/end, DEBUG for intermediate steps; SWAX_LLM_TOKEN never in logs.
 
   LLM responses are parsed defensively (provider-agnostic):
   - Any prose or code fences around the JSON payload are stripped before parsing.
@@ -63,6 +64,17 @@ Annotations: |
   - The parsed shape is validated as dict[str, list[str]]; mismatched shapes are rejected
     via `LLMResponseParseError`.
   - LLM output structure is never trusted — schema-validate before consuming.
+
+  Dependency merging across the two passes:
+  - The first pass contributes confident edges; the refine pass contributes resolved uncertain
+    pairs. Both are merged into the final dependency map.
+  - The refine pass overrides the first pass only when it yields a non-empty adjacency list
+    for a key; an empty refine list is treated as "no new information" so confident edges
+    survive.
+  - Every endpoint extracted from the parsed specs is guaranteed to appear as a graph node
+    (with an empty adjacency list when no dependency was inferred).
+  - Sources and targets outside the endpoint universe extracted from the parsed specs are
+    dropped, honoring the prompt contract forbidding paths outside the endpoint universe.
 
   Use `conventions` for code writing rules and testing.
   Use `project-config` for `load_config` and the `Config` shape.
@@ -93,17 +105,23 @@ Annotations: |
        all endpoints.
     5. Refine pass: build a refine prompt via `build_refine_user_prompt` with schemas
        attached for the ambiguous pairs, then re-ask in multi-turn mode.
-    6. Build the `TraceabilityGraph` from the final dependencies, deduplicate, persist.
+    6. Merge confident edges from the first pass with resolved uncertain pairs from the
+       refine pass; guarantee every extracted endpoint appears as a graph node; drop
+       sources and targets outside the endpoint universe.
+    7. Build the `TraceabilityGraph` from the merged dependencies, deduplicate, persist.
 
     Requirements:
     - Always builds a fresh graph — existing .swax/traceability.yml is ignored.
     - Endpoint order is deterministic across runs (discover_specs returns sorted output).
     - LLM responses are parsed defensively per the global rule above.
+    - The persisted graph contains every endpoint extracted from the parsed specs, including
+      endpoints with no inferred dependencies (persisted with an empty adjacency list).
 
     Constraints:
     - Do not catch `LLMCallError` / `LLMRateLimitedError` — let them propagate.
     - Do not store schemas in the graph — paths only.
     - Do not embed filesystem paths or credentials into prompts — the prompts cell already enforces this.
+    - Do not introduce paths outside the endpoint universe extracted from the parsed specs.
 
 ---
 

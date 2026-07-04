@@ -5,8 +5,11 @@ across five domain cells (config, openapi, llm, prompts, traceability). It
 validates LLM credentials, reads the project Config, discovers and parses the
 local spec files to collect endpoints and schema context, then runs two LLM
 passes: an initial dependency-graph pass and a refine pass that resolves the
-uncertain pairs flagged in the first pass using schema context. The final
-dependencies are loaded into a TraceabilityGraph, deduplicated, and persisted to
+uncertain pairs flagged in the first pass using schema context. The confident
+edges from the first pass are merged with the resolved uncertain pairs from the
+refine pass; every endpoint from the parsed specs is guaranteed to appear as a
+graph node (with an empty adjacency list when no dependency was inferred). The
+merged map is loaded into a TraceabilityGraph, deduplicated, and persisted to
 .swax/traceability.yml, overwriting any prior graph.
 
 LLM responses are parsed defensively: prose and code fences around the JSON are
@@ -68,6 +71,47 @@ def _validate_dependency_shape(d: object) -> None:
                 reason="shape mismatch: expected dict[str, list[str]]",
                 excerpt=str(d)[:_EXCERPT_LENGTH],
             )
+
+
+def _merge_dependencies(
+    first: dict[str, list[str]],
+    refined: dict[str, list[str]],
+    *,
+    allowed_nodes: set[str],
+) -> dict[str, list[str]]:
+    """Merge first-pass confident edges with refine-pass resolved pairs.
+
+    The refine pass overrides the first pass only when it produces a non-empty
+    adjacency list for a key; an empty refine list is treated as "no new
+    information" so confident edges survive. All endpoints from the parsed
+    specs are guaranteed to appear as nodes (with an empty list when no edges
+    were inferred). Sources and targets outside `allowed_nodes` are dropped to
+    honor the prompt contract forbidding paths outside the endpoint universe.
+
+    Args:
+        first: dependencies from the first LLM pass (confident edges).
+        refined: dependencies from the refine LLM pass (resolved uncertain
+            pairs).
+        allowed_nodes: the endpoint universe extracted from the parsed specs.
+
+    Returns:
+        Merged dependency map covering the full endpoint universe.
+    """
+    merged: dict[str, list[str]] = {}
+    for source, targets in first.items():
+        if source in allowed_nodes:
+            merged[source] = [t for t in targets if t in allowed_nodes]
+    for source, targets in refined.items():
+        if source not in allowed_nodes:
+            continue
+        cleaned = [t for t in targets if t in allowed_nodes]
+        if cleaned:
+            merged[source] = cleaned
+        elif source not in merged:
+            merged[source] = []
+    for endpoint in allowed_nodes:
+        merged.setdefault(endpoint, [])
+    return merged
 
 
 def _parse_llm_json(raw: str, *, first_pass: bool) -> tuple[dict[str, list[str]], list[str]]:
@@ -152,9 +196,7 @@ def run_discover(project_root: pathlib.Path) -> None:
     system = build_graph_system_prompt()
     first_user = build_graph_user_prompt(endpoints)
     raw_first = client.ask(system=system, user=first_user)
-    # The first pass is parsed/validated for its uncertain pairs; its dependency
-    # map is superseded by the consolidate result of the refine pass below.
-    _first_dependencies, uncertain = _parse_llm_json(raw_first, first_pass=True)
+    first_dependencies, uncertain = _parse_llm_json(raw_first, first_pass=True)
 
     ambiguous_pairs = uncertain
     refine_user = build_refine_user_prompt(ambiguous_pairs, schemas)
@@ -166,10 +208,19 @@ def run_discover(project_root: pathlib.Path) -> None:
             {"role": "user", "content": refine_user},
         ],
     )
-    final_dependencies, _ = _parse_llm_json(raw_refined, first_pass=False)
+    refined_dependencies, _ = _parse_llm_json(raw_refined, first_pass=False)
+
+    merged = _merge_dependencies(
+        first=first_dependencies,
+        refined=refined_dependencies,
+        allowed_nodes=set(endpoints),
+    )
 
     graph = TraceabilityGraph(edges={})
-    for source, targets in final_dependencies.items():
+    for source, targets in merged.items():
+        # setdefault first so endpoints with no outgoing edges still appear as
+        # graph nodes — the merged map covers the full endpoint universe.
+        graph.edges.setdefault(source, [])
         for target in targets:
             graph.add_edge(source=source, target=target)
     graph.deduplicate()

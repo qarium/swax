@@ -16,7 +16,7 @@ import pathlib
 import pytest
 import yaml
 from swax.applications.discover import run_discover
-from swax.applications.discover.run_discover import _parse_llm_json
+from swax.applications.discover.run_discover import _merge_dependencies, _parse_llm_json
 from swax.config import MissingEnvironmentVariablesError
 from swax.llm import (
     LLMCallError,
@@ -101,7 +101,9 @@ class TestRunDiscoverTwoPass:
         trace_path = _trace_path(discover_project)
         assert trace_path.exists()
         data = yaml.safe_load(trace_path.read_text(encoding="utf-8"))
-        assert data == {"/users": ["/users/{id}"]}
+        # Both endpoints from the spec appear as nodes; /users/{id} has no
+        # outgoing dependencies and is preserved with an empty adjacency list.
+        assert data == {"/users": ["/users/{id}"], "/users/{id}": []}
         mock_client.ask.assert_called_once()
         mock_client.ask_multi_turn.assert_called_once()
         _, kwargs = mock_client.ask_multi_turn.call_args
@@ -136,7 +138,10 @@ class TestRunDiscoverTwoPass:
         assert "/users -> /orders" in refine_message
         assert kwargs["messages"][1]["content"] == mock_client.ask.return_value
         data = yaml.safe_load(_trace_path(discover_project).read_text(encoding="utf-8"))
-        assert data == {"/users": ["/orders"]}
+        # The spec only declares /users and /users/{id}; /orders is foreign and
+        # is filtered out of both source and target lists. The resulting graph
+        # keeps the spec endpoints as nodes (with empty adjacencies here).
+        assert data == {"/users": [], "/users/{id}": []}
 
     def test_run_discover_overwrites_existing_traceability_yml(self, discover_project, mocker):
         existing = _trace_path(discover_project)
@@ -149,7 +154,7 @@ class TestRunDiscoverTwoPass:
         run_discover(project_root=discover_project)
 
         data = yaml.safe_load(existing.read_text(encoding="utf-8"))
-        assert data == {"/users": ["/users/{id}"]}
+        assert data == {"/users": ["/users/{id}"], "/users/{id}": []}
         assert "/old" not in data
 
     def test_run_discover_normalizes_wrapped_refine_response(self, discover_project, mocker):
@@ -164,7 +169,7 @@ class TestRunDiscoverTwoPass:
         run_discover(project_root=discover_project)
 
         data = yaml.safe_load(_trace_path(discover_project).read_text(encoding="utf-8"))
-        assert data == {"/users": ["/users/{id}"]}
+        assert data == {"/users": ["/users/{id}"], "/users/{id}": []}
 
 
 class TestRunDiscoverErrorPropagation:
@@ -208,6 +213,122 @@ class TestRunDiscoverErrorPropagation:
 
         with pytest.raises(expected):
             run_discover(project_root=discover_project)
+
+
+class TestRunDiscoverEndpointGuarantee:
+    """Coverage for the bug where endpoints were dropped from the graph when the
+    LLM omitted them. All endpoints from the parsed specs must appear as graph
+    nodes; foreign paths introduced by the LLM must be filtered out; confident
+    edges from the first pass must merge with refined pairs."""
+
+    def test_run_discover_keeps_endpoint_with_no_dependencies(self, discover_project, mocker):
+        # Neither LLM pass mentions /users/{id}. It must still appear as a node
+        # with an empty adjacency list — this is the regression that motivated
+        # the fix.
+        mock_build = mocker.patch(BUILD_CLIENT)
+        mock_client = mock_build.return_value
+        mock_client.ask.return_value = '{"uncertain": [], "dependencies": {"/users": ["/users/{id}"]}}'
+        mock_client.ask_multi_turn.return_value = '{"/users": ["/users/{id}"]}'
+
+        run_discover(project_root=discover_project)
+
+        data = yaml.safe_load(_trace_path(discover_project).read_text(encoding="utf-8"))
+        assert data == {"/users": ["/users/{id}"], "/users/{id}": []}
+
+    def test_run_discover_merges_first_pass_with_refine(self, discover_project, mocker):
+        # First pass confidently reports /a -> /b (here /users -> /users/{id});
+        # refine resolves a separate uncertain pair. The final graph contains
+        # edges from both passes plus all spec endpoints as nodes.
+        mock_build = mocker.patch(BUILD_CLIENT)
+        mock_client = mock_build.return_value
+        mock_client.ask.return_value = '{"dependencies": {"/users": ["/users/{id}"]}, "uncertain": []}'
+        mock_client.ask_multi_turn.return_value = '{"/users/{id}": ["/users"]}'
+
+        run_discover(project_root=discover_project)
+
+        data = yaml.safe_load(_trace_path(discover_project).read_text(encoding="utf-8"))
+        # First-pass edge /users -> /users/{id} survives; refine adds the
+        # reverse edge /users/{id} -> /users; both endpoints are nodes.
+        assert data == {"/users": ["/users/{id}"], "/users/{id}": ["/users"]}
+
+    def test_run_discover_drops_paths_outside_endpoint_universe(self, discover_project, mocker):
+        # The refine pass invents a foreign path /orders which is not in the
+        # spec. It must not appear in the saved graph (neither as a source nor
+        # as a target).
+        mock_build = mocker.patch(BUILD_CLIENT)
+        mock_client = mock_build.return_value
+        mock_client.ask.return_value = '{"uncertain": [], "dependencies": {}}'
+        mock_client.ask_multi_turn.return_value = '{"/users": ["/orders"], "/orders": ["/users/{id}"]}'
+
+        run_discover(project_root=discover_project)
+
+        data = yaml.safe_load(_trace_path(discover_project).read_text(encoding="utf-8"))
+        assert "/orders" not in data
+        assert all("/orders" not in targets for targets in data.values())
+        # Spec endpoints are still present as nodes.
+        assert set(data.keys()) == {"/users", "/users/{id}"}
+
+    def test_run_discover_refine_empty_list_keeps_first_pass_edges(self, discover_project, mocker):
+        # When the refine pass returns an empty list for a key that the first
+        # pass populated with confident edges, the confident edges survive — an
+        # empty refine answer is treated as "no new information", not as
+        # "delete what the first pass said".
+        mock_build = mocker.patch(BUILD_CLIENT)
+        mock_client = mock_build.return_value
+        mock_client.ask.return_value = (
+            '{"dependencies": {"/users": ["/users/{id}"]}, "uncertain": ["/users -> /users/{id}"]}'
+        )
+        mock_client.ask_multi_turn.return_value = '{"/users": []}'
+
+        run_discover(project_root=discover_project)
+
+        data = yaml.safe_load(_trace_path(discover_project).read_text(encoding="utf-8"))
+        assert data == {"/users": ["/users/{id}"], "/users/{id}": []}
+
+
+class TestMergeDependenciesHelper:
+    def test_merge_guarantees_all_endpoints_as_nodes(self):
+        merged = _merge_dependencies(first={}, refined={}, allowed_nodes={"/a", "/b"})
+
+        assert merged == {"/a": [], "/b": []}
+
+    def test_merge_combines_first_and_refined_edges(self):
+        merged = _merge_dependencies(
+            first={"/a": ["/b"]},
+            refined={"/b": ["/a"]},
+            allowed_nodes={"/a", "/b"},
+        )
+
+        assert merged == {"/a": ["/b"], "/b": ["/a"]}
+
+    def test_merge_refine_overrides_first_with_non_empty(self):
+        merged = _merge_dependencies(
+            first={"/a": ["/b"]},
+            refined={"/a": ["/c"]},
+            allowed_nodes={"/a", "/b", "/c"},
+        )
+
+        # Refine wins because it produced a non-empty adjacency for /a.
+        assert merged == {"/a": ["/c"], "/b": [], "/c": []}
+
+    def test_merge_refine_empty_does_not_destroy_first(self):
+        merged = _merge_dependencies(
+            first={"/a": ["/b"]},
+            refined={"/a": []},
+            allowed_nodes={"/a", "/b"},
+        )
+
+        assert merged == {"/a": ["/b"], "/b": []}
+
+    def test_merge_filters_foreign_sources_and_targets(self):
+        merged = _merge_dependencies(
+            first={"/a": ["/foreign"], "/foreign": ["/b"]},
+            refined={"/b": ["/alien"]},
+            allowed_nodes={"/a", "/b"},
+        )
+
+        # Foreign sources are dropped; foreign targets are removed from lists.
+        assert merged == {"/a": [], "/b": []}
 
 
 class TestParseLlmJsonHelper:

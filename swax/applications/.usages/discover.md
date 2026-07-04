@@ -49,11 +49,12 @@ Use-case выполняет 15 шагов:
 10. build_refine_user_prompt(ambiguous_pairs, schemas).
 11. client.ask_multi_turn(system, [initial_user, assistant_response, refine_user]) -> защитный JSON-парсинг -> финальные зависимости.
 
-**Сборка и сохранение графа (шаги 12-15):**
-12. TraceabilityGraph(edges={}) + add_edge для каждой пары зависимостей.
-13. graph.deduplicate() — удаление дублей и self-loops.
-14. save_traceability(graph, .swax/traceability.yml).
-15. INFO-лог завершения.
+**Сборка и сохранение графа (шаги 12-16):**
+12. Merge confident edges из первого прохода с resolved uncertain pairs из refine-прохода. Refine переопределяет первый проход только при непустом adjacency-списке; пустой refine-ответ трактуется как «нет новой информации», и confident edges сохраняются.
+13. Гарантируется, что каждый endpoint, извлечённый из спецификаций, присутствует в финальной map (с пустым списком, если рёбер нет).
+14. Источники и цели вне множества endpoints отфильтровываются — это honourит контракт промпта, запрещающий пути вне endpoint universe.
+15. TraceabilityGraph(edges={}) + add_edge для каждой пары зависимостей; endpoints без рёбер добавляются как ключи с пустым списком.
+16. graph.deduplicate() — удаление дублей и self-loops (пустые ключи сохраняются как узлы графа), save_traceability(graph, .swax/traceability.yml), INFO-лог завершения.
 
 ---
 

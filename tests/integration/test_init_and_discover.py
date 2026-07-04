@@ -65,14 +65,14 @@ components:
 """
 
 # First-pass (ask) and refine (ask_multi_turn) LLM responses — both valid JSON.
-# The two responses are deliberately DIFFERENT so the persisted graph is proven
-# to come from the refine pass: the first pass proposes /users/{id} -> /users,
-# the refine pass revises it to /users -> /users/{id}. If run_discover ever
-# persisted the first-pass dependency map instead of the refined result, the
-# graph assertion below would fail.
+# The first pass confidently reports /users/{id} -> /users; the refine pass
+# resolves a separate uncertain pair /users -> /users/{id}. The persisted graph
+# merges both edges and guarantees every spec endpoint (/users, /users/{id})
+# appears as a node — /users/{id} accumulates an outgoing edge from the first
+# pass, while isolated endpoints would keep an empty adjacency list.
 FIRST_PASS_RESPONSE = '{"dependencies": {"/users/{id}": ["/users"]}, "uncertain": []}'
 REFINE_RESPONSE = '{"/users": ["/users/{id}"]}'
-EXPECTED_GRAPH = {"/users": ["/users/{id}"]}
+EXPECTED_GRAPH = {"/users": ["/users/{id}"], "/users/{id}": ["/users"]}
 
 
 def _make_remote_repo(path: pathlib.Path) -> str:
