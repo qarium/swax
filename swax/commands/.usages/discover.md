@@ -48,6 +48,7 @@ main.add_command(discover)
 | LLMRateLimitedError | LLM rate limited; retry later |
 | LLMCallError | LLM call failed: {reason} |
 | UnsupportedLLMProtocolError | Unsupported LLM protocol: {protocol} |
+| LLMResponseParseError | LLM response parse failed: {reason} |
 
 Exit codes: 0 — успех, 1 — сбой (Click default для ClickException).
 
