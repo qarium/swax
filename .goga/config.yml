@@ -1,5 +1,4 @@
 language: python
-
 image: qarium/goga-python-3.13:1.0
 
 .claude-env: &claude-env
