@@ -73,6 +73,91 @@ components:
         assert isinstance(exc_info.value.reason, str)
         assert exc_info.value.reason  # non-empty reason surfaced from Prance
 
+    def test_parse_spec_handles_self_referential_schema(self, tmp_path):
+        # A self-referential schema (Node -> children: array of Node) is a valid
+        # OpenAPI construct. parse_spec must terminate the cycle with a $ref
+        # marker instead of raising ResolutionError, while still inlining the
+        # non-cyclic parts of the schema. With recursion_limit=1 (Prance
+        # default), the cycle is inlined once and the marker lands one level
+        # deeper — that is the documented, deterministic termination point.
+        spec_path = _write(
+            tmp_path / "spec.yaml",
+            """
+openapi: 3.0.0
+info:
+  title: T
+  version: "1.0"
+paths: {}
+components:
+  schemas:
+    Child:
+      type: object
+      properties:
+        leaf:
+          type: boolean
+    Node:
+      type: object
+      properties:
+        value:
+          type: integer
+        child:
+          $ref: "#/components/schemas/Child"
+        children:
+          type: array
+          items:
+            $ref: "#/components/schemas/Node"
+""".strip()
+            + "\n",
+        )
+
+        spec = parse_spec(spec_path)
+
+        node = spec["components"]["schemas"]["Node"]
+        # Non-cyclic reference (Node.child -> Child) is fully inlined.
+        assert node["properties"]["child"] == {
+            "type": "object",
+            "properties": {"leaf": {"type": "boolean"}},
+        }
+        # Cyclic reference (Node.children -> Node) terminates with a $ref
+        # marker at the nested cycle point.
+        nested_node = node["properties"]["children"]["items"]
+        assert nested_node["properties"]["value"] == {"type": "integer"}
+        assert nested_node["properties"]["children"]["items"] == {"$ref": "#/components/schemas/Node"}
+
+    def test_parse_spec_handles_mutually_recursive_schemas(self, tmp_path):
+        # A -> B -> A: with recursion_limit=1, each side is inlined once and
+        # the cycle terminates with a marker one level deeper.
+        spec_path = _write(
+            tmp_path / "spec.yaml",
+            """
+openapi: 3.0.0
+info:
+  title: T
+  version: "1.0"
+paths: {}
+components:
+  schemas:
+    A:
+      type: object
+      properties:
+        b:
+          $ref: "#/components/schemas/B"
+    B:
+      type: object
+      properties:
+        a:
+          $ref: "#/components/schemas/A"
+""".strip()
+            + "\n",
+        )
+
+        spec = parse_spec(spec_path)
+
+        a = spec["components"]["schemas"]["A"]
+        b = spec["components"]["schemas"]["B"]
+        assert a["properties"]["b"]["properties"]["a"]["properties"]["b"] == {"$ref": "#/components/schemas/B"}
+        assert b["properties"]["a"]["properties"]["b"]["properties"]["a"] == {"$ref": "#/components/schemas/A"}
+
 
 class TestExtractPaths:
     def test_extract_paths_returns_sorted_paths(self):

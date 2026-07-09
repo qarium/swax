@@ -20,21 +20,25 @@ Annotations: |
 "parse_spec(spec_path: pathlib.Path) -> spec: dict":
   location: parse_spec.py
   annotations: |
-    Parses a specification file into a fully dereferenced dict (all $ref inlined).
+    Parses a specification file into a fully dereferenced dict (all non-cyclic $ref inlined).
 
     `spec_path`: path to a .yaml/.yml/.json spec file.
     `spec`: dereferenced specification containing paths and schemas.
 
     Algorithm:
-    1. Construct a resolving parser over the file (strict mode off, type resolution on).
-    2. Return its dereferenced specification.
-    3. On any parser failure, raise SpecParseError with the path and the original reason.
+    1. Read the file and parse it via Prance's formats helper.
+    2. Construct a Prance reference resolver over the parsed spec (strict mode off, resolve all reference types).
+    3. Configure the resolver to terminate reference cycles by emitting a $ref marker instead of raising — this prevents failure on self-referential and mutually-recursive schemas.
+    4. Return the dereferenced specification.
+    5. On any parser failure, raise `SpecParseError` with the path and the original reason.
 
     Requirements:
-    - $ref is resolved in memory — downstream code never resolves references manually.
+    - Non-cyclic $ref is resolved in memory — downstream code never resolves those references manually.
+    - Cyclic $ref terminates at the cycle point with a $ref marker preserving structural information.
 
     Constraints:
     - RAM usage scales with spec size and reference count (known limitation, accepted).
+    - The Prance post-resolve spec validator is intentionally bypassed — it rejects otherwise valid recursive schemas after dereferencing.
 
 "extract_paths(spec: dict) -> paths: list[str]":
   location: extract_paths.py

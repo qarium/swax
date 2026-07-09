@@ -10,27 +10,50 @@ Swax extracts only API paths from specs — no HTTP method abstraction, no resou
 
 ## Dereferenced Parsing
 
-Use `prance.ApiResolver` (or `ResolvingParser`) to inline `$ref` so downstream code never resolves references manually.
+Drive Prance's `RefResolver` directly (instead of `ResolvingParser`) to fully
+inline `$ref` without triggering Prance's post-resolve `openapi-spec-validator`
+step — that validator rejects valid recursive schemas after they are
+dereferenced. A non-raising `recursion_limit_handler` terminates reference
+cycles by emitting a `{"$ref": ...}` marker, so self-referential and
+mutually-recursive schemas parse cleanly.
 
 ```python
 import pathlib
 
-from prance import ResolvingParser
+from prance.util.formats import parse_spec as parse_spec_string
+from prance.util.resolver import RESOLVE_ALL, RefResolver
+from prance.util.url import absurl
+
+
+def _handle_recursion(limit, parsed_url, recursions=()):
+    fragment = parsed_url.fragment
+    return {"$ref": f"#{fragment}"} if fragment else {"$ref": parsed_url.geturl()}
 
 
 def parse_spec(spec_path: pathlib.Path) -> dict:
-    parser = ResolvingParser(
-        str(spec_path),
-        backend="openapi-spec-validator",
+    resolved = spec_path.resolve()
+    parsed = parse_spec_string(resolved.read_text(encoding="utf-8"), filename=str(resolved))
+    resolver = RefResolver(
+        parsed,
+        absurl(resolved.as_uri(), None),
         strict=False,
-        resolve_types=True,
+        resolve_types=RESOLVE_ALL,
+        recursion_limit_handler=_handle_recursion,
     )
-    return parser.specification
+    resolver.resolve_references()
+    return resolver.specs
 ```
 
-The resolved `specification` dict contains:
+The resolved dict contains:
 - `paths` — mapping of path templates to method definitions
 - `components` / `definitions` — schemas (already inlined into their references)
+- At reference cycles: a `{"$ref": ...}` marker instead of infinite nesting
+
+Why not `ResolvingParser` directly: its built-in post-resolve validator
+(`openapi-spec-validator`) raises on the dereferenced form of recursive
+schemas (the cycle-terminated branch fails `oneOf(Schema | Reference)`).
+Driving `RefResolver` ourselves keeps dereferencing semantics identical for
+non-recursive specs while bypassing that validator.
 
 ---
 

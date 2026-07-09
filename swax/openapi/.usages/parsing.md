@@ -60,3 +60,42 @@ def load_all_specs(specs_root: Path) -> list[dict]:
 ```
 
 RAM-ограничение: Prance разворачивает $ref в памяти, поэтому для очень больших спецификаций потребление RAM может быть значительным — известное ограничение, принимается архитектурно.
+
+---
+
+## Рекурсивные схемы
+
+`parse_spec` поддерживает самоссылающиеся и взаимно-рекурсивные схемы — валидную конструкцию OpenAPI. Пример:
+
+```yaml
+components:
+  schemas:
+    Polygon:
+      type: object
+      properties:
+        children:
+          type: array
+          items:
+            $ref: "#/components/schemas/Polygon"   # цикл
+```
+
+Поведение:
+
+- Все **некольцевые** `$ref` разворачиваются в памяти как обычно.
+- Цикл разворачивается один раз (recursion limit = 1), затем в точке повторного входа подставляется маркер `{"$ref": "#/components/schemas/Polygon"}` вместо бесконечного вложения.
+
+```python
+spec = parse_spec(path)
+polygon = spec["components"]["schemas"]["Polygon"]
+# Первый уровень children развёрнут (видны все свойства Polygon),
+# точка цикла — на один уровень глубже.
+children_items = polygon["properties"]["children"]["items"]
+assert children_items["properties"]["children"]["items"] == {
+    "$ref": "#/components/schemas/Polygon"
+}
+```
+
+Соглашения потребителя:
+
+- Downstream-код (extract_paths, extract_schemas, LLM-context) должен толерантно относиться к маркеру `$ref` в значениях схем — это ожидаемый сигнал цикла, а не необработанная ссылка.
+- Пост-resolve валидация OpenAPI намеренно отключена: она отбраковывает валидные рекурсивные схемы после разворачивания. Контракт `parse_spec` — структура dict, а не соответствие схеме OpenAPI.
