@@ -1,5 +1,5 @@
 language: python
-image: qarium/goga-python-3.13:1.0
+image: qarium/goga-python-3.13:1.1
 
 .claude-env: &claude-env
   ANTHROPIC_MODEL: opus
@@ -16,7 +16,7 @@ pipeline:
   agent: claude
   env:
     <<: *claude-env
-    ANTHROPIC_DEFAULT_OPUS_MODEL: "glm-5.2"
+    ANTHROPIC_DEFAULT_OPUS_MODEL: "glm-5.2[1m]"
 
 codemanifest:
   usages:
