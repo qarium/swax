@@ -223,3 +223,6 @@ __marimo__/
 #docs/design/
 #docs/arch/
 docs/superpowers/
+
+# project
+.swax/
