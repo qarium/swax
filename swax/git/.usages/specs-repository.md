@@ -17,6 +17,7 @@ from pathlib import Path
 
 from swax.git import clone_specs
 
+
 def install_specs(repo_url: str, specs_location: str) -> Path:
     with clone_specs(repo_url, specs_location) as specs_path:
         # specs_path валиден только внутри with — после выхода каталог удалён
@@ -37,6 +38,7 @@ def install_specs(repo_url: str, specs_location: str) -> Path:
 
 ```python
 from swax.git import clone_specs, RepositoryCloneError, SpecsNotFoundError
+
 
 def safe_clone(repo_url: str, specs_location: str):
     try:

@@ -43,6 +43,7 @@ import click
 
 from swax.cli import SwaxContext
 
+
 @click.command()
 @click.pass_obj
 def my_command(ctx: SwaxContext) -> None:
@@ -78,6 +79,7 @@ swax --env-file /path/to/.env init
 from pathlib import Path
 
 from click.testing import CliRunner
+
 
 def test_main_loads_env(mocker, tmp_path):
     env_file = tmp_path / ".env"

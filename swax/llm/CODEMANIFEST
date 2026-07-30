@@ -216,7 +216,7 @@ Annotations: |
     Requirements:
     - Switching providers requires no code change in consumers.
     - Selecting a model requires no code change in consumers.
-    - Protocol value is validated upstream by parse_protocol in config/.
+    - Protocol value is validated upstream.
 
 ---
 

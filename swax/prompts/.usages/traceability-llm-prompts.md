@@ -15,6 +15,7 @@ Cell собирает строки промптов — сами вызовы LL
 ```python
 from swax.prompts import build_graph_system_prompt
 
+
 def setup_llm_context() -> str:
     return build_graph_system_prompt()
 ```
@@ -33,6 +34,7 @@ def setup_llm_context() -> str:
 ```python
 from swax.prompts import build_graph_user_prompt
 
+
 def first_pass(endpoints: list[str]) -> str:
     return build_graph_user_prompt(endpoints)
 ```
@@ -50,6 +52,7 @@ def first_pass(endpoints: list[str]) -> str:
 
 ```python
 from swax.prompts import build_refine_user_prompt
+
 
 def refine_pass(ambiguous_pairs: list[str], schemas: dict) -> str:
     return build_refine_user_prompt(ambiguous_pairs, schemas)
@@ -73,6 +76,7 @@ from swax.prompts import (
     build_graph_user_prompt,
     build_refine_user_prompt,
 )
+
 
 def run_two_pass_analysis(endpoints, ambiguous_pairs, schemas, llm_client):
     system = build_graph_system_prompt()

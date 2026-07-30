@@ -25,6 +25,7 @@ from pathlib import Path
 
 from swax.fs import ensure_swax_dir
 
+
 def write_config(project_root: Path) -> Path:
     swax_dir = ensure_swax_dir(project_root)
     config_path = swax_dir / "config.yml"
@@ -44,6 +45,7 @@ def write_config(project_root: Path) -> Path:
 from pathlib import Path
 
 from swax.fs import copy_specs
+
 
 def install_specs(specs_in_clone: Path, download_path: Path) -> None:
     copy_specs(source=specs_in_clone, destination=download_path)

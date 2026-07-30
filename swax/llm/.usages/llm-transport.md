@@ -16,6 +16,7 @@ Cell `llm/` инкапсулирует только транспорт — пр�
 ```python
 from swax.llm import build_llm_client, LLMClient
 
+
 def get_llm() -> LLMClient:
     return build_llm_client()
 ```
@@ -36,6 +37,7 @@ def get_llm() -> LLMClient:
 from swax.prompts import build_graph_system_prompt, build_graph_user_prompt
 from swax.llm import build_llm_client
 
+
 def first_pass(endpoints: list[str]) -> str:
     client = build_llm_client()
     system = build_graph_system_prompt()
@@ -55,6 +57,7 @@ def first_pass(endpoints: list[str]) -> str:
 
 ```python
 from swax.llm import build_llm_client
+
 
 def refine_pass(system: str, first_user: str, first_response: str, refine_user: str) -> str:
     client = build_llm_client()
@@ -80,6 +83,7 @@ def refine_pass(system: str, first_user: str, first_response: str, refine_user: 
 
 ```python
 from swax.llm import LLMCallError, LLMRateLimitedError
+
 
 def safe_llm_call(client, system, user):
     try:

@@ -25,6 +25,7 @@
 ```python
 from swax.traceability import TraceabilityGraph
 
+
 def build_from_llm_output(dependencies: dict[str, list[str]]) -> TraceabilityGraph:
     graph = TraceabilityGraph(edges={})
     for source, targets in dependencies.items():
@@ -47,6 +48,7 @@ def build_from_llm_output(dependencies: dict[str, list[str]]) -> TraceabilityGra
 ```python
 from swax.traceability import TraceabilityGraph
 
+
 def finalize(graph: TraceabilityGraph) -> TraceabilityGraph:
     graph.deduplicate()
     return graph
@@ -68,6 +70,7 @@ from pathlib import Path
 
 from swax.traceability import TraceabilityGraph, save_traceability
 
+
 def persist(graph: TraceabilityGraph, project_root: Path) -> None:
     save_traceability(graph, project_root / ".swax" / "traceability.yml")
 ```
@@ -88,8 +91,9 @@ from pathlib import Path
 
 from swax.traceability import load_traceability
 
+
 def reload(project_root: Path):
     return load_traceability(project_root / ".swax" / "traceability.yml")
 ```
 
-Чтение используется в задачах 2-3 (plan, update) — задача 1 (discover) только пишет граф.
+Чтение используется для последующего анализа графа; сценарий discover только пишет граф, не читая его.

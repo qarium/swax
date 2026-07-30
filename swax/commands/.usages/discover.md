@@ -65,15 +65,18 @@ from pathlib import Path
 
 from click.testing import CliRunner
 
+
 def test_discovers_graph_on_success(mocker, tmp_path):
     mocker.patch("swax.commands.discover.run_discover")
     runner = CliRunner()
     result = runner.invoke(discover, obj=SwaxContext(env_file=Path(".env")))
     assert result.exit_code == 0
 
+
 def test_discovers_maps_missing_env_vars(mocker):
     def raise_missing(project_root):
         raise MissingEnvironmentVariablesError(missing=["SWAX_LLM_TOKEN"])
+
     mocker.patch("swax.commands.discover.run_discover", side_effect=raise_missing)
     runner = CliRunner()
     result = runner.invoke(discover, obj=SwaxContext(env_file=Path(".env")))

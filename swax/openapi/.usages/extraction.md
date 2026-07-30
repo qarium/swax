@@ -15,6 +15,7 @@
 ```python
 from swax.openapi import extract_paths
 
+
 def collect_nodes(spec: dict) -> list[str]:
     return extract_paths(spec)
 ```
@@ -33,6 +34,7 @@ def collect_nodes(spec: dict) -> list[str]:
 ```python
 from swax.openapi import extract_schemas
 
+
 def collect_schema_context(spec: dict) -> dict:
     return extract_schemas(spec)
 ```
@@ -47,6 +49,7 @@ def collect_schema_context(spec: dict) -> dict:
 
 ```python
 from swax.openapi import extract_paths, extract_schemas
+
 
 def extract_graph_input(spec: dict) -> tuple[list[str], dict]:
     return extract_paths(spec), extract_schemas(spec)

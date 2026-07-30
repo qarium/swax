@@ -56,6 +56,7 @@ Exit codes: 0 — успех, 1 — сбой (Click default для ClickExceptio
 from click.testing import CliRunner
 from swax.commands.init import init
 
+
 def test_init_prompts_and_delegates(mocker):
     mocker.patch("swax.commands.init.run_init")
     runner = CliRunner()

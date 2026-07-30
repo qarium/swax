@@ -32,6 +32,7 @@ from pathlib import Path
 
 from swax.config import Config, GitConfig, SpecsConfig, save_config
 
+
 def persist_config(repo_url: str, specs_location: str, download_path: Path, project_root: Path) -> None:
     config = Config(
         git=GitConfig(url=repo_url, location=specs_location),
@@ -50,6 +51,7 @@ def persist_config(repo_url: str, specs_location: str, download_path: Path, proj
 
 ```python
 from swax.config import load_config
+
 
 def locate_specs(project_root: Path) -> Path:
     config = load_config(project_root / ".swax" / "config.yml")

@@ -28,6 +28,7 @@ from pathlib import Path
 
 from swax.config import load_env
 
+
 def setup_cli(env_file: Path) -> None:
     load_env(env_file)
 ```
@@ -42,6 +43,7 @@ def setup_cli(env_file: Path) -> None:
 
 ```python
 from swax.config import require_vars
+
 
 def before_llm_call() -> dict[str, str]:
     return require_vars()

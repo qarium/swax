@@ -17,6 +17,7 @@ from pathlib import Path
 
 from swax.applications.discover import run_discover
 
+
 def rebuild_graph(project_root: Path) -> None:
     run_discover(project_root=project_root)
 ```
@@ -67,6 +68,7 @@ from swax.applications.discover import run_discover
 from swax.config import MissingEnvironmentVariablesError
 from swax.llm import LLMCallError, LLMRateLimitedError, LLMResponseParseError
 from swax.openapi import SpecParseError
+
 
 def safe_discover(project_root):
     try:

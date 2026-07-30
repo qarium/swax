@@ -17,6 +17,7 @@ from pathlib import Path
 
 from swax.applications.init import run_init
 
+
 def initialize(repo_url: str, specs_location: str, download_path: Path, project_root: Path) -> None:
     run_init(
         repo_url=repo_url,
@@ -53,6 +54,7 @@ Use-case выполняет шаги в строго определённом п
 ```python
 from swax.applications.init import run_init
 from swax.git import RepositoryCloneError, SpecsNotFoundError
+
 
 def safe_initialize(repo_url, specs_location, download_path, project_root):
     try:

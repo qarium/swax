@@ -17,6 +17,7 @@ from pathlib import Path
 
 from swax.openapi import discover_specs
 
+
 def collect_spec_files(specs_root: Path) -> list[Path]:
     return discover_specs(specs_root)
 ```
@@ -37,6 +38,7 @@ from pathlib import Path
 
 from swax.openapi import parse_spec
 
+
 def load_one_spec(spec_path: Path) -> dict:
     return parse_spec(spec_path)
 ```
@@ -54,6 +56,7 @@ def load_one_spec(spec_path: Path) -> dict:
 
 ```python
 from swax.openapi import discover_specs, parse_spec
+
 
 def load_all_specs(specs_root: Path) -> list[dict]:
     return [parse_spec(p) for p in discover_specs(specs_root)]
@@ -90,9 +93,7 @@ polygon = spec["components"]["schemas"]["Polygon"]
 # Первый уровень children развёрнут (видны все свойства Polygon),
 # точка цикла — на один уровень глубже.
 children_items = polygon["properties"]["children"]["items"]
-assert children_items["properties"]["children"]["items"] == {
-    "$ref": "#/components/schemas/Polygon"
-}
+assert children_items["properties"]["children"]["items"] == {"$ref": "#/components/schemas/Polygon"}
 ```
 
 Соглашения потребителя:

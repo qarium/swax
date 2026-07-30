@@ -49,8 +49,7 @@ Annotations: |
     5. Map `RepositoryCloneError` and `SpecsNotFoundError` to click.ClickException.
 
     Requirements:
-    - Prompts are the sole source of user input — no command-line options for these values
-      in task 1.
+    - Prompts are the sole source of user input — no command-line options for these values.
     - Exit code 0 on success, 1 on any ClickException (Click default).
 
     Constraints:

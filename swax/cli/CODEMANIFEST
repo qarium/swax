@@ -14,10 +14,9 @@ Usages:
 
 Annotations: |
   CLI entry point. The top-level Click group loads the environment and initializes a
-  `SwaxContext` for subcommands. Subcommands init and discover are registered via lazy
-  import in __main__.py — never in __init__.py — to keep the CODEMANIFEST contract
-  acyclic (commands import from cli, not the reverse).
-  Main and `SwaxContext` are exported via __all__.
+  `SwaxContext` for subcommands. Subcommands init and discover are registered lazily
+  to keep the CODEMANIFEST contract acyclic (commands import from cli, not the reverse).
+  Main and `SwaxContext` are exported as the cell's public API.
 
   Use `conventions` for code writing rules and testing.
   Use `click` for the entry-point group, the --env-file option, and the pass-object pattern.
