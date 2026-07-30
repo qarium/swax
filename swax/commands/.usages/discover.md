@@ -1,16 +1,16 @@
-# Discover command — Click-handler команды `discover`
+# Discover command — Click handler for the `discover` command
 
-## Предметная область
+## Domain
 
-Шаблон регистрации и вызова Click-команды `discover`. Целевая аудитория: cell `swax/cli/` (регистрирует команду на главной группе `main` через main.add_command(discover)).
+Registration and invocation template for the `discover` Click command. Target audience: cell `swax/cli/` (registers the command on the `main` group via `main.add_command(discover)`).
 
-Команда тонкая — только маппинг ошибок. Прикладная логика (парсинг спецификаций, LLM-анализ, сборка графа) делегируется в `run_discover` (cell `applications/discover/`). В отличие от `init`, `discover` не имеет интерактивных промптов — все входы из .swax/config.yml и окружения.
+The command is thin — only error mapping. Application logic (spec parsing, LLM analysis, graph assembly) is delegated to `run_discover` (cell `applications/discover/`). Unlike `init`, `discover` has no interactive prompts — all inputs come from `.swax/config.yml` and the environment.
 
 ---
 
-## Регистрация команды
+## Command registration
 
-`discover` — это декорированный @click.command callback. Регистрация на главной группе:
+`discover` is a decorated `@click.command` callback. Registration on the main group:
 
 ```python
 from swax.cli import main
@@ -19,30 +19,30 @@ from swax.commands.discover import discover
 main.add_command(discover)
 ```
 
-Соглашения потребителя:
-- Команда не принимает CLI-опций и не имеет промптов.
-- Контекст передаётся через @click.pass_obj — SwaxContext из cell `cli/`.
-- Требует предварительно загруженный .env (callback группы main уже вызвал load_env).
+Consumer conventions:
+- The command takes no CLI options and has no prompts.
+- The context is passed via `@click.pass_obj` — `SwaxContext` from the `cli/` cell.
+- Requires a pre-loaded `.env` (the `main` group callback has already invoked `load_env`).
 
 ---
 
-## Выполнение команды
+## Command execution
 
-При вызове `swax discover` команда:
+On `swax discover`, the command:
 
-1. Получает SwaxContext через @click.pass_obj.
-2. Определяет project_root = pathlib.Path.cwd().
-3. Делегирует в run_discover(project_root).
-4. Перехватывает доменные исключения из `config/`, `openapi/`, `llm/` и маппит в click.ClickException.
+1. Receives `SwaxContext` via `@click.pass_obj`.
+2. Resolves `project_root = pathlib.Path.cwd()`.
+3. Delegates to `run_discover(project_root)`.
+4. Catches domain exceptions from `config/`, `openapi/`, `llm/` and maps them to `click.ClickException`.
 
 ---
 
-## Обработка ошибок
+## Error handling
 
-Все доменные исключения маппятся в click.ClickException с понятными сообщениями:
+All domain exceptions are mapped to `click.ClickException` with clear messages:
 
-| Exception | Сообщение |
-|-----------|-----------|
+| Exception | Message |
+|-----------|---------|
 | MissingEnvironmentVariablesError | Missing env vars: {missing} |
 | SpecParseError | Failed to parse {path}: {reason} |
 | LLMRateLimitedError | LLM rate limited; retry later |
@@ -50,15 +50,15 @@ main.add_command(discover)
 | UnsupportedLLMProtocolError | Unsupported LLM protocol: {protocol} |
 | LLMResponseParseError | LLM response parse failed: {reason} |
 
-Exit codes: 0 — успех, 1 — сбой (Click default для ClickException).
+Exit codes: 0 — success, 1 — failure (Click default for `ClickException`).
 
-Команда НЕ повторяет rate-limited вызовы и НЕ логирует SWAX_LLM_TOKEN в сообщениях об ошибках.
+The command does NOT retry rate-limited calls and does NOT log `SWAX_LLM_TOKEN` in error messages.
 
 ---
 
-## Тестирование
+## Testing
 
-Тестировать через click.testing.CliRunner, мокая run_discover в точке импорта:
+Test via `click.testing.CliRunner`, mocking `run_discover` at its import point:
 
 ```python
 from pathlib import Path
@@ -84,4 +84,4 @@ def test_discovers_maps_missing_env_vars(mocker):
     assert "SWAX_LLM_TOKEN" in result.output
 ```
 
-Не вызывать live LLM API в тестах — всегда mock run_discover.
+Never call the live LLM API in tests — always mock `run_discover`.

@@ -1,14 +1,14 @@
 # Project configuration — `.swax/config.yml`
 
-## Предметная область
+## Domain
 
-Шаблоны чтения и записи конфигурации проекта Swax. Целевая аудитория: cell-и `applications/init/` (записывает конфиг после интерактивного опроса) и `applications/discover/` (читает конфиг для путей к спецификациям).
+Templates for reading and writing the Swax project configuration. Target audience: cells `applications/init/` (writes the config after the interactive survey) and `applications/discover/` (reads the config for paths to the specifications).
 
-Конфигурация хранится в YAML и описывает git-репозиторий со спецификациями и локальный путь для их сохранения.
+The configuration is stored in YAML and describes the git repository with the specifications and the local path where they are saved.
 
 ---
 
-## Модель
+## Model
 
 ```python
 from swax.config import Config, GitConfig, SpecsConfig
@@ -19,13 +19,13 @@ config = Config(
 )
 ```
 
-Поле `specs.type` — объявление формата (`"swagger"` или `"openapi"`); реальный парсер (Prance) определяет версию автоматически, поэтому значение носит информационный характер.
+The `specs.type` field declares the format (`"swagger"` or `"openapi"`); the actual parser (Prance) determines the version automatically, so the value is informational.
 
 ---
 
-## Сохранение после инициализации
+## Saving after initialization
 
-`run_init` создаёт конфигурацию из ответов пользователя и сохраняет её:
+`run_init` builds the configuration from the user's answers and saves it:
 
 ```python
 from pathlib import Path
@@ -41,13 +41,13 @@ def persist_config(repo_url: str, specs_location: str, download_path: Path, proj
     save_config(config, project_root / ".swax" / "config.yml")
 ```
 
-`save_config` создаёт родительские каталоги и пишет детерминированный YAML — diff между запусками стабилен.
+`save_config` creates parent directories and writes deterministic YAML — the diff between runs is stable.
 
 ---
 
-## Чтение перед построением графа
+## Reading before graph construction
 
-`run_discover` читает конфигурацию, чтобы узнать, где лежат локальные спецификации:
+`run_discover` reads the configuration to find where the local specifications live:
 
 ```python
 from swax.config import load_config
@@ -58,4 +58,4 @@ def locate_specs(project_root: Path) -> Path:
     return project_root / config.specs.location
 ```
 
-Файл конфигурации обязан существовать к моменту `discover` — `init` должен быть запущен ранее.
+The configuration file must exist by the time `discover` runs — `init` must have been run previously.

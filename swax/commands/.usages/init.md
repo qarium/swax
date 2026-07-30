@@ -1,16 +1,16 @@
-# Init command — Click-handler команды `init`
+# Init command — Click handler for the `init` command
 
-## Предметная область
+## Domain
 
-Шаблон регистрации и вызова Click-команды `init`. Целевая аудитория: cell `swax/cli/` (регистрирует команду на главной группе `main` через main.add_command(init)).
+Registration and invocation template for the `init` Click command. Target audience: cell `swax/cli/` (registers the command on the `main` group via `main.add_command(init)`).
 
-Команда тонкая — только интерактивные промпты и маппинг ошибок. Прикладная логика (клонирование, копирование, запись конфигурации) делегируется в `run_init` (cell `applications/init/`).
+The command is thin — only interactive prompts and error mapping. Application logic (cloning, copying, writing configuration) is delegated to `run_init` (cell `applications/init/`).
 
 ---
 
-## Регистрация команды
+## Command registration
 
-`init` — это декорированный @click.command callback. Регистрация на главной группе:
+`init` is a decorated `@click.command` callback. Registration on the main group:
 
 ```python
 from swax.cli import main
@@ -19,38 +19,38 @@ from swax.commands.init import init
 main.add_command(init)
 ```
 
-Соглашения потребителя:
-- Команда не принимает CLI-опций — все входы собираются через интерактивные промпты.
-- Контекст передаётся через @click.pass_obj — SwaxContext из cell `cli/`.
+Consumer conventions:
+- The command takes no CLI options — all inputs are collected via interactive prompts.
+- The context is passed via `@click.pass_obj` — `SwaxContext` from the `cli/` cell.
 
 ---
 
-## Выполнение команды
+## Command execution
 
-При вызове `swax init` команда:
+On `swax init`, the command:
 
-1. Получает SwaxContext через @click.pass_obj.
-2. Промптит repo_url, specs_location, download_path через click.prompt.
-3. Определяет project_root = pathlib.Path.cwd().
-4. Делегирует в run_init(repo_url, specs_location, download_path, project_root).
-5. Перехватывает RepositoryCloneError / SpecsNotFoundError и маппит в click.ClickException.
+1. Receives `SwaxContext` via `@click.pass_obj`.
+2. Prompts for `repo_url`, `specs_location`, `download_path` via `click.prompt`.
+3. Resolves `project_root = pathlib.Path.cwd()`.
+4. Delegates to `run_init(repo_url, specs_location, download_path, project_root)`.
+5. Catches `RepositoryCloneError` / `SpecsNotFoundError` and maps them to `click.ClickException`.
 
 ---
 
-## Обработка ошибок
+## Error handling
 
-Доменные исключения из `git/` маппятся в click.ClickException для единообразных exit codes:
+Domain exceptions from `git/` are mapped to `click.ClickException` for uniform exit codes:
 
 - RepositoryCloneError -> click.ClickException(f"Failed to clone {exc.url}: {exc.reason}")
 - SpecsNotFoundError -> click.ClickException(f"Specs not found at {exc.path}")
 
-Exit codes: 0 — успех, 1 — сбой (Click default для ClickException).
+Exit codes: 0 — success, 1 — failure (Click default for `ClickException`).
 
 ---
 
-## Тестирование
+## Testing
 
-Тестировать через click.testing.CliRunner, вызывая callback напрямую без subprocess:
+Test via `click.testing.CliRunner`, invoking the callback directly without a subprocess:
 
 ```python
 from click.testing import CliRunner
@@ -64,4 +64,4 @@ def test_init_prompts_and_delegates(mocker):
     assert result.exit_code == 0
 ```
 
-В тестах мокать run_init в точке импорта — не выполнять реальное клонирование.
+In tests, mock `run_init` at its import point — do not perform a real clone.

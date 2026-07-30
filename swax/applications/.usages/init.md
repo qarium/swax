@@ -1,16 +1,16 @@
-# Initialize project — use-case инициализации Swax
+# Initialize project — Swax initialization use case
 
-## Предметная область
+## Domain
 
-Шаблон вызова use-case-а инициализации проекта Swax. Целевая аудитория: cell `commands/init/` (CLI-handler собирает входные данные из интерактивных промптов и делегирует в `run_init`).
+Invocation template for the Swax project initialization use case. Target audience: cell `commands/init/` (the CLI handler collects inputs from interactive prompts and delegates to `run_init`).
 
-Use-case оркеструет три доменных cell-а: `config/` (запись конфигурации), `git/` (клонирование репозитория), `fs/` (создание .swax/ и копирование спецификаций). Это гексагональный application-слой — без бизнес-логики, только последовательность вызовов.
+The use case orchestrates three domain cells: `config/` (write configuration), `git/` (clone the repository), `fs/` (create `.swax/` and copy specifications). This is a hexagonal application layer — no business logic, only a sequence of calls.
 
 ---
 
-## Запуск use-case
+## Running the use case
 
-`run_init` принимает все входы явно — для тестируемости и независимости от CLI:
+`run_init` accepts all inputs explicitly — for testability and independence from the CLI:
 
 ```python
 from pathlib import Path
@@ -27,29 +27,29 @@ def initialize(repo_url: str, specs_location: str, download_path: Path, project_
     )
 ```
 
-Соглашения потребителя:
-- `repo_url` — clone URL репозитория (из интерактивного промпта).
-- `specs_location` — подкаталог в репозитории со спецификациями.
-- `download_path` — локальный путь для сохранения спецификаций.
-- `project_root` — корень проекта (обычно pathlib.Path.cwd()).
+Consumer conventions:
+- `repo_url` — clone URL of the repository (from an interactive prompt).
+- `specs_location` — subdirectory in the repository containing the specifications.
+- `download_path` — local path where specifications are saved.
+- `project_root` — project root (typically `pathlib.Path.cwd()`).
 
 ---
 
-## Что выполняется внутри
+## What runs inside
 
-Use-case выполняет шаги в строго определённом порядке:
+The use case performs the steps in a strictly defined order:
 
-1. Собирает Config с GitConfig и SpecsConfig из входов.
-2. Создаёт .swax/ через ensure_swax_dir.
-3. Сохраняет .swax/config.yml через save_config — конфигурация пишется ДО клонирования, чтобы пользователь мог её проверить даже при сбое клонирования.
-4. Клонирует репозиторий через clone_specs (context manager — cleanup гарантирован).
-5. Копирует спецификации из временного клона в `download_path` через copy_specs.
+1. Build a `Config` with `GitConfig` and `SpecsConfig` from the inputs.
+2. Create `.swax/` via `ensure_swax_dir`.
+3. Save `.swax/config.yml` via `save_config` — configuration is written BEFORE cloning, so the user can inspect it even if cloning fails.
+4. Clone the repository via `clone_specs` (context manager — cleanup is guaranteed).
+5. Copy specifications from the temporary clone to `download_path` via `copy_specs`.
 
 ---
 
-## Обработка доменных исключений
+## Domain exception handling
 
-`run_init` НЕ перехватывает исключения из `git/` (RepositoryCloneError, SpecsNotFoundError) — они распространяются наверх. CLI-handler в `commands/init/` маппит их в click.ClickException:
+`run_init` does NOT catch exceptions from `git/` (`RepositoryCloneError`, `SpecsNotFoundError`) — they propagate upward. The CLI handler in `commands/init/` maps them to `click.ClickException`:
 
 ```python
 from swax.applications.init import run_init
@@ -60,27 +60,27 @@ def safe_initialize(repo_url, specs_location, download_path, project_root):
     try:
         run_init(repo_url, specs_location, download_path, project_root)
     except RepositoryCloneError as exc:
-        # click.ClickException(f"Не удалось клонировать {exc.url}: {exc.reason}")
+        # click.ClickException(f"Failed to clone {exc.url}: {exc.reason}")
         ...
     except SpecsNotFoundError as exc:
-        # click.ClickException(f"Спецификации не найдены в {exc.path}")
+        # click.ClickException(f"Specs not found at {exc.path}")
         ...
 ```
 
-Это разделение ответственности: application layer не знает про CLI/Click, только оркеструет доменные cell-ы.
+This is the separation of concerns: the application layer knows nothing about the CLI/Click — it only orchestrates the domain cells.
 
 ---
 
-## Тестирование
+## Testing
 
-`run_init` принимает все входы явно — тестируется без mock CLI. Использовать tmp_path для `project_root` и `download_path`:
+`run_init` accepts all inputs explicitly — it is tested without mocking the CLI. Use `tmp_path` for `project_root` and `download_path`:
 
 ```python
 def test_run_init_persists_config(tmp_path):
     project_root = tmp_path
     download_path = tmp_path / "specs"
-    # mock clone_specs и copy_specs в точке импорта для unit-теста
-    # или интеграционный тест с реальным локальным git-репозиторием в tmp_path
+    # mock clone_specs and copy_specs at their import point for a unit test
+    # or run an integration test with a real local git repository in tmp_path
     run_init("https://example.com/repo.git", "specs/", download_path, project_root)
     assert (project_root / ".swax" / "config.yml").exists()
 ```

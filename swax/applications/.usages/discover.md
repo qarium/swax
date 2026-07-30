@@ -1,16 +1,16 @@
-# Discover traceability — use-case полного перестроения графа
+# Discover traceability — use case for full graph rebuild
 
-## Предметная область
+## Domain
 
-Шаблон вызова use-case-а полного перестроения графа отслеживаемости API. Целевая аудитория: cell `commands/discover/` (CLI-handler делегирует в `run_discover` после загрузки .env).
+Invocation template for the API traceability graph full-rebuild use case. Target audience: cell `commands/discover/` (the CLI handler delegates to `run_discover` after loading `.env`).
 
-Use-case оркеструет пять доменных cell-ов в двухпроходном ЛЛМ-сценарии: `config/` (чтение конфигурации), `openapi/` (парсинг спецификаций), `prompts/` (сборка промптов), `llm/` (вызовы API), `traceability/` (сохранение графа). Локально cell выполняет защитный JSON-парсинг и формирование multi-turn сообщений.
+The use case orchestrates five domain cells in a two-pass LLM scenario: `config/` (read configuration), `openapi/` (parse specifications), `prompts/` (build prompts), `llm/` (API calls), `traceability/` (persist the graph). The cell locally performs defensive JSON parsing and multi-turn message assembly.
 
 ---
 
-## Запуск use-case
+## Running the use case
 
-`run_discover` принимает только `project_root` — остальные входы читаются из .swax/config.yml:
+`run_discover` accepts only `project_root` — all other inputs are read from `.swax/config.yml`:
 
 ```python
 from pathlib import Path
@@ -22,46 +22,46 @@ def rebuild_graph(project_root: Path) -> None:
     run_discover(project_root=project_root)
 ```
 
-Соглашения потребителя:
-- Команда требует LLM creds — require_vars выполняется внутри use-case, и MissingEnvironmentVariablesError распространяется наверх для CLI-handler.
-- Проект должен быть инициализирован (init) — .swax/config.yml обязан существовать.
-- Всегда создаёт свежий граф, игнорируя существующий .swax/traceability.yml.
+Consumer conventions:
+- The command requires LLM creds — `require_vars` is executed inside the use case, and `MissingEnvironmentVariablesError` propagates up to the CLI handler.
+- The project must be initialized (`init`) — `.swax/config.yml` must exist.
+- Always builds a fresh graph, ignoring any existing `.swax/traceability.yml`.
 
 ---
 
-## Что выполняется внутри (двухпроходный сценарий)
+## What runs inside (two-pass scenario)
 
-Use-case выполняет 15 шагов:
+The use case performs 15 steps:
 
-**Подготовка (шаги 1-5):**
-1. require_vars — fail fast при отсутствии LLM creds.
-2. load_config — чтение .swax/config.yml.
-3. Определение корня спецификаций из config.specs.location.
-4. discover_specs — список файлов спецификаций.
-5. Для каждой спецификации: parse_spec -> extract_paths (накопление endpoints) + extract_schemas (накопление schema context).
+**Preparation (steps 1-5):**
+1. `require_vars` — fail fast when LLM creds are missing.
+2. `load_config` — read `.swax/config.yml`.
+3. Resolve the specs root from `config.specs.location`.
+4. `discover_specs` — list specification files.
+5. For each specification: `parse_spec` -> `extract_paths` (accumulate endpoints) + `extract_schemas` (accumulate schema context).
 
-**Первый ЛЛМ-проход (шаги 6-9):**
-6. build_llm_client — фабрика по SWAX_LLM_PROTOCOL.
-7. build_graph_system_prompt + build_graph_user_prompt(endpoints).
-8. client.ask(system, first_user) -> защитный JSON-парсинг -> гипотезы зависимостей.
-9. Извлечение неоднозначных пар (пары, помеченные LLM как неуверенные).
+**First LLM pass (steps 6-9):**
+6. `build_llm_client` — factory selected by `SWAX_LLM_PROTOCOL`.
+7. `build_graph_system_prompt` + `build_graph_user_prompt(endpoints)`.
+8. `client.ask(system, first_user)` -> defensive JSON parsing -> dependency hypotheses.
+9. Extract ambiguous pairs (pairs the LLM marked as uncertain).
 
-**Уточняющий ЛЛМ-проход (шаги 10-11):**
-10. build_refine_user_prompt(ambiguous_pairs, schemas).
-11. client.ask_multi_turn(system, [initial_user, assistant_response, refine_user]) -> защитный JSON-парсинг -> финальные зависимости.
+**Refinement LLM pass (steps 10-11):**
+10. `build_refine_user_prompt(ambiguous_pairs, schemas)`.
+11. `client.ask_multi_turn(system, [initial_user, assistant_response, refine_user])` -> defensive JSON parsing -> final dependencies.
 
-**Сборка и сохранение графа (шаги 12-16):**
-12. Merge confident edges из первого прохода с resolved uncertain pairs из refine-прохода. Refine переопределяет первый проход только при непустом adjacency-списке; пустой refine-ответ трактуется как «нет новой информации», и confident edges сохраняются.
-13. Гарантируется, что каждый endpoint, извлечённый из спецификаций, присутствует в финальной map (с пустым списком, если рёбер нет).
-14. Источники и цели вне множества endpoints отфильтровываются — это honourит контракт промпта, запрещающий пути вне endpoint universe.
-15. TraceabilityGraph(edges={}) + add_edge для каждой пары зависимостей; endpoints без рёбер добавляются как ключи с пустым списком.
-16. graph.deduplicate() — удаление дублей и self-loops (пустые ключи сохраняются как узлы графа), save_traceability(graph, .swax/traceability.yml), INFO-лог завершения.
+**Graph assembly and persistence (steps 12-16):**
+12. Merge confident edges from the first pass with resolved uncertain pairs from the refinement pass. The refinement overrides the first pass only when its adjacency list is non-empty; an empty refinement response is treated as "no new information", and the confident edges are preserved.
+13. Every endpoint extracted from the specifications is guaranteed to be present in the final map (with an empty list if it has no edges).
+14. Sources and targets outside the set of endpoints are filtered out — this honors the prompt contract that forbids paths outside the endpoint universe.
+15. `TraceabilityGraph(edges={})` + `add_edge` for each dependency pair; endpoints without edges are added as keys with empty lists.
+16. `graph.deduplicate()` — removes duplicates and self-loops (empty keys are retained as graph nodes), `save_traceability(graph, .swax/traceability.yml)`, INFO log on completion.
 
 ---
 
-## Обработка доменных исключений
+## Domain exception handling
 
-`run_discover` НЕ перехватывает исключения — они распространяются наверх. CLI-handler маппит:
+`run_discover` does NOT catch exceptions — they propagate upward. The CLI handler maps them:
 
 ```python
 from swax.applications.discover import run_discover
@@ -74,37 +74,37 @@ def safe_discover(project_root):
     try:
         run_discover(project_root=project_root)
     except MissingEnvironmentVariablesError as exc:
-        # click.ClickException(f"Отсутствуют переменные: {', '.join(exc.missing)}")
+        # click.ClickException(f"Missing variables: {', '.join(exc.missing)}")
         ...
     except SpecParseError as exc:
-        # click.ClickException(f"Ошибка разбора {exc.path}: {exc.reason}")
+        # click.ClickException(f"Parse error in {exc.path}: {exc.reason}")
         ...
     except LLMRateLimitedError:
-        # click.ClickException("Превышен rate limit LLM")
+        # click.ClickException("LLM rate limit exceeded")
         ...
     except LLMCallError as exc:
-        # click.ClickException(f"Сбой LLM: {exc.reason}")
+        # click.ClickException(f"LLM failure: {exc.reason}")
         ...
     except LLMResponseParseError as exc:
-        # click.ClickException(f"Ошибка разбора ответа LLM: {exc.reason}")
+        # click.ClickException(f"LLM response parse error: {exc.reason}")
         ...
 ```
 
-Application layer не знает про CLI/Click — это разделение ответственности.
+The application layer knows nothing about CLI/Click — this is the separation of concerns.
 
 ---
 
-## Тестирование
+## Testing
 
-`run_discover` тестируется через mock в точке импорта доменных routines. Использовать tmp_path для `project_root` и предзаписанный .swax/config.yml:
+`run_discover` is tested by mocking domain routines at their import point. Use `tmp_path` for `project_root` and a pre-written `.swax/config.yml`:
 
 ```python
 def test_run_discover_builds_graph(tmp_path, mocker):
-    # подготовка .swax/config.yml в tmp_path
-    # mock discover_specs, parse_spec, extract_paths возвращают фикстуры
-    # mock build_llm_client и LLMClient.ask/ask_multi_turn возвращают JSON-ответы
+    # prepare .swax/config.yml in tmp_path
+    # mock discover_specs, parse_spec, extract_paths to return fixtures
+    # mock build_llm_client and LLMClient.ask/ask_multi_turn to return JSON responses
     run_discover(project_root=tmp_path)
     assert (tmp_path / ".swax" / "traceability.yml").exists()
 ```
 
-Не вызывать live LLM API в тестах — всегда mock.
+Never call the live LLM API in tests — always mock.

@@ -1,16 +1,16 @@
-# Parsing — разбор спецификаций OpenAPI/Swagger
+# Parsing — parsing OpenAPI/Swagger specifications
 
-## Предметная область
+## Domain
 
-Шаблоны обнаружения файлов спецификаций и их разбора в полностью разыменованный dict. Целевая аудитория: cell `applications/discover/` (находит все спецификации в локальном каталоге и разбирает каждую через Prance).
+Templates for discovering specification files and parsing them into a fully dereferenced dict. Target audience: cell `applications/discover/` (finds all specifications in a local directory and parses each one via Prance).
 
-Prance разворачивает $ref в памяти, поэтому последующему коду никогда не приходится разрешать ссылки вручную. Swagger 2.0 и OpenAPI 3.x обрабатываются прозрачно.
+Prance expands `$ref` in memory, so subsequent code never has to resolve references manually. Swagger 2.0 and OpenAPI 3.x are handled transparently.
 
 ---
 
-## Обнаружение спецификаций
+## Discovering specifications
 
-`discover_specs` сканирует каталог по расширению и лёгкой эвристике (файл должен содержать ключ openapi или swagger в начале):
+`discover_specs` scans the directory by extension and a lightweight heuristic (the file must contain the `openapi` or `swagger` key near the start):
 
 ```python
 from pathlib import Path
@@ -22,16 +22,16 @@ def collect_spec_files(specs_root: Path) -> list[Path]:
     return discover_specs(specs_root)
 ```
 
-Соглашения потребителя:
-- `root` — локальный путь из `SpecsConfig.location`.
-- Эвристика дешёвая (читает только head файла) — полный разбор выполняется позже через `parse_spec`.
-- Возвращает отсортированный список для детерминированного порядка обработки.
+Consumer conventions:
+- `root` — the local path from `SpecsConfig.location`.
+- The heuristic is cheap (reads only the file head) — full parsing happens later via `parse_spec`.
+- Returns a sorted list for deterministic processing order.
 
 ---
 
-## Разбор спецификации
+## Parsing a specification
 
-`parse_spec` возвращает полностью разырешённый dict — $ref уже инлайнены:
+`parse_spec` returns a fully dereferenced dict — `$ref` are already inlined:
 
 ```python
 from pathlib import Path
@@ -43,16 +43,16 @@ def load_one_spec(spec_path: Path) -> dict:
     return parse_spec(spec_path)
 ```
 
-Соглашения потребителя:
-- Принимает .yaml, .yml, .json файлы.
-- Возвращает dict с paths (пути) и схемами (в components.schemas для OpenAPI 3.x или definitions для Swagger 2.0).
-- При ошибке разбора выбрасывает `SpecParseError` с путём файла и причиной — CLI-handler маппит в `click.ClickException`.
+Consumer conventions:
+- Accepts `.yaml`, `.yml`, `.json` files.
+- Returns a dict with `paths` and schemas (in `components.schemas` for OpenAPI 3.x or `definitions` for Swagger 2.0).
+- On a parse error it raises `SpecParseError` with the file path and reason — the CLI handler maps it to `click.ClickException`.
 
 ---
 
-## Объединение: сканирование → разбор
+## Composition: scan -> parse
 
-Типичный сценарий в use-case:
+A typical scenario in the use case:
 
 ```python
 from swax.openapi import discover_specs, parse_spec
@@ -62,13 +62,13 @@ def load_all_specs(specs_root: Path) -> list[dict]:
     return [parse_spec(p) for p in discover_specs(specs_root)]
 ```
 
-RAM-ограничение: Prance разворачивает $ref в памяти, поэтому для очень больших спецификаций потребление RAM может быть значительным — известное ограничение, принимается архитектурно.
+RAM constraint: Prance expands `$ref` in memory, so for very large specifications the RAM footprint may be significant — a known limitation, accepted by design.
 
 ---
 
-## Рекурсивные схемы
+## Recursive schemas
 
-`parse_spec` поддерживает самоссылающиеся и взаимно-рекурсивные схемы — валидную конструкцию OpenAPI. Пример:
+`parse_spec` supports self-referencing and mutually recursive schemas — a valid OpenAPI construct. Example:
 
 ```yaml
 components:
@@ -79,24 +79,24 @@ components:
         children:
           type: array
           items:
-            $ref: "#/components/schemas/Polygon"   # цикл
+            $ref: "#/components/schemas/Polygon"   # cycle
 ```
 
-Поведение:
+Behavior:
 
-- Все **некольцевые** `$ref` разворачиваются в памяти как обычно.
-- Цикл разворачивается один раз (recursion limit = 1), затем в точке повторного входа подставляется маркер `{"$ref": "#/components/schemas/Polygon"}` вместо бесконечного вложения.
+- All **non-cyclic** `$ref` are expanded in memory as usual.
+- The cycle is expanded once (recursion limit = 1), then at the point of re-entry the marker `{"$ref": "#/components/schemas/Polygon"}` is substituted instead of infinite nesting.
 
 ```python
 spec = parse_spec(path)
 polygon = spec["components"]["schemas"]["Polygon"]
-# Первый уровень children развёрнут (видны все свойства Polygon),
-# точка цикла — на один уровень глубже.
+# The first level of children is expanded (all Polygon properties are visible),
+# the cycle point is one level deeper.
 children_items = polygon["properties"]["children"]["items"]
 assert children_items["properties"]["children"]["items"] == {"$ref": "#/components/schemas/Polygon"}
 ```
 
-Соглашения потребителя:
+Consumer conventions:
 
-- Downstream-код (extract_paths, extract_schemas, LLM-context) должен толерантно относиться к маркеру `$ref` в значениях схем — это ожидаемый сигнал цикла, а не необработанная ссылка.
-- Пост-resolve валидация OpenAPI намеренно отключена: она отбраковывает валидные рекурсивные схемы после разворачивания. Контракт `parse_spec` — структура dict, а не соответствие схеме OpenAPI.
+- Downstream code (extract_paths, extract_schemas, LLM context) must tolerate a `$ref` marker inside schema values — this is the expected cycle signal, not an unresolved reference.
+- Post-resolve OpenAPI validation is intentionally disabled: it would reject valid recursive schemas after expansion. The `parse_spec` contract is about dict structure, not conformance to the OpenAPI schema.

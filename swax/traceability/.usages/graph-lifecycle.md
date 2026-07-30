@@ -1,12 +1,12 @@
-# Traceability graph — жизненный цикл и персистентность
+# Traceability graph — lifecycle and persistence
 
-## Предметная область
+## Domain
 
-Шаблоны построения и сохранения графа отслеживаемости API. Целевая аудитория: cell `applications/discover/` (накапливает рёбра из ЛЛМ-вывода и сохраняет граф в .swax/traceability.yml).
+Templates for building and persisting the API traceability graph. Target audience: cell `applications/discover/` (accumulates edges from the LLM output and saves the graph to `.swax/traceability.yml`).
 
-Граф оперирует только путями — без HTTP-методов, без абстракции ресурсов. Это архитектурное правило Swax: минимальная абстракция. Узлы = пути API, рёбра = выявленные зависимости между эндпоинтами.
+The graph operates on paths only — no HTTP methods, no resource abstraction. This is an architectural rule of Swax: minimal abstraction. Nodes = API paths, edges = discovered dependencies between endpoints.
 
-Формат файла .swax/traceability.yml:
+The `.swax/traceability.yml` file format:
 ```yaml
 /payment:
   - /users
@@ -14,13 +14,13 @@
 /orders:
   - /payment
 ```
-Ключи — пути, значения — списки зависимых путей.
+Keys are paths, values are lists of dependent paths.
 
 ---
 
-## Построение графа
+## Building the graph
 
-`TraceabilityGraph` накапливает рёбра через `add_edge` во время ЛЛМ-анализа:
+`TraceabilityGraph` accumulates edges via `add_edge` during the LLM analysis:
 
 ```python
 from swax.traceability import TraceabilityGraph
@@ -34,16 +34,16 @@ def build_from_llm_output(dependencies: dict[str, list[str]]) -> TraceabilityGra
     return graph
 ```
 
-Соглашения потребителя:
-- `source` — путь, который зависит от другого.
-- `target` — путь, от которого зависит `source`.
-- Дубликаты в момент добавления допустимы — они устраняются позже через deduplicate.
+Consumer conventions:
+- `source` — the path that depends on another.
+- `target` — the path that `source` depends on.
+- Duplicates at insertion time are acceptable — they are removed later via `deduplicate`.
 
 ---
 
-## Дедупликация перед сохранением
+## Deduplication before saving
 
-Перед сериализацией граф обязательно дедуплицируется — это убирает повторяющиеся рёбра и самозависимости, обеспечивая детерминированный вывод:
+Before serialization the graph is always deduplicated — this removes duplicate edges and self-dependencies, ensuring deterministic output:
 
 ```python
 from swax.traceability import TraceabilityGraph
@@ -54,16 +54,16 @@ def finalize(graph: TraceabilityGraph) -> TraceabilityGraph:
     return graph
 ```
 
-Соглашения потребителя:
-- Идемпотентен — безопасно вызывать несколько раз.
-- Возвращает отсортированные списки рёбер внутри каждого ключа.
-- Пустые adjacency-списки сохраняются — путь без зависимостей остаётся узлом графа. `run_discover` полагается на это, гарантируя что каждый endpoint из спецификаций присутствует в `.swax/traceability.yml`.
+Consumer conventions:
+- Idempotent — safe to call multiple times.
+- Returns sorted edge lists within each key.
+- Empty adjacency lists are preserved — a path without dependencies remains a graph node. `run_discover` relies on this, guaranteeing that every endpoint from the specifications is present in `.swax/traceability.yml`.
 
 ---
 
-## Сохранение графа
+## Saving the graph
 
-`save_traceability` пишет детерминированный YAML: ключи и значения отсортированы явно в Python для стабильного diff-а между запусками:
+`save_traceability` writes deterministic YAML: keys and values are explicitly sorted in Python for a stable diff between runs:
 
 ```python
 from pathlib import Path
@@ -75,16 +75,16 @@ def persist(graph: TraceabilityGraph, project_root: Path) -> None:
     save_traceability(graph, project_root / ".swax" / "traceability.yml")
 ```
 
-Соглашения потребителя:
-- Передать граф, для которого уже вызван deduplicate.
-- Функция создаёт родительские каталоги при необходимости.
-- mode="json" для pydantic-dump гарантирует YAML-совместимые примитивы.
+Consumer conventions:
+- Pass a graph that has already had `deduplicate` called.
+- The function creates parent directories as needed.
+- `mode="json"` for the pydantic dump guarantees YAML-compatible primitives.
 
 ---
 
-## Чтение графа
+## Reading the graph
 
-`load_traceability` читает .swax/traceability.yml обратно в модель. Пустой файл даёт пустой граф, а не ошибку:
+`load_traceability` reads `.swax/traceability.yml` back into the model. An empty file yields an empty graph, not an error:
 
 ```python
 from pathlib import Path
@@ -96,4 +96,4 @@ def reload(project_root: Path):
     return load_traceability(project_root / ".swax" / "traceability.yml")
 ```
 
-Чтение используется для последующего анализа графа; сценарий discover только пишет граф, не читая его.
+Reading is used for subsequent graph analysis; the `discover` scenario only writes the graph, it does not read it.

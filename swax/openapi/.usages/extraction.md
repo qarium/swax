@@ -1,16 +1,16 @@
-# Extraction — пути и схемы из разобранной спецификации
+# Extraction — paths and schemas from a parsed specification
 
-## Предметная область
+## Domain
 
-Шаблоны извлечения данных из разобранной спецификации для построения графа отслеживаемости. Целевая аудитория: cell `applications/discover/` (собирает узлы графа из путей и готовит схемы для уточняющего ЛЛМ-прохода).
+Templates for extracting data from a parsed specification to build the traceability graph. Target audience: cell `applications/discover/` (collects graph nodes from paths and prepares schemas for the refinement LLM pass).
 
-Граф отслеживаемости оперирует только путями — без HTTP-методов, без абстракции ресурсов. Это архитектурное правило Swax: минимальная абстракция.
+The traceability graph operates on paths only — no HTTP methods, no resource abstraction. This is an architectural rule of Swax: minimal abstraction.
 
 ---
 
-## Извлечение путей (узлы графа)
+## Extracting paths (graph nodes)
 
-`extract_paths` возвращает отсортированный список путей API из разобранной спецификации:
+`extract_paths` returns a sorted list of API paths from the parsed specification:
 
 ```python
 from swax.openapi import extract_paths
@@ -20,16 +20,16 @@ def collect_nodes(spec: dict) -> list[str]:
     return extract_paths(spec)
 ```
 
-Соглашения потребителя:
-- `spec` — вывод `parse_spec` (dereferenced dict).
-- Возвращает шаблоны путей (например, /users, /users/{id}).
-- Результат напрямую становится узлами графа отслеживаемости — методов в графе нет.
+Consumer conventions:
+- `spec` — the output of `parse_spec` (a dereferenced dict).
+- Returns path templates (e.g., `/users`, `/users/{id}`).
+- The result directly becomes the nodes of the traceability graph — methods are not present in the graph.
 
 ---
 
-## Извлечение схем (контекст для LLM)
+## Extracting schemas (context for the LLM)
 
-`extract_schemas` возвращает определения схем для уточняющего ЛЛМ-прохода. Функция автоматически различает OpenAPI 3.x (components.schemas) и Swagger 2.0 (definitions):
+`extract_schemas` returns schema definitions for the refinement LLM pass. The function automatically distinguishes OpenAPI 3.x (`components.schemas`) from Swagger 2.0 (`definitions`):
 
 ```python
 from swax.openapi import extract_schemas
@@ -39,13 +39,13 @@ def collect_schema_context(spec: dict) -> dict:
     return extract_schemas(spec)
 ```
 
-Соглашения потребителя:
-- Схемы используются ТОЛЬКО в `build_refine_user_prompt` (cell `prompts/`) для уточнения неоднозначных пар зависимостей.
-- Схемы НИКОГДА не сохраняются в граф отслеживаемости — граф хранит только пути.
+Consumer conventions:
+- Schemas are used ONLY in `build_refine_user_prompt` (cell `prompts/`) to refine ambiguous dependency pairs.
+- Schemas are NEVER stored in the traceability graph — the graph stores only paths.
 
 ---
 
-## Полный сценарий извлечения
+## Full extraction scenario
 
 ```python
 from swax.openapi import extract_paths, extract_schemas
@@ -55,4 +55,4 @@ def extract_graph_input(spec: dict) -> tuple[list[str], dict]:
     return extract_paths(spec), extract_schemas(spec)
 ```
 
-Use-case `run_discover` агрегирует пути всех спецификаций в единый список узлов, а схемы передаёт в уточняющий промпт при необходимости.
+The `run_discover` use case aggregates paths from all specifications into a single list of nodes and passes schemas to the refinement prompt when needed.

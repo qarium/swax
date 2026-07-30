@@ -1,16 +1,16 @@
-# Traceability LLM prompts — сборка промптов для построения графа
+# Traceability LLM prompts — assembling prompts for graph construction
 
-## Предметная область
+## Domain
 
-Шаблоны сборки промптов для ЛЛМ-анализа зависимостей API. Целевая аудитория: cell `applications/discover/` (использует три промпт-билдера в двухпроходном сценарии построения графа отслеживаемости).
+Templates for assembling prompts for the LLM-based API dependency analysis. Target audience: cell `applications/discover/` (uses three prompt builders in the two-pass traceability graph construction scenario).
 
-Cell собирает строки промптов — сами вызовы LLM и парсинг JSON выполняются потребителем через `LLMClient` (cell `llm/`). Это разделение ответственности: prompts/ знает «что сказать LLM», llm/ знает «как вызвать API».
+The cell assembles prompt strings — the LLM calls and JSON parsing themselves are performed by the consumer via `LLMClient` (cell `llm/`). This is the separation of concerns: `prompts/` knows "what to say to the LLM", `llm/` knows "how to call the API".
 
 ---
 
-## System-промпт аналитика
+## Analyst system prompt
 
-`build_graph_system_prompt` возвращает константный system-промпт, переиспользуемый в обоих проходах:
+`build_graph_system_prompt` returns a constant system prompt, reused in both passes:
 
 ```python
 from swax.prompts import build_graph_system_prompt
@@ -20,16 +20,16 @@ def setup_llm_context() -> str:
     return build_graph_system_prompt()
 ```
 
-Соглашения потребителя:
-- Без параметров — системный промпт постоянен для use-case-а discover.
-- Передаётся как system= в LLMClient.ask / ask_multi_turn.
-- Запрашивает JSON-объект {source_path: [dependent_paths]} без prose-обёртки.
+Consumer conventions:
+- Takes no parameters — the system prompt is constant for the `discover` use case.
+- Passed as `system=` to `LLMClient.ask` / `ask_multi_turn`.
+- Requests a JSON object `{source_path: [dependent_paths]}` without prose wrapping.
 
 ---
 
-## Первый проход: гипотезы зависимостей
+## First pass: dependency hypotheses
 
-`build_graph_user_prompt` формирует user-сообщение с полным списком эндпоинтов:
+`build_graph_user_prompt` builds the user message with the full list of endpoints:
 
 ```python
 from swax.prompts import build_graph_user_prompt
@@ -39,16 +39,16 @@ def first_pass(endpoints: list[str]) -> str:
     return build_graph_user_prompt(endpoints)
 ```
 
-Соглашения потребителя:
-- `endpoints` — пути API из `extract_paths` (cell `openapi/`), отсортированные.
-- LLM возвращает гипотезы зависимостей и может помечать неуверенные пары для уточняющего прохода.
-- Потребитель парсит JSON защитно (через json.loads с обработкой JSONDecodeError).
+Consumer conventions:
+- `endpoints` — API paths from `extract_paths` (cell `openapi/`), sorted.
+- The LLM returns dependency hypotheses and may flag uncertain pairs for the refinement pass.
+- The consumer parses the JSON defensively (via `json.loads` with `JSONDecodeError` handling).
 
 ---
 
-## Уточняющий проход: схемы для неоднозначных пар
+## Refinement pass: schemas for ambiguous pairs
 
-`build_refine_user_prompt` формирует user-сообщение для второго (multi-turn) хода — со схемами неоднозначных пар:
+`build_refine_user_prompt` builds the user message for the second (multi-turn) turn — with schemas of the ambiguous pairs:
 
 ```python
 from swax.prompts import build_refine_user_prompt
@@ -58,17 +58,17 @@ def refine_pass(ambiguous_pairs: list[str], schemas: dict) -> str:
     return build_refine_user_prompt(ambiguous_pairs, schemas)
 ```
 
-Соглашения потребителя:
-- `ambiguous_pairs` — пары, помеченные LLM как неуверенные в первом проходе (например, "/users -> /orders").
-- `schemas` — словарь схем из `extract_schemas` (cell `openapi/`).
-- Используется в LLMClient.ask_multi_turn — multi-turn context уже несёт первый ход.
-- Выходной JSON-контракт идентичен первому проходу — потребитель переиспользует тот же парсер.
+Consumer conventions:
+- `ambiguous_pairs` — pairs the LLM flagged as uncertain in the first pass (e.g., `"/users -> /orders"`).
+- `schemas` — a dictionary of schemas from `extract_schemas` (cell `openapi/`).
+- Used in `LLMClient.ask_multi_turn` — the multi-turn context already carries the first turn.
+- The output JSON contract is identical to the first pass — the consumer reuses the same parser.
 
 ---
 
-## Полный сценарий двух проходов
+## Full two-pass scenario
 
-use-case `run_discover` собирает все три промпта в один сценарий:
+The `run_discover` use case assembles all three prompts into a single scenario:
 
 ```python
 from swax.prompts import (
@@ -96,4 +96,4 @@ def run_two_pass_analysis(endpoints, ambiguous_pairs, schemas, llm_client):
     return raw_refined
 ```
 
-Потребитель сам управляет маппингом ошибок LLM (LLMCallError, LLMRateLimitedError) и парсингом JSON — это не ответственность cell-а `prompts/`.
+The consumer manages LLM error mapping (`LLMCallError`, `LLMRateLimitedError`) and JSON parsing on its own — this is not the responsibility of the `prompts/` cell.

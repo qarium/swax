@@ -1,22 +1,22 @@
-# CLI facade — точка входа и pass object
+# CLI facade — entry point and pass object
 
-## Предметная область
+## Domain
 
-Шаблоны использования точки входа CLI Swax и pass object SwaxContext. Целевая аудитория: cell-ы `commands/init/` и `commands/discover/` (регистрируются на группе main и читают SwaxContext через @click.pass_obj).
+Usage templates for the Swax CLI entry point and the `SwaxContext` pass object. Target audience: cells `commands/init/` and `commands/discover/` (registered on the `main` group and reading `SwaxContext` via `@click.pass_obj`).
 
-Click — единственный CLI-фреймворк Swax. Группа main верхнего уровня с опцией --env-file загружает окружение перед выполнением любой подкоманды.
+Click is the only CLI framework in Swax. The top-level `main` group with the `--env-file` option loads the environment before any subcommand runs.
 
 ---
 
-## Регистрация подкоманд
+## Subcommand registration
 
-Подкоманды init и discover регистрируются на группе main через main.add_command(). Чтобы избежать циклических импортов между cli/ и commands/, регистрация выполняется лениво в __main__.py ячейки cli/:
+The `init` and `discover` subcommands are registered on the `main` group via `main.add_command()`. To avoid circular imports between `cli/` and `commands/`, registration is performed lazily in the `__main__.py` of the `cli/` cell:
 
 ```python
 # swax/cli/__main__.py
 from swax.cli import main
 
-# Ленивая регистрация — разрывает цикл cli/ <-> commands/
+# Lazy registration — breaks the cli/ <-> commands/ cycle
 from swax.commands.init import init
 from swax.commands.discover import discover
 
@@ -27,16 +27,16 @@ if __name__ == "__main__":
     main()
 ```
 
-Соглашения потребителя:
-- main — это группа Click верхнего уровня, декорированная @click.group.
-- Скрипт точки входа swax указывает на swax.cli.__main__:main в [project.scripts].
-- Команды импортируются только в __main__.py, не в __init__.py — это сохраняет контракт CODEMANIFEST без цикла.
+Consumer conventions:
+- `main` is the top-level Click group, decorated with `@click.group`.
+- The `swax` entry-point script points to `swax.cli.__main__:main` in `[project.scripts]`.
+- Commands are imported only in `__main__.py`, not in `__init__.py` — this keeps the CODEMANIFEST contract cycle-free.
 
 ---
 
-## Использование SwaxContext в подкоманде
+## Using SwaxContext in a subcommand
 
-Подкоманды получают SwaxContext через @click.pass_obj. Контекст несёт env_file; конфигурация проекта подгружается лениво:
+Subcommands receive `SwaxContext` via `@click.pass_obj`. The context carries `env_file`; project configuration is loaded lazily:
 
 ```python
 import click
@@ -47,33 +47,33 @@ from swax.cli import SwaxContext
 @click.command()
 @click.pass_obj
 def my_command(ctx: SwaxContext) -> None:
-    # ctx.env_file — путь к .env, уже загруженному callback-ом main
-    # ctx.config — None по умолчанию; подгрузите через load_config при необходимости
+    # ctx.env_file — path to .env, already loaded by the main group callback
+    # ctx.config — None by default; load it via load_config if needed
     pass
 ```
 
-Соглашения потребителя:
-- env_file — только для чтения после конструирования; уже передан в load_env callback-ом группы.
-- config — опциональный кэш конфигурации. Команда init не использует его (она записывает конфигурацию). Команда discover подгружает конфигурацию через load_config внутри use-case, а не через контекст.
+Consumer conventions:
+- `env_file` is read-only after construction; it has already been passed to `load_env` by the group callback.
+- `config` is an optional configuration cache. The `init` command does not use it (it writes the configuration). The `discover` command loads configuration via `load_config` inside the use case, not through the context.
 
 ---
 
-## Опция --env-file
+## The --env-file option
 
-Конечный пользователь передаёт .env через --env-file:
+The end user passes `.env` via `--env-file`:
 
 ```bash
 swax --env-file .env discover
 swax --env-file /path/to/.env init
 ```
 
-По умолчанию --env-file .env. Переменные окружения, уже заданные в shell, имеют приоритет над файлом (override=False в load_dotenv).
+Default is `--env-file .env`. Environment variables already set in the shell take precedence over the file (`override=False` in `load_dotenv`).
 
 ---
 
-## Тестирование
+## Testing
 
-Тестировать точку входа через CliRunner, передавая mock SwaxContext через obj=:
+Test the entry point via `CliRunner`, passing a mock `SwaxContext` through `obj=`:
 
 ```python
 from pathlib import Path
@@ -91,4 +91,4 @@ def test_main_loads_env(mocker, tmp_path):
     assert mock_load_env.called
 ```
 
-В тестах load_env можно мокать, чтобы избежать реальной записи в os.environ.
+In tests, `load_env` may be mocked to avoid real writes to `os.environ`.
