@@ -34,6 +34,7 @@ def build_llm_client() -> LLMClient:
             "anthropic" nor "openai".
     """
     protocol = os.environ.get("SWAX_LLM_PROTOCOL")
+
     if protocol == "anthropic":
         return AnthropicAdapter(
             client=build_anthropic_client(),

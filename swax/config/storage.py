@@ -23,6 +23,9 @@ def load_config(path: pathlib.Path) -> Config:
     The raw YAML is parsed with yaml.safe_load and validated through
     Config.model_validate, so malformed or schema-violating files raise
     pydantic's ValidationError.
+
+    Returns:
+        The validated Config model.
     """
     raw_text = path.read_text(encoding="utf-8")
     raw = yaml.safe_load(raw_text)
@@ -42,12 +45,14 @@ def save_config(config: Config, path: pathlib.Path) -> None:
     """
     payload = config.model_dump(mode="json")
     path.parent.mkdir(parents=True, exist_ok=True)
+
     yaml_text = yaml.safe_dump(
         payload,
         sort_keys=False,
         allow_unicode=True,
         default_flow_style=False,
     )
+
     path.write_text(yaml_text, encoding="utf-8")
 
 

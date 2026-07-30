@@ -14,7 +14,8 @@ import pathlib
 from typing import Optional
 
 from pydantic import BaseModel, ConfigDict
-from swax.config import Config
+
+from ..config import Config
 
 
 class SwaxContext(BaseModel):

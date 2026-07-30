@@ -26,6 +26,10 @@ class TraceabilityGraph(BaseModel):
 
         Duplicates and self-loops (source == target) are permitted at insert
         time and resolved later by ``deduplicate``.
+
+        Args:
+            source: the path that gains a dependency.
+            target: the path it now depends on.
         """
         self.edges.setdefault(source, []).append(target)
 

@@ -21,11 +21,12 @@ import pathlib
 from typing import TYPE_CHECKING
 
 import click
-from swax.applications import run_init_handler as run_init
-from swax.git import RepositoryCloneError, SpecsNotFoundError
+
+from ...applications import run_init_handler as run_init
+from ...git import RepositoryCloneError, SpecsNotFoundError
 
 if TYPE_CHECKING:
-    from swax.cli import SwaxContext
+    from ...cli import SwaxContext
 
 
 @click.command()
@@ -40,6 +41,7 @@ def init(_ctx: SwaxContext) -> None:
     specs_location = click.prompt("Path to specs inside the repo")
     download_path = pathlib.Path(click.prompt("Local download path"))
     project_root = pathlib.Path.cwd()
+
     try:
         run_init(repo_url, specs_location, download_path, project_root)
     except RepositoryCloneError as exc:

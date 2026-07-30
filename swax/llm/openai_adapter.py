@@ -88,6 +88,7 @@ class OpenAIAdapter:
             LLMCallError: on any other OpenAI API error.
         """
         prepended = [{"role": "system", "content": system}, *messages]
+
         try:
             response = self._client.chat.completions.create(
                 model=self._model,

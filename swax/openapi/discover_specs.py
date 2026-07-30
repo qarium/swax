@@ -29,6 +29,7 @@ def discover_specs(root: pathlib.Path) -> list[pathlib.Path]:
         from parse_spec on the discovered candidates.
     """
     result: list[pathlib.Path] = []
+
     for path in root.rglob("*"):
         if not path.is_file():
             continue
@@ -45,6 +46,7 @@ def discover_specs(root: pathlib.Path) -> list[pathlib.Path]:
             continue
         if isinstance(head, dict) and ("openapi" in head or "swagger" in head):
             result.append(path)
+
     return sorted(result)
 
 

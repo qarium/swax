@@ -12,9 +12,9 @@ click.ClickException.
 import logging
 import pathlib
 
-from swax.config import Config, GitConfig, SpecsConfig, save_config
-from swax.fs import copy_specs, ensure_swax_dir
-from swax.git import clone_specs
+from ...config import Config, GitConfig, SpecsConfig, save_config
+from ...fs import copy_specs, ensure_swax_dir
+from ...git import clone_specs
 
 logger = logging.getLogger(__name__)
 

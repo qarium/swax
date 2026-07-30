@@ -44,16 +44,26 @@ def load_env(env_file: pathlib.Path) -> None:
 def require_vars() -> dict[str, str]:
     """Validate that all mandatory SWAX_* variables are present and non-empty.
 
-    Empty and whitespace-only values count as missing. Returns a name-to-value
-    mapping for caller convenience.
+    Empty and whitespace-only values count as missing.
+
+    Returns:
+        A name-to-value mapping of the mandatory variables for caller
+        convenience.
+
+    Raises:
+        MissingEnvironmentVariablesError: when any mandatory variable is
+            missing or whitespace-only.
     """
     missing: list[str] = []
+
     for name in REQUIRED_VARS:
         value = os.environ.get(name)
         if not value or not value.strip():
             missing.append(name)
+
     if missing:
         raise MissingEnvironmentVariablesError(missing=missing)
+
     return {name: os.environ[name] for name in REQUIRED_VARS}
 
 
@@ -63,7 +73,12 @@ def parse_protocol(value: str) -> str:
     Args:
         value: raw value from the environment.
 
-    Values outside ("anthropic", "openai") raise InvalidLLMProtocolError.
+    Returns:
+        The validated protocol value when it is one of the supported providers.
+
+    Raises:
+        InvalidLLMProtocolError: when the value is outside
+            ("anthropic", "openai").
     """
     if value not in ALLOWED_PROTOCOLS:
         raise InvalidLLMProtocolError(value=value, allowed=ALLOWED_PROTOCOLS)
@@ -76,8 +91,12 @@ def parse_base_url(value: str) -> str:
     Args:
         value: raw value from the environment.
 
-    A trailing slash is stripped before the version check. URLs ending with
-    /v1 or /v2 raise InvalidLLMBaseURLError.
+    Returns:
+        The base URL with any trailing slash removed.
+
+    Raises:
+        InvalidLLMBaseURLError: when the URL ends with /v1 or /v2. A trailing
+            slash is stripped before the version check.
     """
     stripped = value.rstrip("/")
     if stripped.endswith(("/v1", "/v2")):

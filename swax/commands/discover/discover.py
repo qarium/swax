@@ -23,18 +23,19 @@ import pathlib
 from typing import TYPE_CHECKING
 
 import click
-from swax.applications import run_discover_handler as run_discover
-from swax.config import MissingEnvironmentVariablesError
-from swax.llm import (
+
+from ...applications import run_discover_handler as run_discover
+from ...config import MissingEnvironmentVariablesError
+from ...llm import (
     LLMCallError,
     LLMRateLimitedError,
     LLMResponseParseError,
     UnsupportedLLMProtocolError,
 )
-from swax.openapi import SpecParseError
+from ...openapi import SpecParseError
 
 if TYPE_CHECKING:
-    from swax.cli import SwaxContext
+    from ...cli import SwaxContext
 
 
 @click.command()
@@ -46,6 +47,7 @@ def discover(_ctx: SwaxContext) -> None:
     discover reads its inputs from ``.swax/config.yml`` and the environment.
     """
     project_root = pathlib.Path.cwd()
+
     try:
         run_discover(project_root)
     except MissingEnvironmentVariablesError as exc:

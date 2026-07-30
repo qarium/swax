@@ -10,7 +10,8 @@ SDK appends the version path itself.
 import os
 
 from anthropic import Anthropic
-from swax.config import require_vars
+
+from ..config import require_vars
 
 
 def build_anthropic_client() -> Anthropic:

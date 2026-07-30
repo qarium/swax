@@ -10,7 +10,8 @@ SDK appends the version path itself.
 import os
 
 from openai import OpenAI
-from swax.config import require_vars
+
+from ..config import require_vars
 
 
 def build_openai_client() -> OpenAI:

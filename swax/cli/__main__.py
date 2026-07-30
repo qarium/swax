@@ -8,8 +8,8 @@ cli cell for type hints, so the cli cell must not import the commands cell at
 package import time.
 """
 
-from swax.cli.main import main
-from swax.commands import discover_handler, init_handler
+from ..commands import discover_handler, init_handler
+from .main import main
 
 main.add_command(discover_handler, name="discover")
 main.add_command(init_handler, name="init")

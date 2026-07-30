@@ -24,7 +24,7 @@ dependencies = [
     "pydantic>=2.0",
     "pyyaml>=6.0",
     "gitpython>=3.1",
-    "prance>=23.0",
+    "prance>=23.0,<24",  # <24: Prance 24+ changed RefResolver recursion handling for mutually-recursive schemas; 23.x is the tested behavior (see test_parse_spec_handles_mutually_recursive_schemas).
     "openapi-spec-validator>=0.5",
     "anthropic>=0.40",
     "openai>=1.50",
@@ -39,6 +39,7 @@ test = [
     "pytest>=8.0",
     "pytest-cov>=5.0",
     "pytest-mock>=3.10",
+    "httpx>=0.28",
     "ruff>=0.15.0",
 ]
 docs = [

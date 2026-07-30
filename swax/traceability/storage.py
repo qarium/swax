@@ -24,16 +24,23 @@ def load_traceability(path: pathlib.Path) -> TraceabilityGraph:
     An empty or missing file yields an empty graph, not an error. Each
     adjacency value is normalized to a list: a list value is copied, any other
     (scalar) value is wrapped as a single-element list.
+
+    Returns:
+        The deserialized TraceabilityGraph.
     """
     raw_text = path.read_text(encoding="utf-8") if path.exists() else ""
     data = yaml.safe_load(raw_text) or {}
+
     if not isinstance(data, dict):
         # A non-mapping payload (e.g. a bare scalar in a corrupt file) is treated
         # like an empty/missing file rather than crashing on .items() below.
         data = {}
+
     normalized: dict[str, list[str]] = {}
+
     for key, value in data.items():
         normalized[key] = list(value) if isinstance(value, list) else [value]
+
     return TraceabilityGraph(edges=normalized)
 
 
@@ -53,12 +60,14 @@ def save_traceability(graph: TraceabilityGraph, path: pathlib.Path) -> None:
     payload = graph.model_dump(mode="json")
     ordered = {key: sorted(value) for key, value in sorted(payload["edges"].items())}
     path.parent.mkdir(parents=True, exist_ok=True)
+
     yaml_text = yaml.safe_dump(
         ordered,
         sort_keys=False,
         allow_unicode=True,
         default_flow_style=False,
     )
+
     path.write_text(yaml_text, encoding="utf-8")
 
 

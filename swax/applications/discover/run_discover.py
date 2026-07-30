@@ -25,15 +25,15 @@ import json
 import logging
 import pathlib
 
-from swax.config import Config, load_config, require_vars
-from swax.llm import LLMClient, LLMResponseParseError, build_llm_client
-from swax.openapi import discover_specs, extract_paths, extract_schemas, parse_spec
-from swax.prompts import (
+from ...config import Config, load_config, require_vars
+from ...llm import LLMClient, LLMResponseParseError, build_llm_client
+from ...openapi import discover_specs, extract_paths, extract_schemas, parse_spec
+from ...prompts import (
     build_graph_system_prompt,
     build_graph_user_prompt,
     build_refine_user_prompt,
 )
-from swax.traceability import TraceabilityGraph, save_traceability
+from ...traceability import TraceabilityGraph, save_traceability
 
 logger = logging.getLogger(__name__)
 
@@ -48,8 +48,10 @@ def _strip_prose_and_fences(raw: str) -> str:
     """
     first_brace = raw.find("{")
     last_brace = raw.rfind("}")
+
     if first_brace == -1 or last_brace == -1 or first_brace > last_brace:
         return raw
+
     return raw[first_brace : last_brace + 1]
 
 
@@ -65,6 +67,7 @@ def _validate_dependency_shape(d: object) -> None:
             reason="shape mismatch: expected dict[str, list[str]]",
             excerpt=str(d)[:_EXCERPT_LENGTH],
         )
+
     for value in d.values():
         if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
             raise LLMResponseParseError(
@@ -98,9 +101,11 @@ def _merge_dependencies(
         Merged dependency map covering the full endpoint universe.
     """
     merged: dict[str, list[str]] = {}
+
     for source, targets in first.items():
         if source in allowed_nodes:
             merged[source] = [t for t in targets if t in allowed_nodes]
+
     for source, targets in refined.items():
         if source not in allowed_nodes:
             continue
@@ -109,8 +114,10 @@ def _merge_dependencies(
             merged[source] = cleaned
         elif source not in merged:
             merged[source] = []
+
     for endpoint in allowed_nodes:
         merged.setdefault(endpoint, [])
+
     return merged
 
 
@@ -132,12 +139,15 @@ def _parse_llm_json(raw: str, *, first_pass: bool) -> tuple[dict[str, list[str]]
             has the wrong keys (first pass), or fails the shape validation.
     """
     stripped = _strip_prose_and_fences(raw)
+
     try:
         parsed = json.loads(stripped)
     except json.JSONDecodeError as exc:
         raise LLMResponseParseError(reason=str(exc), excerpt=stripped[:_EXCERPT_LENGTH]) from exc
+
     if not isinstance(parsed, dict):
         raise LLMResponseParseError(reason="not a dict", excerpt=stripped[:_EXCERPT_LENGTH])
+
     if first_pass:
         if set(parsed.keys()) != {"dependencies", "uncertain"}:
             raise LLMResponseParseError(
@@ -153,9 +163,12 @@ def _parse_llm_json(raw: str, *, first_pass: bool) -> tuple[dict[str, list[str]]
                 excerpt=stripped[:_EXCERPT_LENGTH],
             )
         return dependencies, uncertain
+
     if set(parsed.keys()) == {"dependencies"} and isinstance(parsed["dependencies"], dict):
         parsed = parsed["dependencies"]
+
     _validate_dependency_shape(parsed)
+
     return parsed, []
 
 
@@ -187,6 +200,7 @@ def run_discover(project_root: pathlib.Path) -> None:
 
     endpoints: list[str] = []
     schemas: dict = {}
+
     for spec_path in spec_files:
         spec = parse_spec(spec_path)
         endpoints.extend(extract_paths(spec))
@@ -217,12 +231,14 @@ def run_discover(project_root: pathlib.Path) -> None:
     )
 
     graph = TraceabilityGraph(edges={})
+
     for source, targets in merged.items():
         # setdefault first so endpoints with no outgoing edges still appear as
         # graph nodes — the merged map covers the full endpoint universe.
         graph.edges.setdefault(source, [])
         for target in targets:
             graph.add_edge(source=source, target=target)
+
     graph.deduplicate()
     save_traceability(graph, project_root / ".swax" / "traceability.yml")
 

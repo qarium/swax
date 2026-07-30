@@ -13,8 +13,8 @@ from __future__ import annotations
 import pathlib
 
 import click
-from swax.config import load_env
 
+from ..config import load_env
 from .swax_context import SwaxContext
 
 
