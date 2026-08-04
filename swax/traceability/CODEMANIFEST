@@ -89,9 +89,40 @@ Annotations: |
     - Output is stable across runs — deterministic order of keys and values.
     - Sorting is done in Python, not deferred to the YAML serializer.
 
+"find_affected_endpoints(changed_paths: list[str], graph: TraceabilityGraph) -> affected: list[str]":
+  location: find_affected_endpoints.py
+  annotations: |
+    Finds all endpoints transitively affected by a set of changed endpoints via the traceability graph.
+
+    `changed_paths`: endpoints that changed directly (the directly-changed set supplied by the caller).
+    `graph`: the loaded traceability graph.
+    `affected`: the changed endpoints plus every endpoint that transitively depends on them, sorted and deduplicated.
+
+    Algorithm:
+    1. Treat graph edges as source -> targets-it-depends-on (source depends on target);
+       a node's dependents are the nodes whose adjacency list contains it.
+    2. For each changed path, collect it and every node that transitively reaches it (reverse reachability).
+    3. Merge, deduplicate, sort.
+
+    Requirements:
+    - Returns the complete affected set — no internal cap.
+    - Changed paths not present as graph nodes are still returned.
+
+    Constraints:
+    - Read-only — does not mutate the graph.
+    - Does not import from the openapi cell; accepts plain path strings so the cell stays dependency-free.
+
+"TraceabilityGraphMissingError(path: pathlib.Path)":
+  location: errors.py
+  annotations: |
+    Raised when the traceability graph file does not exist — the project has not run discover yet.
+
+    `path`: expected path to .swax/traceability.yml.
+
 ---
 
 Author: Goga
 CreatedAt: 25/06/26
 Description: |
-  Traceability graph model and YAML persistence (paths-only, deterministic serialization).
+  Traceability graph model, YAML persistence (paths-only, deterministic serialization),
+  graph traversal for transitively-affected endpoints, and the missing-graph domain error.

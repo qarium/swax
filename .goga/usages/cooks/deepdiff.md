@@ -39,13 +39,15 @@ def diff_specs(base: dict, current: dict) -> DeepDiff:
 ```python
 result = diff_specs(base_spec, current_spec)
 
-result.keys_added         # new keys (e.g. new path, new schema field)
-result.keys_removed       # removed keys
-result.values_changed     # modified values
-result.type_changes       # changed types
+result["dictionary_item_added"]         # new dict keys (e.g. new path, new schema field)
+result["dictionary_item_removed"]       # removed dict keys
+result.values_changed     # modified values (dict keyed by path)
+result.type_changes       # changed types (dict keyed by path)
 result.set_item_added     # new items in sets
 result.set_item_removed   # removed items
 ```
+
+`dictionary_item_added` / `dictionary_item_removed` are ordered sets of path strings (iterating yields path strings); `values_changed` / `type_changes` are dicts keyed by path string. There is **no** `keys_added` / `keys_removed` category in deepdiff 8.x/9.x — use `dictionary_item_added` / `dictionary_item_removed`.
 
 Each entry references the path within the structure (e.g. `root['paths']['/users']['get']['responses']['200']`).
 
@@ -61,11 +63,11 @@ def classify_endpoint_changes(diff_result: DeepDiff) -> EndpointDiff:
     removed: list[str] = []
     modified: dict[str, list[str]] = {}
 
-    for key in diff_result.get("keys_added", []) or []:
+    for key in diff_result.get("dictionary_item_added", []) or []:
         if (path := _extract_path_key(key)) and path.startswith("paths['"):
             added.append(_endpoint_from_path(path))
 
-    for key in diff_result.get("keys_removed", []) or []:
+    for key in diff_result.get("dictionary_item_removed", []) or []:
         if (path := _extract_path_key(key)) and path.startswith("paths['"):
             removed.append(_endpoint_from_path(path))
 

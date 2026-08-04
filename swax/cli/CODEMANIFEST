@@ -14,7 +14,7 @@ Usages:
 
 Annotations: |
   CLI entry point. The top-level Click group loads the environment and initializes a
-  `SwaxContext` for subcommands. Subcommands init and discover are registered lazily
+  `SwaxContext` for subcommands. Subcommands init, discover, and plan are registered lazily
   to keep the CODEMANIFEST contract acyclic (commands import from cli, not the reverse).
   Main and `SwaxContext` are exported as the cell's public API.
 
@@ -42,7 +42,7 @@ Annotations: |
 
     Requirements:
     - Registered as swax = "swax.cli.__main__:main" in [project.scripts].
-    - Subcommands init and discover are registered in __main__.py, not in this callback.
+    - Subcommands init, discover, and plan are registered in __main__.py, not in this callback.
 
     Constraints:
     - Do not raise on missing .env — `load_env` handles it.

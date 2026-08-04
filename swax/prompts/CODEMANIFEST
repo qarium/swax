@@ -2,7 +2,8 @@ Usages:
   conventions: .goga/usages/conventions.md
 
 Annotations: |
-  LLM prompt builders for the two-pass traceability graph construction.
+  LLM prompt builders for the traceability graph construction (two-pass) and the
+  change-impact report (single-turn) scenarios.
 
   Every routine returns a fully-formed prompt string ready for LLMClient.ask / ask_multi_turn.
   Prompts request structured JSON output; the consumer parses the response defensively.
@@ -78,9 +79,50 @@ Annotations: |
     - Do not re-list all endpoints — the multi-turn context already carries them.
     - Forbid introducing paths outside the provided endpoint universe.
 
+"build_impact_report_system_prompt() -> prompt: str":
+  location: build_impact_report_system_prompt.py
+  annotations: |
+    Builds the system prompt that instructs the LLM to act as an API change impact analyst.
+
+    `prompt`: the system message for the single-turn LLMClient.ask call in run_plan.
+
+    Requirements:
+    - Defines the LLM role: assess the testing impact of API endpoint changes.
+    - Mandates the output contract: JSON with summary, risk, modified, affected, requirements, checklist.
+    - Fixes allowed risk values to HIGH, MEDIUM, LOW.
+    - Forbids prose around JSON — the response must be parseable as JSON.
+
+    Constraints:
+    - No parameters — the system prompt is constant for the plan use-case.
+    - No endpoint data or graph — those go into the user prompt.
+    - Never embed filesystem paths, tokens, or secrets.
+
+"build_impact_report_user_prompt(added: list[str], removed: list[str], modified: dict[str, list[str]], affected: list[str], graph_context: dict[str, list[str]]) -> prompt: str":
+  location: build_impact_report_user_prompt.py
+  annotations: |
+    Builds the user prompt: structured change context plus affected endpoints and the relevant graph portion.
+
+    `added`/`removed`: endpoint path lists. `modified`: path -> change descriptions.
+    `affected`: transitively affected endpoints. `graph_context`: relevant graph edges (path -> dependencies), sliced from the traceability graph for the affected paths.
+    `prompt`: the user message for LLMClient.ask.
+
+    Algorithm:
+    1. Render `added`/`removed`/`affected` as JSON arrays.
+    2. Render `modified`/`graph_context` as JSON objects.
+    3. Instruct the LLM to return the Impact Report JSON contract from the system prompt.
+
+    Requirements:
+    - Output format matches the parser in run_plan.
+    - Endpoint order follows the sorted order supplied by the caller.
+
+    Constraints:
+    - Do not truncate silently — the caller trims before calling if the context is large.
+    - Never embed filesystem paths, tokens, or secrets.
+
 ---
 
 Author: Goga
 CreatedAt: 25/06/26
 Description: |
-  LLM prompt builders for the two-pass traceability graph construction scenario.
+  LLM prompt builders for the two-pass traceability graph construction scenario and
+  the single-turn change-impact report scenario.

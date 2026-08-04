@@ -1,0 +1,171 @@
+Imports:
+  - Types:
+      - load_config
+      - require_vars
+      - Config
+    Usages:
+      - project-config
+      - environment
+    From: swax/config
+  - Types:
+      - clone_specs
+      - RepositoryCloneError
+      - SpecsNotFoundError
+    Usages:
+      - specs-repository
+    From: swax/git
+  - Types:
+      - discover_specs
+      - parse_spec
+      - diff_specs
+      - classify_endpoint_changes
+      - EndpointDiff
+    Usages:
+      - parsing
+      - diff
+    From: swax/openapi
+  - Types:
+      - load_traceability
+      - TraceabilityGraph
+      - find_affected_endpoints
+      - TraceabilityGraphMissingError
+    Usages:
+      - graph-lifecycle
+      - affected-endpoints
+    From: swax/traceability
+  - Types:
+      - build_impact_report_system_prompt
+      - build_impact_report_user_prompt
+    Usages:
+      - impact-report-prompts
+    From: swax/prompts
+  - Types:
+      - build_llm_client
+      - LLMClient
+      - LLMCallError
+      - LLMRateLimitedError
+      - LLMResponseParseError
+    Usages:
+      - llm-transport
+    From: swax/llm
+
+Usages:
+  conventions: .goga/usages/conventions.md
+  json: |
+    Python stdlib json module. Use json.loads for parsing LLM responses and
+    catch json.JSONDecodeError to wrap into a domain error. Defensive parsing only —
+    never trust LLM output structure without schema validation.
+
+Annotations: |
+  Application-layer use-case: generate an Impact Report by diffing baseline vs fresh specs,
+  mapping changes onto the traceability graph, and asking the LLM once.
+  The graph stores paths only; the diff sees methods/schemas for analysis but the report
+  carries paths with change descriptions. Domain exceptions propagate uncaught — the CLI
+  handler maps them: `RepositoryCloneError` and `SpecsNotFoundError` from `clone_specs`,
+  and `LLMCallError`, `LLMRateLimitedError`, `LLMResponseParseError` from the LLM call.
+  `TraceabilityGraphMissingError` is raised when .swax/traceability.yml is absent (hint: run discover).
+  Logs INFO at start/end, DEBUG for intermediate steps; SWAX_LLM_TOKEN never in logs.
+
+  LLM responses are parsed defensively (provider-agnostic):
+  - Strip prose/code fences around the JSON payload before parsing.
+  - json.JSONDecodeError is wrapped into `LLMResponseParseError` with a raw payload excerpt.
+  - The parsed shape is validated against the Impact Report contract; mismatch -> `LLMResponseParseError`.
+  - The risk field is validated against {HIGH, MEDIUM, LOW}; an invalid value falls back to MEDIUM (WARNING log).
+
+  Use `conventions` for code writing rules and testing.
+  Use `project-config` for `load_config` and the `Config` shape.
+  Use `environment` for `require_vars`.
+  Use `specs-repository` for `clone_specs` and its errors (`RepositoryCloneError`, `SpecsNotFoundError`).
+  Use `parsing` for `discover_specs` and `parse_spec`.
+  Use `diff` for `diff_specs`, `classify_endpoint_changes`, and `EndpointDiff`.
+  Use `graph-lifecycle` for `load_traceability` and `TraceabilityGraph`.
+  Use `affected-endpoints` for `find_affected_endpoints` and `TraceabilityGraphMissingError`.
+  Use `impact-report-prompts` for prompt assembly.
+  Use `llm-transport` for `build_llm_client`, `LLMClient`, and `LLMResponseParseError`.
+  Use `json` for defensive parsing of the LLM JSON response.
+
+---
+
+"run_plan(project_root: pathlib.Path) -> markdown: str":
+  location: run_plan.py
+  annotations: |
+    Use-case "plan": analyze differences between baseline and fresh specifications and produce an Impact Report.
+
+    `project_root`: root of the Swax project — .swax/config.yml describes specs/repo, .swax/traceability.yml is read.
+    `markdown`: the Impact Report rendered as Markdown for stdout.
+
+    Algorithm:
+    1. Validate LLM credentials via `require_vars`.
+    2. Read `Config` via `load_config` — repo URL, specs location, local baseline root.
+    3. Load the traceability graph via `load_traceability`; if the file is absent, raise `TraceabilityGraphMissingError`.
+    4. Clone the repository via `clone_specs` (context manager) and parse the fresh specs (`discover_specs` + `parse_spec`).
+    5. Parse the baseline specs from the local root (`discover_specs` + `parse_spec`).
+    6. For each matching spec file pair, compute `diff_specs` then `classify_endpoint_changes`; merge into one `EndpointDiff`.
+    7. If `EndpointDiff` reports no changes (has_changes() returns false), build a no-change `ImpactReport` (summary "No changes detected", risk LOW) and skip the LLM.
+    8. Otherwise map the changed paths onto the graph via `find_affected_endpoints` and extract the relevant graph context.
+       If the affected set or graph context exceeds a reasonable threshold, trim to the most relevant entries
+       (changed paths first, then nearest dependents) and log a WARNING that the LLM context was truncated —
+       honoring the `build_impact_report_user_prompt` contract that the caller trims. Then build the system
+       prompt via `build_impact_report_system_prompt` and the user prompt via `build_impact_report_user_prompt`.
+    9. Call `LLMClient` once to ask for the report, defensively parse JSON into an `ImpactReport`, validate risk (fallback MEDIUM).
+    10. Render via `render_impact_report` and return the Markdown.
+
+    Requirements:
+    - The repository clone is cleaned up on every outcome (clone_specs context manager).
+    - Baseline and fresh specs are matched by relative path.
+    - Risk is constrained to {HIGH, MEDIUM, LOW} with a MEDIUM fallback.
+    - SWAX_LLM_TOKEN never appears in logs or the returned Markdown.
+
+    Constraints:
+    - Do not catch `LLMCallError` / `LLMRateLimitedError` / `LLMResponseParseError` — let them propagate.
+    - Do not store schemas or methods as separate report paths — paths with change descriptions only.
+    - Do not print to stdout — return the Markdown; the CLI handler echoes it.
+
+"ImpactReport(summary: str, risk: str, modified: list[str], affected: list[str], requirements: list[str], checklist: list[str])":
+  location: impact_report.py
+  annotations: |
+    Structured LLM output for the Impact Report.
+
+    `summary`: one-line human-readable summary of the change impact.
+    `risk`: overall risk level — HIGH, MEDIUM, or LOW (validated by `run_plan`).
+    `modified`: endpoint paths that changed.
+    `affected`: endpoint paths transitively affected via the graph.
+    `requirements`: testing requirements derived from the changes.
+    `checklist`: actionable verification checklist items.
+  properties:
+    "summary -> str": |
+      One-line human-readable summary of the change impact.
+    "risk -> str": |
+      Overall risk level — HIGH, MEDIUM, or LOW (validated by `run_plan`).
+    "modified -> list[str]": |
+      Endpoint paths that changed.
+    "affected -> list[str]": |
+      Endpoint paths transitively affected via the graph.
+    "requirements -> list[str]": |
+      Testing requirements derived from the changes.
+    "checklist -> list[str]": |
+      Actionable verification checklist items.
+
+"render_impact_report(report: ImpactReport) -> markdown: str":
+  location: render_impact_report.py
+  annotations: |
+    Renders an `ImpactReport` into the Markdown template for stdout.
+
+    `report`: the impact report model (LLM-generated or the no-change placeholder).
+    `markdown`: the report as Markdown following the template (Summary, Risk, Modified, Affected, Requirements, Checklist).
+
+    Requirements:
+    - Follows the report template from the product spec.
+    - Renders the no-change report ("No changes detected", LOW) identically to any other report.
+
+    Constraints:
+    - Pure transformation — no I/O, no LLM calls.
+    - Do not synthesize content not present in `report`.
+
+---
+
+Author: Goga
+CreatedAt: 30/07/26
+Description: |
+  Application-layer use-case for change-impact analysis: diff baseline vs fresh specs,
+  map changes onto the traceability graph, and generate a Markdown Impact Report via a single LLM call.
