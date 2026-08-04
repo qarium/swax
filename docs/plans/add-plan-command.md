@@ -501,17 +501,17 @@ Constraint: read-only (не мутирует `graph.edges`); не импорти
 
 **CRITICAL: `CODEMANIFEST` — read-only контракт. Не модифицировать.**
 
-- [ ] **Contract tests** (`tests/traceability/test_affected_and_error_contract.py`):
+- [x] **Contract tests** (`tests/traceability/test_affected_and_error_contract.py`):
       `from swax.traceability import find_affected_endpoints, TraceabilityGraphMissingError`
       успешен; сигнатуры через `inspect` соответствуют; ошибка конструируется через
       `TraceabilityGraphMissingError(path=...)` и хранит `.path`.
-- [ ] **Code**: создать `swax/traceability/errors.py`
+- [x] **Code**: создать `swax/traceability/errors.py`
       (`TraceabilityGraphMissingError`, keyword-only `__init__(self, *, path)`,
       `__all__ = ["TraceabilityGraphMissingError"]`); `swax/traceability/find_affected_endpoints.py`
       (routine по алгоритму выше, `from .traceability_graph import TraceabilityGraph`,
       `__all__ = ["find_affected_endpoints"]`).
-- [ ] **Interface verification**: `pytest tests/traceability/test_affected_and_error_contract.py -v`
-- [ ] **Logic tests** (`tests/traceability/test_affected_and_error_logic.py`) — verbatim из design-doc:
+- [x] **Interface verification**: `pytest tests/traceability/test_affected_and_error_contract.py -v`
+- [x] **Logic tests** (`tests/traceability/test_affected_and_error_logic.py`) — verbatim из design-doc:
       - `test_find_affected_endpoints_reverse_reachability`:
         `TraceabilityGraph(edges={"/a": ["/b"], "/b": ["/c"], "/d": ["/c"]})`;
         `find_affected_endpoints(["/c"], graph) == ["/a", "/b", "/c", "/d"]`.
@@ -520,16 +520,16 @@ Constraint: read-only (не мутирует `graph.edges`); не импорти
         `find_affected_endpoints(["/zzz"], graph) == ["/zzz"]`.
       - Доп.: `TraceabilityGraphMissingError(path=Path("x")).path == Path("x")`;
         read-only — `find_affected_endpoints` не меняет `graph.edges` после вызова.
-- [ ] **Debugging**: `pytest tests/traceability/ -v`
-- [ ] **Contract re-verification**: read-only; cell остаётся без cross-cell imports;
+- [x] **Debugging**: `pytest tests/traceability/ -v`
+- [x] **Contract re-verification**: read-only; cell остаётся без cross-cell imports;
       полный affected-set без cap.
-- [ ] **Facade**: в `swax/traceability/__init__.py` добавить импорты
+- [x] **Facade**: в `swax/traceability/__init__.py` добавить импорты
       `from .errors import TraceabilityGraphMissingError`,
       `from .find_affected_endpoints import find_affected_endpoints` и расширить
       `__all__` (теперь 5 имён: `TraceabilityGraph`, `load_traceability`,
       `save_traceability`, `find_affected_endpoints`, `TraceabilityGraphMissingError`).
-- [ ] Verify facade: `python -c "from swax.traceability import find_affected_endpoints, TraceabilityGraphMissingError"`
-- [ ] Lint: `ruff check swax/traceability tests/traceability`
+- [x] Verify facade: `python -c "from swax.traceability import find_affected_endpoints, TraceabilityGraphMissingError"`
+- [x] Lint: `ruff check swax/traceability tests/traceability`
 
 ---
 
