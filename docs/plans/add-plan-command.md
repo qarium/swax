@@ -571,15 +571,15 @@ Constraint: без silent truncation (caller триммит); без paths/token
 
 **CRITICAL: `CODEMANIFEST` — read-only контракт. Не модифицировать.**
 
-- [ ] **Contract tests** (`tests/prompts/test_impact_report_prompts_contract.py`):
+- [x] **Contract tests** (`tests/prompts/test_impact_report_prompts_contract.py`):
       `from swax.prompts import build_impact_report_system_prompt, build_impact_report_user_prompt`
       успешен; `build_impact_report_system_prompt()` — без параметров; сигнатура
       user-prompt через `inspect` соответствует 5 параметрам.
-- [ ] **Code**: создать `swax/prompts/build_impact_report_system_prompt.py` и
+- [x] **Code**: создать `swax/prompts/build_impact_report_system_prompt.py` и
       `swax/prompts/build_impact_report_user_prompt.py` (последний — `import json`,
       рендер пяти блоков). Каждый модуль — `__all__` + docstring.
-- [ ] **Interface verification**: `pytest tests/prompts/test_impact_report_prompts_contract.py -v`
-- [ ] **Logic tests** (`tests/prompts/test_impact_report_prompts_logic.py`):
+- [x] **Interface verification**: `pytest tests/prompts/test_impact_report_prompts_contract.py -v`
+- [x] **Logic tests** (`tests/prompts/test_impact_report_prompts_logic.py`):
       - system prompt содержит маркеры контракта: "impact analyst", "summary",
         "risk", "modified", "affected", "requirements", "checklist", "HIGH",
         "MEDIUM", "LOW", и запрет prose ("JSON only" или "no prose").
@@ -589,15 +589,15 @@ Constraint: без silent truncation (caller триммит); без paths/token
         `modified`/`graph_context`.
       - negative: в выводе нет маркеров secrets/paths beyond переданных данных
         (напр., нет `SWAX_LLM_TOKEN`).
-- [ ] **Debugging**: `pytest tests/prompts/ -v`
-- [ ] **Contract re-verification**: нет filesystem paths/tokens/secrets сверх
+- [x] **Debugging**: `pytest tests/prompts/ -v`
+- [x] **Contract re-verification**: нет filesystem paths/tokens/secrets сверх
       переданных аргументов; без silent truncation.
-- [ ] **Facade**: в `swax/prompts/__init__.py` добавить импорты
+- [x] **Facade**: в `swax/prompts/__init__.py` добавить импорты
       `from .build_impact_report_system_prompt import build_impact_report_system_prompt`,
       `from .build_impact_report_user_prompt import build_impact_report_user_prompt`
       и расширить `__all__` (теперь 5 имён).
-- [ ] Verify facade: `python -c "from swax.prompts import build_impact_report_system_prompt, build_impact_report_user_prompt"`
-- [ ] Lint: `ruff check swax/prompts tests/prompts`
+- [x] Verify facade: `python -c "from swax.prompts import build_impact_report_system_prompt, build_impact_report_user_prompt"`
+- [x] Lint: `ruff check swax/prompts tests/prompts`
 
 ---
 
