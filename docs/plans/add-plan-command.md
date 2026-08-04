@@ -635,28 +635,28 @@ Edge case: no-change report рендерится идентично любому
 
 **CRITICAL: `CODEMANIFEST` — read-only контракт. Не модифицировать.**
 
-- [ ] **Contract tests** (`tests/applications/plan/test_models_and_render_contract.py`):
+- [x] **Contract tests** (`tests/applications/plan/test_models_and_render_contract.py`):
       `from swax.applications.plan.impact_report import ImpactReport` и
       `from swax.applications.plan.render_impact_report import render_impact_report`
       успешны; `ImpactReport` `kw_only` (`TypeError` на позиционные); `render_impact_report`
       принимает `ImpactReport` и возвращает `str`.
-- [ ] **Code**: создать `swax/applications/plan/__init__.py` (пока НЕ экспортирует
+- [x] **Code**: создать `swax/applications/plan/__init__.py` (пока НЕ экспортирует
       `run_plan` — он появится в Task 6; на этом шаге допустим пустой `__all__ = []`
       либо временно не трогать, если клетка ещё не импортируется; создать каталог с
       `__init__.py`), `swax/applications/plan/impact_report.py` (pydantic-модель),
       `swax/applications/plan/render_impact_report.py` (чистая трансформация).
-- [ ] **Interface verification**: `pytest tests/applications/plan/test_models_and_render_contract.py -v`
-- [ ] **Logic tests** (`tests/applications/plan/test_models_and_render_logic.py`) — verbatim
+- [x] **Interface verification**: `pytest tests/applications/plan/test_models_and_render_contract.py -v`
+- [x] **Logic tests** (`tests/applications/plan/test_models_and_render_logic.py`) — verbatim
       design-doc edge-case test `test_render_impact_report_no_change_renders_consistently`:
       `ImpactReport(summary="No changes detected", risk="LOW", modified=[], affected=[], requirements=[], checklist=[])`;
       `md = render_impact_report(report)`; assert `"No changes detected" in md`,
       `"LOW" in md`, `"(none)" in md` (пустые секции рендерятся явно).
       Доп.: непустой report — каждая секция содержит bullet-список; `checklist` →
       `- [ ]`-элементы; deterministic (повторный вызов → идентичная строка с trailing newline).
-- [ ] **Debugging**: `pytest tests/applications/plan/ -v`
-- [ ] **Contract re-verification**: pure (нет I/O/LLM); нет синтезированного
+- [x] **Debugging**: `pytest tests/applications/plan/ -v`
+- [x] **Contract re-verification**: pure (нет I/O/LLM); нет синтезированного
       контента; `kw_only=True`.
-- [ ] **Lint**: `ruff check swax/applications/plan tests/applications/plan`
+- [x] **Lint**: `ruff check swax/applications/plan tests/applications/plan`
 
 ---
 
