@@ -421,17 +421,17 @@ changed_paths():
 
 **CRITICAL: `CODEMANIFEST` — read-only контракт. Не модифицировать.**
 
-- [ ] **Contract tests** (`tests/openapi/test_diff_contract.py`):
+- [x] **Contract tests** (`tests/openapi/test_diff_contract.py`):
       `from swax.openapi import diff_specs, classify_endpoint_changes` успешен;
       сигнатуры через `inspect` соответствуют контракту
       (`diff_specs(base, current)`, `classify_endpoint_changes(diff)`);
       `diff_specs(...)` возвращает объект с типом `deepdiff.DeepDiff`.
-- [ ] **Code**: создать `swax/openapi/diff_specs.py` (одна routine, `from deepdiff import DeepDiff`,
+- [x] **Code**: создать `swax/openapi/diff_specs.py` (одна routine, `from deepdiff import DeepDiff`,
       `__all__ = ["diff_specs"]`); `swax/openapi/classify_endpoint_changes.py`
       (routine + приватные helper-ы `_extract_endpoint` / `_describe_change`,
       `from .endpoint_diff import EndpointDiff`, `__all__ = ["classify_endpoint_changes"]`).
-- [ ] **Interface verification**: `pytest tests/openapi/test_diff_contract.py -v`
-- [ ] **Logic tests** (`tests/openapi/test_diff_logic.py`) — verbatim из design-doc:
+- [x] **Interface verification**: `pytest tests/openapi/test_diff_contract.py -v`
+- [x] **Logic tests** (`tests/openapi/test_diff_logic.py`) — verbatim из design-doc:
       - `test_diff_specs_detects_added_endpoint` (positive):
         `base = {"paths": {"/users": {}}}`, `current = {"paths": {"/users": {}, "/orders": {}}}`;
         `changes = classify_endpoint_changes(diff_specs(base, current))`;
@@ -445,17 +445,17 @@ changed_paths():
       - Доп. негативные: removed endpoint (`base` содержит `/old`, `current` — нет) →
         `changes.removed == ["/old"]`; modified value under `paths` → попадает в
         `modified[ep]`; identical specs → `has_changes() is False`.
-- [ ] **Debugging**: `pytest tests/openapi/ -v`
-- [ ] **Contract re-verification**: используются **только** реальные deepdiff-категории
+- [x] **Debugging**: `pytest tests/openapi/ -v`
+- [x] **Contract re-verification**: используются **только** реальные deepdiff-категории
       (`dictionary_item_added`/`_removed`/`values_changed`/`type_changes`); `added`/`removed`/`modified`
       отсортированы для детерминизма; пути под `components`/`definitions` не эмитятся как endpoints.
-- [ ] **Facade**: в `swax/openapi/__init__.py` добавить импорты `from .diff_specs import diff_specs`,
+- [x] **Facade**: в `swax/openapi/__init__.py` добавить импорты `from .diff_specs import diff_specs`,
       `from .classify_endpoint_changes import classify_endpoint_changes`,
       `from .endpoint_diff import EndpointDiff` и расширить `__all__` (теперь 8 имён:
       `SpecParseError`, `discover_specs`, `extract_paths`, `extract_schemas`,
       `parse_spec`, `diff_specs`, `classify_endpoint_changes`, `EndpointDiff`).
-- [ ] Verify facade: `python -c "from swax.openapi import diff_specs, classify_endpoint_changes, EndpointDiff"`
-- [ ] Lint: `ruff check swax/openapi tests/openapi`
+- [x] Verify facade: `python -c "from swax.openapi import diff_specs, classify_endpoint_changes, EndpointDiff"`
+- [x] Lint: `ruff check swax/openapi tests/openapi`
 
 ---
 

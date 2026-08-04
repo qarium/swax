@@ -7,6 +7,8 @@ components.schemas (3.x) or definitions (2.0). The traceability graph operates
 on paths only.
 """
 
+from .classify_endpoint_changes import classify_endpoint_changes
+from .diff_specs import diff_specs
 from .discover_specs import discover_specs
 from .endpoint_diff import EndpointDiff
 from .errors import SpecParseError
@@ -17,6 +19,8 @@ from .parse_spec import parse_spec
 __all__: list[str] = [
     "EndpointDiff",
     "SpecParseError",
+    "classify_endpoint_changes",
+    "diff_specs",
     "discover_specs",
     "extract_paths",
     "extract_schemas",
