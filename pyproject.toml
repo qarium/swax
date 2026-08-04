@@ -26,6 +26,7 @@ dependencies = [
     "gitpython>=3.1",
     "prance>=23.0,<24",  # <24: Prance 24+ changed RefResolver recursion handling for mutually-recursive schemas; 23.x is the tested behavior (see test_parse_spec_handles_mutually_recursive_schemas).
     "openapi-spec-validator>=0.5",
+    "deepdiff>=8.0",  # DeepDiff base→current spec diffing for the `plan` impact-report pipeline (diff_specs/classify_endpoint_changes).
     "anthropic>=0.40",
     "openai>=1.50",
     "python-dotenv>=1.0",
