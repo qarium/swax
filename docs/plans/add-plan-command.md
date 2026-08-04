@@ -326,17 +326,20 @@ changed_paths():
 
 **CRITICAL: `CODEMANIFEST` — read-only контракт. Не модифицировать.**
 
-- [ ] **Contract tests** (`tests/openapi/test_endpoint_diff_contract.py`):
+- [x] **Contract tests** (`tests/openapi/test_endpoint_diff_contract.py`):
       `from swax.openapi import EndpointDiff` успешен; модель `kw_only`
       (`TypeError` на позиционные аргументы); три поля доступны как атрибуты;
       `has_changes` и `changed_paths` — callable, сигнатуры через `inspect`
       соответствуют контракту. (Ожидаемый fail — `ImportError`.)
-- [ ] **Code**: создать `swax/openapi/endpoint_diff.py` — pydantic-модель с
+- [x] **Code**: создать `swax/openapi/endpoint_diff.py` — pydantic-модель с
       `model_config = ConfigDict(kw_only=True)` и тремя полями; методы
       `has_changes()` / `changed_paths()` по алгоритму выше. Module-level
-      `__all__: list[str] = ["EndpointDiff"]`, Google-style docstring.
-- [ ] **Interface verification**: `pytest tests/openapi/test_endpoint_diff_contract.py -v`
-- [ ] **Logic tests** (`tests/openapi/test_endpoint_diff_logic.py`) — verbatim из
+      `__all__: list[str] = ["EndpointDiff"]`, Google-style docstring. (`EndpointDiff`
+      добавлен в фасад `swax/openapi/__init__.py` — требуется для контракт-теста
+      `from swax.openapi import EndpointDiff`; оставшиеся иён фасада
+      `diff_specs`/`classify_endpoint_changes` добавит Task 2.)
+- [x] **Interface verification**: `pytest tests/openapi/test_endpoint_diff_contract.py -v`
+- [x] **Logic tests** (`tests/openapi/test_endpoint_diff_logic.py`) — verbatim из
       design-doc edge-case test `test_endpoint_diff_changed_paths_dedup_across_buckets`:
       - `diff_a = EndpointDiff(added=["/x"], removed=[], modified={"/x": ["resp 200 changed"]})`
         → `diff_a.changed_paths() == ["/x"]` (дедуп across buckets);
@@ -345,11 +348,11 @@ changed_paths():
         → `diff_b.has_changes() is False` (precondition no-change short-circuit).
       - Доп.: `EndpointDiff(added=["/b","/a"], removed=["/c"], modified={"/d":[]}).changed_paths() == ["/a","/b","/c","/d"]`
         (sorted union); `kw_only` enforced (`EndpointDiff(["/x"], [], {})` → `TypeError`).
-- [ ] **Debugging**: `pytest tests/openapi/ -v` — фиксить только код (не тесты),
+- [x] **Debugging**: `pytest tests/openapi/ -v` — фиксить только код (не тесты),
       пока все тесты не пройдут.
-- [ ] **Contract re-verification**: `kw_only=True`; сигнатуры `has_changes` /
+- [x] **Contract re-verification**: `kw_only=True`; сигнатуры `has_changes` /
       `changed_paths` совпадают с контрактом; `changed_paths` детерминированный.
-- [ ] **Lint**: `ruff check swax/openapi/endpoint_diff.py tests/openapi/test_endpoint_diff_*.py`
+- [x] **Lint**: `ruff check swax/openapi/endpoint_diff.py tests/openapi/test_endpoint_diff_*.py`
 
 ---
 
@@ -1013,7 +1016,7 @@ def plan(ctx: SwaxContext) -> None:
 - [ ] Агрегирующие фасады `swax/applications` (`run_plan_handler`) и
       `swax/commands` (`plan_handler`) расширены; `swax/cli/__main__.py` не
       изменялся (уже регистрирует `plan`).
-- [ ] Свойства и методы (`EndpointDiff.has_changes` / `changed_paths`) соответствуют
+- [x] Свойства и методы (`EndpointDiff.has_changes` / `changed_paths`) соответствуют
       объявленным сигнатурам.
 - [ ] Алгоритмы/Algorithm-ы отражены в поведении (verified логическими тестами,
       verbatim из design-doc Test Stack Trace).

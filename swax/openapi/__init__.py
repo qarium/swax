@@ -8,12 +8,14 @@ on paths only.
 """
 
 from .discover_specs import discover_specs
+from .endpoint_diff import EndpointDiff
 from .errors import SpecParseError
 from .extract_paths import extract_paths
 from .extract_schemas import extract_schemas
 from .parse_spec import parse_spec
 
 __all__: list[str] = [
+    "EndpointDiff",
     "SpecParseError",
     "discover_specs",
     "extract_paths",
