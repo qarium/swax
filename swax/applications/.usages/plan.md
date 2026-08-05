@@ -32,8 +32,8 @@ Consumer conventions:
 1. `require_vars` — fail fast on missing LLM creds.
 2. `load_config` — repo URL, specs location, local baseline root.
 3. `load_traceability` — missing file raises `TraceabilityGraphMissingError` (run `discover`).
-4. `clone_specs` (ctx-mgr) → `discover_specs` + `parse_spec` over fresh specs.
-5. `discover_specs` + `parse_spec` over the local baseline.
+4. `discover_specs` + `parse_spec` over the local baseline.
+5. `clone_specs` (ctx-mgr) → `discover_specs` + `parse_spec` over fresh specs.
 6. Per matching file pair: `diff_specs` → `classify_endpoint_changes`; merge into one `EndpointDiff`.
 7. No changes → build `ImpactReport(summary="No changes detected", risk="LOW")`, skip LLM.
 8. Else `find_affected_endpoints(changed_paths, graph)`, build prompts, one `LLMClient.ask`.

@@ -56,7 +56,8 @@ class TestRenderImpactReportLogic:
         md = render_impact_report(report)
 
         assert "# Impact Report" in md
-        assert "**Summary:** Checkout endpoint modified" in md
+        assert "## Summary" in md
+        assert "Checkout endpoint modified" in md
         assert "**Risk:** HIGH" in md
         assert "## Modified Endpoints" in md
         assert "- /checkout" in md
