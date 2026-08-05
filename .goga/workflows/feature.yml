@@ -30,3 +30,15 @@ stages:
       - Annotations does not contains implementation details
       - Annotations must not use "X from Imports" phrasing
       - Footer Description does not contains details
+
+extend:
+  update-docs:
+    after:
+      - accept-result
+    skills:
+      - goga-tool
+    prompt: |
+      ARGUMENTS="mkdocs"
+
+      Requirements:
+      - Fix changes after update docs

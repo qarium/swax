@@ -12,3 +12,15 @@ stages:
       Constraints:
       - Don't implementation without approve from user
       - Don't research before you receive the task from user
+
+extend:
+  update-docs:
+    after:
+      - accept-result
+    skills:
+      - goga-tool
+    prompt: |
+      ARGUMENTS="mkdocs"
+
+      Requirements:
+      - Fix changes after update docs
