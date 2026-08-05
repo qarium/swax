@@ -43,14 +43,21 @@ def render_impact_report(report: "ImpactReport") -> str:
     """
     sections = [
         "# Impact Report",
-        f"**Summary:** {report.summary}",
+        "",
+        "## Summary",
         f"**Risk:** {report.risk}",
+        "",
+        f"{report.summary}",
+        "",
         "## Modified Endpoints",
         _render_bullets(report.modified),
+        "",
         "## Affected Endpoints",
         _render_bullets(report.affected),
+        "",
         "## Requirements",
         _render_bullets(report.requirements),
+        "",
         "## Checklist",
         "\n".join(f"- [ ] {item}" for item in report.checklist) or "- (none)",
     ]
