@@ -8,6 +8,8 @@ persists the result as a deterministic graph.
 > Status: Alpha. The `init`, `discover`, and `plan` commands are the currently
 > implemented surface.
 
+📖 **Documentation:** https://qarium.github.io/swax/
+
 ## Requirements
 
 - Python 3.10 or newer.

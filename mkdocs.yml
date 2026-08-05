@@ -32,7 +32,32 @@ theme:
     - search.highlight
     - content.code.copy
 
-nav: []
+nav:
+  - Home: index.md
+  - Getting started:
+      - Installation: getting-started/installation.md
+      - Configuration: getting-started/configuration.md
+      - Quickstart: getting-started/quickstart.md
+  - Guide:
+      - Commands: guide/commands.md
+      - Project layout: guide/project-layout.md
+      - Traceability graph: guide/traceability-graph.md
+      - Impact Report: guide/impact-report.md
+  - Architecture:
+      - Overview: architecture/overview.md
+      - Cells:
+          - Reference: architecture/cells/index.md
+          - cli: architecture/cells/cli.md
+          - commands: architecture/cells/commands.md
+          - applications: architecture/cells/applications.md
+          - config: architecture/cells/config.md
+          - fs: architecture/cells/fs.md
+          - git: architecture/cells/git.md
+          - openapi: architecture/cells/openapi.md
+          - llm: architecture/cells/llm.md
+          - prompts: architecture/cells/prompts.md
+          - traceability: architecture/cells/traceability.md
+      - Conventions: architecture/conventions.md
 
 plugins:
   - search

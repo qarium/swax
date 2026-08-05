@@ -1,0 +1,59 @@
+docs/index.md: []
+docs/getting-started/installation.md: []
+docs/getting-started/configuration.md:
+  - swax/config
+docs/getting-started/quickstart.md:
+  - swax/cli
+  - swax/config
+  - swax/applications/init
+  - swax/applications/discover
+  - swax/applications/plan
+docs/guide/commands.md:
+  - swax/cli
+  - swax/commands/init
+  - swax/commands/discover
+  - swax/commands/plan
+docs/guide/project-layout.md:
+  - swax/fs
+  - swax/config
+docs/guide/traceability-graph.md:
+  - swax/traceability
+  - swax/applications/discover
+docs/guide/impact-report.md:
+  - swax/applications/plan
+  - swax/openapi
+  - swax/traceability
+docs/architecture/overview.md:
+  - swax/applications
+  - swax/commands
+  - swax/cli
+docs/architecture/conventions.md: []
+docs/architecture/cells/index.md:
+  - swax/applications
+  - swax/commands
+docs/architecture/cells/cli.md:
+  - swax/cli
+docs/architecture/cells/commands.md:
+  - swax/commands
+  - swax/commands/init
+  - swax/commands/discover
+  - swax/commands/plan
+docs/architecture/cells/applications.md:
+  - swax/applications
+  - swax/applications/init
+  - swax/applications/discover
+  - swax/applications/plan
+docs/architecture/cells/config.md:
+  - swax/config
+docs/architecture/cells/fs.md:
+  - swax/fs
+docs/architecture/cells/git.md:
+  - swax/git
+docs/architecture/cells/openapi.md:
+  - swax/openapi
+docs/architecture/cells/llm.md:
+  - swax/llm
+docs/architecture/cells/prompts.md:
+  - swax/prompts
+docs/architecture/cells/traceability.md:
+  - swax/traceability
