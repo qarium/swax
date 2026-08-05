@@ -54,7 +54,7 @@ docs = [
 include = ["swax*"]
 
 [tool.setuptools.package-data]
-swax = [".usages/**/*"]
+swax = []
 
 [tool.ruff]
 target-version = "py310"
