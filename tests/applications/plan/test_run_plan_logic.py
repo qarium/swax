@@ -256,13 +256,14 @@ class TestBuildGraphContextHelper:
         assert ctx == {"/a": ["/b"], "/c": []}
         assert affected == ["/a", "/c"]
 
-    def test_trims_to_max_affected_changed_first(self, mocker):
+    def test_trims_to_max_affected_changed_first(self, mocker, caplog):
         run_plan_module = sys.modules["swax.applications.plan.run_plan"]
         mocker.patch.object(run_plan_module, "_MAX_AFFECTED", 3)
         graph = TraceabilityGraph(edges={})
         affected = [f"/e{i}" for i in range(10)]
         changed = ["/e0", "/e5"]
 
+        caplog.set_level(logging.WARNING, logger="swax.applications.plan.run_plan")
         ctx, trimmed = _build_graph_context(affected, changed, graph)
 
         assert len(trimmed) == 3
@@ -272,6 +273,11 @@ class TestBuildGraphContextHelper:
         assert "/e0" in trimmed
         assert "/e5" in trimmed
         assert trimmed == sorted(trimmed)
+        # Trimming emits a WARNING so the truncation is observable, not silent.
+        assert any(
+            "plan context truncated" in record.getMessage() and record.levelno == logging.WARNING
+            for record in caplog.records
+        )
 
 
 class TestParseImpactReportHelper:
@@ -280,6 +286,13 @@ class TestParseImpactReportHelper:
 
         assert report.risk == "LOW"
         assert report.summary == "added an endpoint"
+
+    def test_coerces_lowercase_valid_risk_to_upper(self):
+        # run_plan upper-cases risk before the enum check, so "high"/"medium"/
+        # "low" are accepted (not only the all-caps forms).
+        report = _parse_impact_report(_impact_json(risk="high"))
+
+        assert report.risk == "HIGH"
 
     def test_strips_prose_around_json(self):
         report = _parse_impact_report("here you go: " + _impact_json() + " thanks")
@@ -300,6 +313,12 @@ class TestParseImpactReportHelper:
     def test_rejects_missing_keys(self):
         with pytest.raises(LLMResponseParseError):
             _parse_impact_report(json.dumps({"summary": "s", "risk": "LOW"}))
+
+    def test_rejects_extra_keys(self):
+        # The contract is *exactly* six keys — an LLM-injected seventh must be
+        # rejected, not silently accepted.
+        with pytest.raises(LLMResponseParseError):
+            _parse_impact_report(_impact_json(extra="not allowed"))
 
     def test_rejects_wrong_value_type(self):
         with pytest.raises(LLMResponseParseError):

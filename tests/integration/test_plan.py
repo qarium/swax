@@ -135,13 +135,18 @@ def test_swax_plan_end_to_end_with_mocked_llm(tmp_path, monkeypatch, mocker):
     _materialize_project(tmp_path, with_traceability=True)
     fresh_root = _fresh_root(tmp_path, FRESH_SPEC_WITH_ORDERS)
     _patch_clone(mocker, fresh_root)
-    _patch_llm(mocker, _impact_json())
+    mock_build = _patch_llm(mocker, _impact_json())
 
     result = CliRunner().invoke(main, ["--env-file", ".env", "plan"])
 
     assert result.exit_code == 0, result.output
-    assert "# Impact Report" in result.output
-    assert "Summary:" in result.output
+    # Generic markers alone also appear in the no-change render, so assert the
+    # LLM was actually consulted and that LLM-provided content reached stdout —
+    # this is what distinguishes the change path from the short-circuit.
+    mock_build.assert_called_once()
+    assert "added /orders endpoint" in result.output
+    assert "/orders" in result.output
+    assert "smoke /orders" in result.output
 
 
 def test_swax_plan_no_changes_short_circuits(tmp_path, monkeypatch, mocker):

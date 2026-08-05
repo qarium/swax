@@ -77,10 +77,15 @@ def classify_endpoint_changes(diff: DeepDiff) -> EndpointDiff:
 
     Walks the real deepdiff categories — ``dictionary_item_added`` /
     ``dictionary_item_removed`` (ordered sets of path strings) and
-    ``values_changed`` / ``type_changes`` (dicts keyed by path string). Paths
-    not under ``paths`` (e.g. ``components`` / ``definitions``) are skipped. The
-    result is sorted for determinism, since deepdiff category iteration order is
-    not stable across processes.
+    ``values_changed`` / ``type_changes`` / ``iterable_item_added`` /
+    ``iterable_item_removed`` (dicts keyed by path string). The iterable
+    categories are what deepdiff emits when an item is added to or removed from
+    a JSON array under an endpoint (a ``parameters``, ``tags``, ``enum``, or
+    ``required`` list); treating them as modifications is what surfaces a newly
+    added query parameter or enum value. Paths not under ``paths`` (e.g.
+    ``components`` / ``definitions``) are skipped. The result is sorted for
+    determinism, since deepdiff category iteration order is not stable across
+    processes.
 
     Args:
         diff: DeepDiff result from diff_specs.
@@ -105,6 +110,8 @@ def classify_endpoint_changes(diff: DeepDiff) -> EndpointDiff:
     changed_value_paths = {
         **(diff.get("values_changed", {}) or {}),
         **(diff.get("type_changes", {}) or {}),
+        **(diff.get("iterable_item_added", {}) or {}),
+        **(diff.get("iterable_item_removed", {}) or {}),
     }
     for path_str in changed_value_paths:
         endpoint = _extract_endpoint(path_str)

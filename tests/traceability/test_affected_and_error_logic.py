@@ -52,6 +52,15 @@ class TestFindAffectedEndpointsLogic:
 
         assert graph.edges == edges_before
 
+    def test_find_affected_endpoints_terminates_on_cycles(self):
+        # A cyclic graph (/a depends on /b, /b depends on /a) must terminate and
+        # still return the full closure — the BFS dedups via the affected set.
+        graph = TraceabilityGraph(edges={"/a": ["/b"], "/b": ["/a"]})
+
+        affected = find_affected_endpoints(["/a"], graph)
+
+        assert affected == ["/a", "/b"]
+
     def test_find_affected_endpoints_empty_changes_returns_empty(self):
         graph = TraceabilityGraph(edges={"/a": ["/b"]})
 

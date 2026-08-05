@@ -5,7 +5,7 @@ from OpenAPI / Swagger specifications, using a two-pass LLM analysis. Given a
 spec repository, it infers which API paths depend on which other paths and
 persists the result as a deterministic graph.
 
-> Status: Alpha. The `init` and `discover` commands are the currently
+> Status: Alpha. The `init`, `discover`, and `plan` commands are the currently
 > implemented surface.
 
 ## Requirements
@@ -41,6 +41,7 @@ shell values take precedence over the file:
 ```bash
 swax --env-file .env init
 swax --env-file .env discover
+swax --env-file .env plan
 ```
 
 `--env-file` defaults to `.env`; a missing file is silently ignored.
@@ -65,6 +66,23 @@ specs, runs a two-pass LLM analysis (an initial dependency-graph pass, then a
 schema-informed refine pass for the uncertain pairs), deduplicates the edges,
 and overwrites the traceability graph. Domain failures map to exit code 1 with
 messages such as `Missing env vars: ...`, `Failed to parse <path>: <reason>`,
+`LLM rate limited; retry later`, `LLM call failed: <reason>`,
+`Unsupported LLM protocol: <protocol>`, `LLM response parse failed: <reason>`.
+
+### `swax plan`
+
+Analyzes spec changes and prints a Markdown Impact Report to stdout (no prompts;
+reads `.swax/config.yml`, the environment, and `.swax/traceability.yml` produced
+by `swax discover`). It parses the local baseline specs, shallow-clones the spec
+repository fresh, classifies the endpoint diff (added / removed / modified), maps
+the changed endpoints onto the traceability graph to find transitively affected
+endpoints, and runs a single-turn LLM analysis. With no changes it skips the LLM
+and prints a `LOW`-risk "No changes detected" report. The report has Summary,
+Risk (`HIGH` / `MEDIUM` / `LOW`), Modified Endpoints, Affected Endpoints,
+Requirements, and Checklist sections. Domain failures map to exit code 1 with
+messages such as `Missing env vars: ...`, `Failed to parse <path>: <reason>`,
+`Failed to clone <url>: <reason>`, `Specs directory not found at <path>`,
+`Traceability graph not found at <path> — run \`swax discover\` first`,
 `LLM rate limited; retry later`, `LLM call failed: <reason>`,
 `Unsupported LLM protocol: <protocol>`, `LLM response parse failed: <reason>`.
 

@@ -112,3 +112,46 @@ class TestDiffPipeline:
         assert changes.removed == []
         assert changes.modified == {}
         assert changes.has_changes() is False
+
+    def test_classify_endpoint_changes_skips_components_added_and_removed(self):
+        # The skip-components guarantee must hold for added/removed whole schemas
+        # too (deepdiff dictionary_item_added/_removed), not only value changes.
+        base = {"paths": {}, "components": {"schemas": {"Kept": {"name": "x"}}}}
+        current = {
+            "paths": {},
+            "components": {"schemas": {"Kept": {"name": "x"}, "Orphan": {"name": "y"}}},
+        }
+
+        changes = classify_endpoint_changes(diff_specs(base, current))
+
+        assert changes.added == []
+        assert changes.removed == []
+        assert changes.modified == {}
+        assert changes.has_changes() is False
+
+    def test_classify_endpoint_changes_detects_array_item_added(self):
+        # deepdiff reports a list-element addition as iterable_item_added; it must
+        # be classified as a modification of the owning endpoint (e.g. a new tag,
+        # a new query parameter, or a new enum value).
+        base = {"paths": {"/users": {"get": {"tags": ["users"]}}}}
+        current = {"paths": {"/users": {"get": {"tags": ["users", "admin"]}}}}
+
+        changes = classify_endpoint_changes(diff_specs(base, current))
+
+        assert "/users" in changes.modified
+        assert changes.added == []
+        assert changes.removed == []
+        assert changes.has_changes() is True
+
+    def test_classify_endpoint_changes_detects_array_item_removed(self):
+        # deepdiff reports a list-element removal as iterable_item_removed; it must
+        # be classified as a modification (e.g. a removed parameter or enum value).
+        base = {"paths": {"/users": {"get": {"parameters": [{"name": "a"}, {"name": "b"}]}}}}
+        current = {"paths": {"/users": {"get": {"parameters": [{"name": "a"}]}}}}
+
+        changes = classify_endpoint_changes(diff_specs(base, current))
+
+        assert "/users" in changes.modified
+        assert changes.added == []
+        assert changes.removed == []
+        assert changes.has_changes() is True
