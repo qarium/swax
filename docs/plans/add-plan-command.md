@@ -787,11 +787,11 @@ on any shape mismatch → raise LLMResponseParseError(reason=..., excerpt=raw[:2
 
 **CRITICAL: `CODEMANIFEST` — read-only контракт. Не модифицировать.**
 
-- [ ] **Contract tests** (`tests/applications/plan/test_run_plan_contract.py`):
+- [x] **Contract tests** (`tests/applications/plan/test_run_plan_contract.py`):
       `from swax.applications.plan import run_plan` успешен; сигнатура через
       `inspect.signature(run_plan)` == `(project_root: pathlib.Path)` с аннотацией
       возврата `str`.
-- [ ] **Code**: создать `swax/applications/plan/run_plan.py` с `run_plan` + 4
+- [x] **Code**: создать `swax/applications/plan/run_plan.py` с `run_plan` + 4
       приватными helper-ами (`_parse_spec_map`, `_diff_and_classify`,
       `_build_graph_context`, `_parse_impact_report`, и переиспользовать/локально
       определить `_strip_prose_and_fences` по образцу `run_discover`). Cross-cell
@@ -803,8 +803,8 @@ on any shape mismatch → raise LLMResponseParseError(reason=..., excerpt=raw[:2
       `from .render_impact_report import render_impact_report`). `_MAX_AFFECTED = 100`
       как module-level константа. `logger = logging.getLogger(__name__)`.
       Module-level `__all__: list[str] = ["run_plan"]`.
-- [ ] **Interface verification**: `pytest tests/applications/plan/test_run_plan_contract.py -v`
-- [ ] **Logic tests** (`tests/applications/plan/test_run_plan_logic.py`) — verbatim из
+- [x] **Interface verification**: `pytest tests/applications/plan/test_run_plan_contract.py -v`
+- [x] **Logic tests** (`tests/applications/plan/test_run_plan_logic.py`) — verbatim из
       design-doc Test Stack Trace (mock на `build_llm_client` и `clone_specs` в точке
       импорта; `tmp_path` проект с `.swax/config.yml`, `.swax/traceability.yml`,
       baseline specs):
@@ -825,24 +825,24 @@ on any shape mismatch → raise LLMResponseParseError(reason=..., excerpt=raw[:2
       - Доп.: one-sided spec (`fresh-only` → `added` из `paths`; `baseline-only` →
         `removed`) — покрывает ветви `_diff_and_classify` (напрямую чтение `paths`,
         не diff против `{}`).
-- [ ] **Debugging**: `pytest tests/applications/plan/ -v`
-- [ ] **Contract re-verification**: paths only в отчёте; defensive parsing активен
+- [x] **Debugging**: `pytest tests/applications/plan/ -v`
+- [x] **Contract re-verification**: paths only в отчёте; defensive parsing активен
       (risk fallback); `SWAX_LLM_TOKEN` не в логах/Markdown; cleanup клона на любом исходе;
       `run_plan` поднимает `TraceabilityGraphMissingError` сам (existence check до `load_traceability`).
-- [ ] **Facade (sub-cell)**: в `swax/applications/plan/__init__.py` добавить
+- [x] **Facade (sub-cell)**: в `swax/applications/plan/__init__.py` добавить
       `from .run_plan import run_plan` и `__all__: list[str] = ["run_plan"]`
       (docstring клетки — по образцу `swax/applications/discover/__init__.py`).
-- [ ] **Facade (aggregator)**: в `swax/applications/__init__.py` добавить
+- [x] **Facade (aggregator)**: в `swax/applications/__init__.py` добавить
       `from .plan import run_plan as run_plan_handler` и расширить `__all__`
       (теперь 3 имени: `run_discover_handler`, `run_init_handler`, `run_plan_handler`).
       Обновить module docstring (упомянуть третий re-export).
-- [ ] **Facade test**: создать `tests/applications/test_applications_facade.py` по
+- [x] **Facade test**: создать `tests/applications/test_applications_facade.py` по
       образцу `tests/commands/test_commands_facade.py` — assert `run_plan_handler`,
       `run_init_handler`, `run_discover_handler` импортируемы; callable;
       `__all__ == ["run_discover_handler", "run_init_handler", "run_plan_handler"]`;
       `run_plan_handler is run_plan`.
-- [ ] Verify facade: `python -c "from swax.applications import run_plan_handler, run_init_handler, run_discover_handler; assert callable(run_plan_handler)"`
-- [ ] Lint: `ruff check swax/applications tests/applications`
+- [x] Verify facade: `python -c "from swax.applications import run_plan_handler, run_init_handler, run_discover_handler; assert callable(run_plan_handler)"`
+- [x] Lint: `ruff check swax/applications tests/applications`
 
 ---
 
