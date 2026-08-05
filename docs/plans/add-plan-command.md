@@ -903,16 +903,16 @@ def plan(ctx: SwaxContext) -> None:
 
 **CRITICAL: `CODEMANIFEST` — read-only контракт. Не модифицировать.**
 
-- [ ] **Contract tests** (`tests/commands/plan/test_plan_contract.py`):
+- [x] **Contract tests** (`tests/commands/plan/test_plan_contract.py`):
       `from swax.commands.plan import plan` успешен; `isinstance(plan, click.Command)`;
       callback decorated с `@click.pass_obj` (через `plan.params` / callback-инспекцию).
-- [ ] **Code**: создать `swax/commands/plan/__init__.py` (`from .plan import plan`,
+- [x] **Code**: создать `swax/commands/plan/__init__.py` (`from .plan import plan`,
       `__all__: list[str] = ["plan"]`, docstring по образцу `swax/commands/discover/__init__.py`);
       `swax/commands/plan/plan.py` по алгоритму выше
       (`from __future__ import annotations`, `TYPE_CHECKING` блок для `SwaxContext`,
       `@click.command()` + `@click.pass_obj`, module-level `__all__: list[str] = ["plan"]`).
-- [ ] **Interface verification**: `pytest tests/commands/plan/test_plan_contract.py -v`
-- [ ] **Logic tests** (`tests/commands/plan/test_plan_logic.py`) — verbatim из design-doc
+- [x] **Interface verification**: `pytest tests/commands/plan/test_plan_contract.py -v`
+- [x] **Logic tests** (`tests/commands/plan/test_plan_logic.py`) — verbatim из design-doc
       Test Stack Trace (mock `run_plan` в точке импорта `swax.commands.plan.plan.run_plan`;
       `CliRunner().invoke(main, ["plan"])`):
       - `test_plan_handler_echoes_markdown_and_maps_missing_graph` (positive + edge):
@@ -926,21 +926,21 @@ def plan(ctx: SwaxContext) -> None:
         `"SWAX_LLM_TOKEN" not in result.output`.
       - Доп.: `test_plan_handler_no_prompts` — invoke без stdin, mock успехом →
         `exit_code == 0` (command без опций/промптов).
-- [ ] **Debugging**: `pytest tests/commands/plan/ -v`
-- [ ] **Contract re-verification**: маппятся ровно 9 documented exceptions; generic
+- [x] **Debugging**: `pytest tests/commands/plan/ -v`
+- [x] **Contract re-verification**: маппятся ровно 9 documented exceptions; generic
       `Exception` не ловится; `SWAX_LLM_TOKEN` не в сообщениях; `SwaxContext` только
       под `TYPE_CHECKING` (цикл `cli ↔ commands` не введён).
-- [ ] **Facade (aggregator)**: в `swax/commands/__init__.py` добавить
+- [x] **Facade (aggregator)**: в `swax/commands/__init__.py` добавить
       `from .plan import plan as plan_handler` и расширить `__all__`
       (теперь 3 имени: `discover_handler`, `init_handler`, `plan_handler`).
       Обновить module docstring (упомянуть третий re-export).
-- [ ] **Facade test**: расширить `tests/commands/test_commands_facade.py` — добавить
+- [x] **Facade test**: расширить `tests/commands/test_commands_facade.py` — добавить
       `plan_handler` в импорты; assert `isinstance(plan_handler, click.Command)`;
       `__all__ == ["discover_handler", "init_handler", "plan_handler"]`;
       `plan_handler is plan` (из `swax.commands.plan`).
-- [ ] Verify facade: `python -c "from swax.commands import plan_handler; import click; assert isinstance(plan_handler, click.Command)"`
-- [ ] Verify end-to-end import (это замыкает `__main__.py`): `python -c "from swax.cli.__main__ import main; assert 'plan' in main.commands"`
-- [ ] Lint: `ruff check swax/commands tests/commands`
+- [x] Verify facade: `python -c "from swax.commands import plan_handler; import click; assert isinstance(plan_handler, click.Command)"`
+- [x] Verify end-to-end import (это замыкает `__main__.py`): `python -c "from swax.cli.__main__ import main; assert 'plan' in main.commands"`
+- [x] Lint: `ruff check swax/commands tests/commands`
 
 ---
 
@@ -1004,37 +1004,37 @@ def plan(ctx: SwaxContext) -> None:
 
 ## Completion Criteria
 
-- [ ] Каждое новое контрактное entity реализовано в правильном `location`
+- [x] Каждое новое контрактное entity реализовано в правильном `location`
       (`diff_specs.py`, `classify_endpoint_changes.py`, `endpoint_diff.py`,
       `find_affected_endpoints.py`, `errors.py` (traceability),
       `build_impact_report_system_prompt.py`, `build_impact_report_user_prompt.py`,
       `run_plan.py`, `impact_report.py`, `render_impact_report.py`,
       `swax/applications/plan/__init__.py`, `plan.py`, `swax/commands/plan/__init__.py`).
-- [ ] Каждое новое entity доступно из фасада своей клетки (`__init__.py.__all__`):
+- [x] Каждое новое entity доступно из фасада своей клетки (`__init__.py.__all__`):
       `openapi` (8 имён), `traceability` (5 имён), `prompts` (5 имён),
       `applications/plan` (`run_plan`), `commands/plan` (`plan`).
-- [ ] Агрегирующие фасады `swax/applications` (`run_plan_handler`) и
+- [x] Агрегирующие фасады `swax/applications` (`run_plan_handler`) и
       `swax/commands` (`plan_handler`) расширены; `swax/cli/__main__.py` не
       изменялся (уже регистрирует `plan`).
 - [x] Свойства и методы (`EndpointDiff.has_changes` / `changed_paths`) соответствуют
       объявленным сигнатурам.
-- [ ] Алгоритмы/Algorithm-ы отражены в поведении (verified логическими тестами,
+- [x] Алгоритмы/Algorithm-ы отражены в поведении (verified логическими тестами,
       verbatim из design-doc Test Stack Trace).
-- [ ] Контрактные cross-cell зависимости разрешены: импорты `run_plan` из шести
+- [x] Контрактные cross-cell зависимости разрешены: импорты `run_plan` из шести
       provider-клеток работают; цикл `cli ↔ commands` не введён (`SwaxContext`
       под `TYPE_CHECKING`).
-- [ ] Re-exports `run_plan_handler`, `plan_handler` доступны из соответствующих
+- [x] Re-exports `run_plan_handler`, `plan_handler` доступны из соответствующих
       фасадов; `swax plan` регистрируется без `ImportError`.
-- [ ] Каждая coding-задача прошла TDD-цикл (контракт-тесты → код → interface
+- [x] Каждая coding-задача прошла TDD-цикл (контракт-тесты → код → interface
       verification → logic-тесты → debugging → re-verification → lint).
-- [ ] Контракт-тесты и logic-тесты покрывают фасад, API и поведение в каждой
+- [x] Контракт-тесты и logic-тесты покрывают фасад, API и поведение в каждой
       coding-задаче; все 9 доменных ошибок маппятся в `plan` handler.
 - [ ] Интеграционный тест покрывает end-to-end `swax plan` (mocked clone + LLM).
-- [ ] Ни одна граница клетки не была расширена — новые клетки не создавались
+- [x] Ни одна граница клетки не была расширена — новые клетки не создавались
       (`swax/applications/plan` и `swax/commands/plan` уже материализованы
       стадией `apply-architecture`).
-- [ ] `CODEMANIFEST` файлы и `.usages/` не модифицировались (read-only).
+- [x] `CODEMANIFEST` файлы и `.usages/` не модифицировались (read-only).
 - [x] `deepdiff>=8.0` добавлен в `pyproject.toml`.
-- [ ] Все команды валидации проходят (`pytest tests/ -x`, `ruff check swax/`).
-- [ ] Каждое Usages-указание упомянуто минимум в одной задаче (`conventions`,
+- [x] Все команды валидации проходят (`pytest tests/ -x`, `ruff check swax/`).
+- [x] Каждое Usages-указание упомянуто минимум в одной задаче (`conventions`,
       `deepdiff`, `click`, шесть imported usages provider-клеток, inline `json`).
