@@ -956,9 +956,9 @@ def plan(ctx: SwaxContext) -> None:
   `mocker.patch` на `build_llm_client` и `clone_specs` в точке импорта.
 - Все cell-level usages, упомянутые в design-doc.
 
-- [ ] Создать `tests/integration/test_plan.py` (с `tests/integration/__init__.py`
+- [x] Создать `tests/integration/test_plan.py` (с `tests/integration/__init__.py`
       уже существует).
-- [ ] `test_swax_plan_end_to_end_with_mocked_llm` — `tmp_path` с `.swax/config.yml`,
+- [x] `test_swax_plan_end_to_end_with_mocked_llm` — `tmp_path` с `.swax/config.yml`,
       `.swax/traceability.yml` (минимальный граф `/a -> /b`), baseline spec под
       `tmp_path/<specs.location>`; `mocker.patch("swax.applications.plan.run_plan.clone_specs")`
       yields fresh root с **изменённой** spec (один добавленный/изменённый эндпоинт);
@@ -966,13 +966,13 @@ def plan(ctx: SwaxContext) -> None:
       `ask` возвращает валидный 6-ключевой JSON; `monkeypatch.setenv` SWAX_LLM_*;
       `CliRunner().invoke(main, ["--env-file", ".env", "plan"])` → asserts `exit_code == 0`,
       `"# Impact Report" in result.output`, `"Summary:" in result.output`.
-- [ ] `test_swax_plan_no_changes_short_circuits` — fresh spec идентичен baseline →
+- [x] `test_swax_plan_no_changes_short_circuits` — fresh spec идентичен baseline →
       `exit_code == 0`, `"No changes detected" in result.output`,
       `mock_build_llm_client.assert_not_called()`.
-- [ ] `test_swax_plan_missing_traceability_maps_to_hint` — `.swax/traceability.yml`
+- [x] `test_swax_plan_missing_traceability_maps_to_hint` — `.swax/traceability.yml`
       отсутствует → `exit_code == 1`, `"Traceability graph not found" in result.output`,
       `"swax discover" in result.output`.
-- [ ] Run validation: `pytest tests/integration/test_plan.py -v`
+- [x] Run validation: `pytest tests/integration/test_plan.py -v`
 
 ---
 
@@ -1029,7 +1029,7 @@ def plan(ctx: SwaxContext) -> None:
       verification → logic-тесты → debugging → re-verification → lint).
 - [x] Контракт-тесты и logic-тесты покрывают фасад, API и поведение в каждой
       coding-задаче; все 9 доменных ошибок маппятся в `plan` handler.
-- [ ] Интеграционный тест покрывает end-to-end `swax plan` (mocked clone + LLM).
+- [x] Интеграционный тест покрывает end-to-end `swax plan` (mocked clone + LLM).
 - [x] Ни одна граница клетки не была расширена — новые клетки не создавались
       (`swax/applications/plan` и `swax/commands/plan` уже материализованы
       стадией `apply-architecture`).
