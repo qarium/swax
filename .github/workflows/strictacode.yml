@@ -30,7 +30,7 @@ jobs:
       - uses: qarium/strictacode/.github/actions/analyze@0.0.x
         with:
           install-cmd: pip install strictacode
-          working-directory: goga_tool_viewer
+          working-directory: swax
         env:
           STRICTACODE_SCORE: 30
           STRICTACODE_RP: 40
