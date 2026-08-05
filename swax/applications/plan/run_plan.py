@@ -168,8 +168,10 @@ def _build_graph_context(
     if len(affected) <= _MAX_AFFECTED:
         kept = affected
     else:
-        kept_changed = [path for path in changed if path in set(affected)]
-        remainder = sorted(path for path in affected if path not in kept_changed)
+        affected_set = set(affected)
+        kept_changed = [path for path in changed if path in affected_set]
+        kept_changed_set = set(kept_changed)
+        remainder = sorted(path for path in affected if path not in kept_changed_set)
         kept = (kept_changed + remainder)[:_MAX_AFFECTED]
         logger.warning(
             "plan context truncated",

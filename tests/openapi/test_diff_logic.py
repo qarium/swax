@@ -155,3 +155,71 @@ class TestDiffPipeline:
         assert changes.added == []
         assert changes.removed == []
         assert changes.has_changes() is True
+
+    def test_classify_endpoint_changes_deep_add_is_modification_not_added(self):
+        # Adding a sub-field (here a new response code) to an endpoint that already
+        # exists is a modification, not a new endpoint: only the two-segment path
+        # ``root['paths']['<endpoint>']`` is a genuine endpoint add.
+        base = {"paths": {"/users": {"get": {"responses": {"200": {"description": "ok"}}}}}}
+        current = {
+            "paths": {
+                "/users": {
+                    "get": {
+                        "responses": {
+                            "200": {"description": "ok"},
+                            "201": {"description": "created"},
+                        },
+                    },
+                },
+            },
+        }
+
+        changes = classify_endpoint_changes(diff_specs(base, current))
+
+        assert changes.added == []
+        assert changes.removed == []
+        assert "/users" in changes.modified
+        assert changes.has_changes() is True
+
+    def test_classify_endpoint_changes_added_method_is_modification(self):
+        # Adding a new method (post) to an existing endpoint is a modification,
+        # not a new endpoint.
+        base = {"paths": {"/users": {"get": {"responses": {"200": {"description": "ok"}}}}}}
+        current = {
+            "paths": {
+                "/users": {
+                    "get": {"responses": {"200": {"description": "ok"}}},
+                    "post": {"responses": {"201": {"description": "created"}}},
+                },
+            },
+        }
+
+        changes = classify_endpoint_changes(diff_specs(base, current))
+
+        assert changes.added == []
+        assert "/users" in changes.modified
+        assert changes.has_changes() is True
+
+    def test_classify_endpoint_changes_deep_remove_is_modification_not_removed(self):
+        # Removing a sub-field from an existing endpoint is a modification, not a
+        # removed endpoint — symmetric to the deep-add case.
+        base = {
+            "paths": {
+                "/users": {
+                    "get": {
+                        "responses": {
+                            "200": {"description": "ok"},
+                            "201": {"description": "created"},
+                        },
+                    },
+                },
+            },
+        }
+        current = {"paths": {"/users": {"get": {"responses": {"200": {"description": "ok"}}}}}}
+
+        changes = classify_endpoint_changes(diff_specs(base, current))
+
+        assert changes.removed == []
+        assert changes.added == []
+        assert "/users" in changes.modified
+        assert changes.has_changes() is True

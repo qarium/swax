@@ -21,6 +21,13 @@ from .endpoint_diff import EndpointDiff
 # split on a single character.
 _SEGMENT_RE = re.compile(r"""\['([^']*)'\]|\["([^"]*)"\]""")
 
+# A DeepDiff path of exactly ``root['paths']['<endpoint>']`` has two segments
+# (``paths`` and the endpoint key) and is the only shape that represents a
+# genuine endpoint add/remove. Anything deeper under ``paths`` (a new method,
+# response code, or parameter block) is a sub-field change on an endpoint that
+# already exists and is therefore a modification, not a new/removed endpoint.
+_ENDPOINT_SEGMENT_COUNT = 2
+
 
 def _path_segments(path_str: str) -> list[str]:
     """Return the bracketed key segments of a DeepDiff path string.
@@ -97,15 +104,23 @@ def classify_endpoint_changes(diff: DeepDiff) -> EndpointDiff:
     removed: list[str] = []
     modified: dict[str, list[str]] = {}
 
-    for path_str in diff.get("dictionary_item_added", []) or []:
-        endpoint = _extract_endpoint(path_str)
-        if endpoint is not None and endpoint not in added:
-            added.append(endpoint)
-
-    for path_str in diff.get("dictionary_item_removed", []) or []:
-        endpoint = _extract_endpoint(path_str)
-        if endpoint is not None and endpoint not in removed:
-            removed.append(endpoint)
+    for category, bucket in (
+        ("dictionary_item_added", added),
+        ("dictionary_item_removed", removed),
+    ):
+        for path_str in diff.get(category, []) or []:
+            segments = _path_segments(path_str)
+            if len(segments) < _ENDPOINT_SEGMENT_COUNT or segments[0] != "paths":
+                continue
+            endpoint = segments[1]
+            if len(segments) == _ENDPOINT_SEGMENT_COUNT:
+                if endpoint not in bucket:
+                    bucket.append(endpoint)
+            else:
+                # A deeper key (a new method, response code, or parameter block)
+                # is a sub-field change on an endpoint that already exists — a
+                # modification, not a new/removed endpoint.
+                modified.setdefault(endpoint, []).append(_describe_change(path_str))
 
     changed_value_paths = {
         **(diff.get("values_changed", {}) or {}),
