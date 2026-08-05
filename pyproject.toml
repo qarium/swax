@@ -42,6 +42,7 @@ test = [
     "pytest-mock>=3.10",
     "httpx>=0.28",
     "ruff>=0.15.0",
+    "tomli>=2.0; python_version < '3.11'",  # backport of tomllib (stdlib 3.11+) for the 3.10 test env
 ]
 docs = [
     "mkdocs>=1.6.0",

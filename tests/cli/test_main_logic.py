@@ -10,13 +10,18 @@ and ``ctx.obj`` be observed without coupling to the init/discover handlers.
 
 import os
 import pathlib
+import sys
 
 import click
 import pytest
 import swax.cli.__main__  # noqa: F401  -- import side effect registers init/discover lazily
-import tomllib
 from click.testing import CliRunner
 from swax.cli import SwaxContext, main
+
+if sys.version_info >= (3, 11):
+    import tomllib
+else:  # pragma: no cover
+    import tomli as tomllib  # backport for Python 3.10
 
 
 @pytest.fixture

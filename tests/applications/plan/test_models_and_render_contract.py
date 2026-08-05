@@ -41,8 +41,12 @@ class TestImpactReportContract:
         assert report.checklist == ["Run smoke tests"]
 
     def test_impact_report_defines_no_custom_methods(self):
+        # Dunder attributes are language/typing machinery (e.g. ``__annotate_func__``
+        # on Python 3.14+ via PEP 649 lazy annotations), not custom model methods.
         own_callables = {
-            name for name, value in vars(ImpactReport).items() if callable(value) and name not in vars(BaseModel)
+            name
+            for name, value in vars(ImpactReport).items()
+            if callable(value) and not name.startswith("__") and name not in vars(BaseModel)
         }
 
         assert own_callables == set()
