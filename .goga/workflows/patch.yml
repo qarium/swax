@@ -15,6 +15,7 @@ stages:
 
 extend:
   update-docs:
+    communication: true
     after:
       - accept-result
     skills:
