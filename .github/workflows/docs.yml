@@ -2,7 +2,7 @@ name: Release docs
 on:
   push:
     branches:
-      - 0.0.x
+      - '[0-9]+.[0-9]+.x'
 
 permissions:
   contents: write
