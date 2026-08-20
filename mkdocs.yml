@@ -4,7 +4,7 @@ site_name: Swax
 site_description: Swax is tool for test plan generation based on AI
 site_url: https://qarium.github.io/swax/
 repo_url: https://github.com/qarium/gswax
-edit_uri: edit/main/docs/
+edit_uri: edit/1.0.x/docs/
 
 theme:
   name: material
