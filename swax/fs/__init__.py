@@ -2,11 +2,13 @@
 
 The facade re-exports the entities that manage the on-disk project layout:
 ensure_swax_dir (idempotent .swax/ creation), copy_specs (merging cloned specs
-into the local path), the change classification value object SpecsChanges, and
-the mirroring path-guard error UnsafeSpecsLocationError. All paths are
+into the local path), compare_specs (byte-level change classification of two
+specs trees), the change classification value object SpecsChanges, and the
+mirroring path-guard error UnsafeSpecsLocationError. All paths are
 pathlib.Path; imports inside the cell are relative.
 """
 
+from .compare_specs import compare_specs
 from .copy_specs import copy_specs
 from .ensure_swax_dir import ensure_swax_dir
 from .errors import UnsafeSpecsLocationError
@@ -15,6 +17,7 @@ from .specs_changes import SpecsChanges
 __all__: list[str] = [
     "SpecsChanges",
     "UnsafeSpecsLocationError",
+    "compare_specs",
     "copy_specs",
     "ensure_swax_dir",
 ]

@@ -1,21 +1,28 @@
 """Contract tests for the swax.fs cell.
 
 These tests pin the public surface and signatures of ensure_swax_dir,
-copy_specs, and the spec-mirroring foundation entities (SpecsChanges,
-UnsafeSpecsLocationError).
+copy_specs, the spec-mirroring foundation entities (SpecsChanges,
+UnsafeSpecsLocationError), and the change classifier compare_specs.
 """
 
 import inspect
 import pathlib
 
 import pytest
-from swax.fs import SpecsChanges, UnsafeSpecsLocationError, copy_specs, ensure_swax_dir
+from swax.fs import (
+    SpecsChanges,
+    UnsafeSpecsLocationError,
+    compare_specs,
+    copy_specs,
+    ensure_swax_dir,
+)
 
 
 class TestFsContract:
     def test_routines_are_importable_from_facade(self):
         assert callable(ensure_swax_dir)
         assert callable(copy_specs)
+        assert callable(compare_specs)
 
     def test_ensure_swax_dir_signature(self):
         signature = inspect.signature(ensure_swax_dir)
@@ -30,6 +37,14 @@ class TestFsContract:
         assert list(signature.parameters) == ["source", "destination"]
         assert signature.parameters["source"].annotation is pathlib.Path
         assert signature.parameters["destination"].annotation is pathlib.Path
+
+    def test_compare_specs_signature(self):
+        signature = inspect.signature(compare_specs)
+
+        assert list(signature.parameters) == ["local_root", "remote_root"]
+        assert signature.parameters["local_root"].annotation is pathlib.Path
+        assert signature.parameters["remote_root"].annotation is pathlib.Path
+        assert signature.return_annotation is SpecsChanges
 
 
 class TestSpecsChangesContract:
