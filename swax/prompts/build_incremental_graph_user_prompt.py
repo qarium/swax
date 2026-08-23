@@ -37,7 +37,9 @@ def build_incremental_graph_user_prompt(  # noqa: PLR0913, PLR0917
     """
     graph_payload = json.dumps(existing_edges)
     changes_payload = json.dumps({"added": diff_added, "removed": diff_removed, "modified": diff_modified})
-    new_specs_payload = json.dumps({"endpoints": added_endpoints, "schemas": added_schemas})
+    # default=str: parsed YAML carries non-JSON-native scalars (unquoted dates
+    # become datetime.date), which would otherwise raise mid-rebuild.
+    new_specs_payload = json.dumps({"endpoints": added_endpoints, "schemas": added_schemas}, default=str)
 
     universe = sorted((set(existing_edges) - set(diff_removed)) | set(diff_added) | set(added_endpoints))
 

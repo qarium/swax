@@ -6,6 +6,8 @@ ambiguous-pairs/schemas payload in the refine prompt, and the determinism of
 every routine for identical input.
 """
 
+import datetime
+
 import pytest
 from swax.prompts import (
     build_graph_system_prompt,
@@ -61,6 +63,13 @@ class TestRefineUserPrompt:
         prompt = build_refine_user_prompt([], {})
 
         assert "Do not introduce paths" in prompt
+
+    def test_refine_prompt_serializes_non_json_scalars(self):
+        # Parsed YAML carries non-JSON-native scalars (an unquoted date becomes
+        # datetime.date) — the payload renders them instead of raising.
+        prompt = build_refine_user_prompt([], {"Billing": {"example": datetime.date(2024, 1, 31)}})
+
+        assert "2024-01-31" in prompt
 
     @pytest.mark.parametrize(("pairs", "schemas"), [([], {}), (["/a -> /b"], {"User": {}})])
     def test_refine_prompt_is_deterministic_for_same_input(self, pairs, schemas):

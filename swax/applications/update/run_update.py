@@ -486,6 +486,11 @@ def run_update(project_root: pathlib.Path) -> str:
 
                 if graph_status is not None:
                     logger.debug("graph persisted", extra={"graph_status": graph_status})
+        # ValueError/TypeError cover corrupt-input failures that are not
+        # OSError or yaml.YAMLError: a binary graph file (UnicodeDecodeError),
+        # a non-string adjacency (pydantic ValidationError), or an
+        # unserializable payload scalar — all rebuild-block failures, so all
+        # wrapped per the contract.
         except (
             SpecParseError,
             LLMCallError,
@@ -494,6 +499,8 @@ def run_update(project_root: pathlib.Path) -> str:
             LLMResponseParseError,
             OSError,
             yaml.YAMLError,
+            ValueError,
+            TypeError,
         ) as exc:
             if not graph_existed and graph_path.exists():
                 graph_path.unlink()

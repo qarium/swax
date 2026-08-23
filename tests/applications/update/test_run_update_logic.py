@@ -98,6 +98,23 @@ BILLING_SPEC = (
     "      type: object\n"
 )
 
+BILLING_SPEC_WITH_DATE = (
+    "openapi: 3.0.0\n"
+    "info: {title: Billing, version: 1.0.0}\n"
+    "paths:\n"
+    "  /billing:\n"
+    "    get:\n"
+    "      responses: {'200': {description: ok}}\n"
+    "components:\n"
+    "  schemas:\n"
+    "    Billing:\n"
+    "      type: object\n"
+    "      properties:\n"
+    "        created:\n"
+    "          type: string\n"
+    "          example: 2024-01-31\n"
+)
+
 SHARED_SPEC = (
     "openapi: 3.0.0\n"
     "info: {title: Shared, version: 1.0.0}\n"
@@ -354,6 +371,26 @@ class TestRunUpdatePositiveFlows:
         }
         assert (tmp_path / "specs" / "billing.yaml").read_text(encoding="utf-8") == BILLING_SPEC
 
+    def test_run_update_added_spec_with_yaml_date_scalar_completes_revision(self, update_project, mocker, tmp_path):
+        # YAML parses the unquoted example into a datetime.date — the prompt
+        # payload must serialize it (default=str), not raise a raw TypeError
+        # out of the rebuild block.
+        graph_file = _write_graph(tmp_path, "/users:\n- /orders\n/orders: []\n")
+        remote = _make_remote(tmp_path, {"api.yaml": BASELINE_SPEC, "billing.yaml": BILLING_SPEC_WITH_DATE})
+        _patch_clone(mocker, remote)
+        captured = _patch_capturing_client(mocker, '{"/users": ["/orders"], "/orders": [], "/billing": []}')
+
+        output = run_update(tmp_path)
+
+        assert output == "Added:\n  - billing.yaml\nTraceability graph: rebuilt"
+        assert "2024-01-31" in captured["user"]
+        assert yaml.safe_load(graph_file.read_text(encoding="utf-8")) == {
+            "/users": ["/orders"],
+            "/orders": [],
+            "/billing": [],
+        }
+        assert (tmp_path / "specs" / "billing.yaml").read_text(encoding="utf-8") == BILLING_SPEC_WITH_DATE
+
     def test_run_update_added_spec_endpoints_are_deduplicated_across_files(self, update_project, mocker, tmp_path):
         # Two added spec files both declaring /billing: the prompt endpoints
         # are their union — /billing appears once, not once per file.
@@ -539,6 +576,57 @@ class TestRunUpdateNegativeFlows:
             run_update(tmp_path)
 
         assert "expected" in exc_info.value.reason.lower() or "yaml" in exc_info.value.reason.lower()
+        assert (tmp_path / "specs" / "api.yaml").read_text(encoding="utf-8") == BASELINE_SPEC
+        client_tripwire.assert_not_called()
+
+    def test_run_update_non_utf8_graph_file_in_additions_branch_wraps_into_graph_rebuild_failed(
+        self, update_project, mocker, tmp_path
+    ):
+        # A binary-corrupt traceability.yml fails decode inside the rebuild
+        # block — wrapped like every other rebuild failure, never a raw
+        # UnicodeDecodeError traceback.
+        graph_file = _write_graph(tmp_path, "/users:\n- /orders\n/orders: []\n")
+        graph_file.write_bytes(b"/users:\n- /orders\n\xff\xfe\xfa")
+        remote = _make_remote(tmp_path, {"api.yaml": UPDATED_SPEC})
+        _patch_clone(mocker, remote)
+        client_tripwire = mocker.patch(BUILD_CLIENT)
+
+        with pytest.raises(GraphRebuildFailedError) as exc_info:
+            run_update(tmp_path)
+
+        assert "utf-8" in str(exc_info.value.reason)
+        assert (tmp_path / "specs" / "api.yaml").read_text(encoding="utf-8") == BASELINE_SPEC
+        client_tripwire.assert_not_called()
+
+    def test_run_update_non_utf8_graph_file_in_prune_branch_wraps_into_graph_rebuild_failed(
+        self, update_project, mocker, tmp_path
+    ):
+        # The same binary corruption in the removals-only branch: the prune
+        # load happens inside the rebuild block too.
+        graph_file = _write_graph(tmp_path, "/users:\n- /orders\n/orders: []\n")
+        graph_file.write_bytes(b"/users:\n- /orders\n\xff\xfe\xfa")
+        (tmp_path / "specs" / "legacy.yaml").write_text(LEGACY_SPEC, encoding="utf-8")
+        remote = _make_remote(tmp_path, {"api.yaml": BASELINE_SPEC})
+        _patch_clone(mocker, remote)
+
+        with pytest.raises(GraphRebuildFailedError):
+            run_update(tmp_path)
+
+        assert (tmp_path / "specs" / "legacy.yaml").exists()
+
+    def test_run_update_non_string_graph_values_wraps_into_graph_rebuild_failed(self, update_project, mocker, tmp_path):
+        # A syntactically valid graph whose adjacency holds a non-string
+        # scalar fails TraceabilityGraph validation inside the rebuild block —
+        # wrapped, not a raw pydantic ValidationError traceback.
+        _write_graph(tmp_path, "/users: 1\n")
+        remote = _make_remote(tmp_path, {"api.yaml": UPDATED_SPEC})
+        _patch_clone(mocker, remote)
+        client_tripwire = mocker.patch(BUILD_CLIENT)
+
+        with pytest.raises(GraphRebuildFailedError) as exc_info:
+            run_update(tmp_path)
+
+        assert "Input should be a valid string" in str(exc_info.value.reason)
         assert (tmp_path / "specs" / "api.yaml").read_text(encoding="utf-8") == BASELINE_SPEC
         client_tripwire.assert_not_called()
 
