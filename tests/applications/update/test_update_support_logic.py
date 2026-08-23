@@ -5,8 +5,9 @@ GraphRebuildFailedError is importable from swax.applications.update, is an
 Exception subclass, stores its keyword-only reason, and cannot be constructed
 positionally. The second block pins the cell-internal helper
 save_traceability_atomically (task 8): its module-level import path, its
-signature, and its absence from the facade. Later blocks (task 9) extend this
-file with render_update_summary.
+signature, and its absence from the facade. The remaining blocks pin
+render_update_summary (task 9): the same internal-module contract plus the
+pure rendering behavior (group order, empty-group omission, status line).
 """
 
 import inspect
@@ -14,7 +15,9 @@ import pathlib
 
 import pytest
 from swax.applications.update import GraphRebuildFailedError
+from swax.applications.update.render_update_summary import render_update_summary
 from swax.applications.update.save_traceability_atomically import save_traceability_atomically
+from swax.fs import SpecsChanges
 from swax.traceability import TraceabilityGraph
 
 
@@ -88,3 +91,51 @@ class TestSaveTraceabilityAtomicallyLogic:
 
         assert not (swax_dir / ".traceability.yml.tmp").exists()
         assert path.read_text(encoding="utf-8") == old_content
+
+
+class TestRenderUpdateSummaryContract:
+    def test_importable_from_internal_module(self):
+        assert callable(render_update_summary)
+
+    def test_signature(self):
+        signature = inspect.signature(render_update_summary)
+
+        params = list(signature.parameters)
+        assert params == ["changes", "graph_status"]
+        assert signature.parameters["changes"].annotation is SpecsChanges
+        assert signature.parameters["graph_status"].annotation == (str | None)
+        assert signature.return_annotation is str
+
+    def test_not_exposed_on_facade(self):
+        import swax.applications.update as facade
+
+        assert "render_update_summary" not in facade.__all__
+
+
+class TestRenderUpdateSummaryLogic:
+    def test_groups_sorted_paths_and_status(self):
+        changes = SpecsChanges(
+            added=["orders.yaml"],
+            updated=["a.yaml", "users.yaml"],
+            removed=["legacy.yaml"],
+        )
+
+        output = render_update_summary(changes, graph_status="rebuilt")
+
+        assert output == (
+            "Added:\n"
+            "  - orders.yaml\n"
+            "Updated:\n"
+            "  - a.yaml\n"
+            "  - users.yaml\n"
+            "Removed:\n"
+            "  - legacy.yaml\n"
+            "Traceability graph: rebuilt"
+        )
+
+    def test_omits_empty_groups_and_none_status(self):
+        changes = SpecsChanges(added=[], updated=[], removed=["only.yaml"])
+
+        output = render_update_summary(changes, graph_status=None)
+
+        assert output == "Removed:\n  - only.yaml"
