@@ -98,6 +98,15 @@ BILLING_SPEC = (
     "      type: object\n"
 )
 
+SHARED_SPEC = (
+    "openapi: 3.0.0\n"
+    "info: {title: Shared, version: 1.0.0}\n"
+    "paths:\n"
+    "  /shared:\n"
+    "    get:\n"
+    "      responses: {'200': {description: ok}}\n"
+)
+
 MODIFIED_RESPONSE_SPEC = (
     "openapi: 3.0.0\n"
     "info: {title: Test, version: 1.0.0}\n"
@@ -230,6 +239,29 @@ class TestRunUpdatePositiveFlows:
             "/shared": ["/users"],
         }
 
+    def test_run_update_keeps_endpoints_dropped_by_modified_spec_when_a_surviving_spec_declares_them(
+        self, update_project, mocker, tmp_path
+    ):
+        # /shared is dropped by the MODIFIED api.yaml but still declared by the
+        # unchanged b.yaml — the incremental branch must reconcile per-pair
+        # removals like whole-file removals: /shared stays in the universe and
+        # the graph, and never reaches the LLM as a removal.
+        graph_file = _write_graph(tmp_path, "/users:\n- /shared\n/shared:\n- /users\n")
+        (tmp_path / "specs" / "api.yaml").write_text(API_SPEC_WITH_SHARED, encoding="utf-8")
+        (tmp_path / "specs" / "b.yaml").write_text(SHARED_SPEC, encoding="utf-8")
+        remote = _make_remote(tmp_path, {"api.yaml": BASELINE_SPEC, "b.yaml": SHARED_SPEC})
+        _patch_clone(mocker, remote)
+        captured = _patch_capturing_client(mocker, '{"/users": ["/shared"], "/shared": ["/users"]}')
+
+        output = run_update(tmp_path)
+
+        assert output == "Updated:\n  - api.yaml\nTraceability graph: rebuilt"
+        assert '"removed": []' in captured["user"]
+        assert yaml.safe_load(graph_file.read_text(encoding="utf-8")) == {
+            "/users": ["/shared"],
+            "/shared": ["/users"],
+        }
+
     def test_run_update_removals_only_without_graph_applies_specs_and_omits_status(
         self, update_project, mocker, tmp_path
     ):
@@ -321,6 +353,22 @@ class TestRunUpdatePositiveFlows:
             "/billing": ["/users"],
         }
         assert (tmp_path / "specs" / "billing.yaml").read_text(encoding="utf-8") == BILLING_SPEC
+
+    def test_run_update_added_spec_endpoints_are_deduplicated_across_files(self, update_project, mocker, tmp_path):
+        # Two added spec files both declaring /billing: the prompt endpoints
+        # are their union — /billing appears once, not once per file.
+        _write_graph(tmp_path, "/users:\n- /orders\n/orders: []\n")
+        remote = _make_remote(
+            tmp_path,
+            {"api.yaml": BASELINE_SPEC, "billing.yaml": BILLING_SPEC, "billing2.yaml": BILLING_SPEC},
+        )
+        _patch_clone(mocker, remote)
+        captured = _patch_capturing_client(mocker, '{"/users": ["/orders"], "/orders": [], "/billing": ["/users"]}')
+
+        run_update(tmp_path)
+
+        assert '"endpoints": ["/billing"]' in captured["user"]
+        assert '"endpoints": ["/billing", "/billing"]' not in captured["user"]
 
     def test_run_update_prompt_carries_modified_endpoint_descriptions(self, update_project, mocker, tmp_path):
         # A changed response description classifies as a modification (not an
@@ -475,6 +523,24 @@ class TestRunUpdateNegativeFlows:
 
         assert "expected" in exc_info.value.reason.lower() or "yaml" in exc_info.value.reason.lower()
         assert (tmp_path / "specs" / "legacy.yaml").exists()
+
+    def test_run_update_corrupt_graph_file_in_additions_branch_wraps_into_graph_rebuild_failed(
+        self, update_project, mocker, tmp_path
+    ):
+        # The same malformed traceability.yml in the incremental branch: the
+        # graph is loaded inside the rebuild block there too, so the failure
+        # is wrapped and the specs restored — never a raw yaml traceback.
+        _write_graph(tmp_path, "broken: [unclosed\n")
+        remote = _make_remote(tmp_path, {"api.yaml": UPDATED_SPEC})
+        _patch_clone(mocker, remote)
+        client_tripwire = mocker.patch(BUILD_CLIENT)
+
+        with pytest.raises(GraphRebuildFailedError) as exc_info:
+            run_update(tmp_path)
+
+        assert "expected" in exc_info.value.reason.lower() or "yaml" in exc_info.value.reason.lower()
+        assert (tmp_path / "specs" / "api.yaml").read_text(encoding="utf-8") == BASELINE_SPEC
+        client_tripwire.assert_not_called()
 
 
 class TestRunUpdateEdgeCases:

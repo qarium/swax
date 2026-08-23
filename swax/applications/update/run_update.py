@@ -179,7 +179,10 @@ def _classify_spec_changes(
         changes: file-level classification from compare_specs.
 
     Returns:
-        A ``(modified_spec_rels, added_spec_rels, removed_endpoints)`` tuple.
+        A ``(modified_spec_rels, added_spec_rels, removed_endpoints,
+        surviving_endpoints)`` tuple — surviving_endpoints is every endpoint
+        declared by the post-update remote tree, reused to reconcile the
+        per-pair removals of the incremental branch the same way.
 
     Raises:
         SpecParseError: when a removed or surviving spec fails to parse
@@ -200,7 +203,7 @@ def _classify_spec_changes(
 
     removed_endpoints = sorted(dropped_endpoints - surviving_endpoints)
 
-    return modified_spec_rels, added_spec_rels, removed_endpoints
+    return modified_spec_rels, added_spec_rels, removed_endpoints, surviving_endpoints
 
 
 def _merged_endpoint_diff(
@@ -208,19 +211,25 @@ def _merged_endpoint_diff(
     remote_root: pathlib.Path,
     modified_spec_rels: set[str],
     removed_endpoints: list[str],
+    surviving_endpoints: set[str],
 ) -> EndpointDiff:
     """Classify and merge the endpoint diff of every modified spec-file pair.
 
     Each modified spec file is parsed on both sides and diffed; the per-pair
     buckets are unioned as sets and sorted once at the end for determinism.
     The endpoints of the whole-file removals are folded into the merged
-    removed list — removed spec files are pruned in the same revision.
+    removed list — removed spec files are pruned in the same revision. Per-pair
+    removals are reconciled against the surviving (remote) endpoints first: an
+    endpoint dropped by one modified file but still declared by any surviving
+    spec stays live, exactly like a whole-file removal.
 
     Args:
         local_root: local specs directory (still the pre-swap content).
         remote_root: specs directory inside the fresh clone.
         modified_spec_rels: relative paths changed and present on both sides.
         removed_endpoints: endpoints of the locally removed spec files.
+        surviving_endpoints: every endpoint declared by the post-update remote
+            tree (from _classify_spec_changes).
 
     Returns:
         A single EndpointDiff with deterministic, sorted buckets.
@@ -235,7 +244,7 @@ def _merged_endpoint_diff(
     for rel in sorted(modified_spec_rels):
         pair = classify_endpoint_changes(diff_specs(parse_spec(local_root / rel), parse_spec(remote_root / rel)))
         added.update(pair.added)
-        removed.update(pair.removed)
+        removed.update(set(pair.removed) - surviving_endpoints)
         for endpoint, descriptions in pair.modified.items():
             modified.setdefault(endpoint, set()).update(descriptions)
 
@@ -255,17 +264,19 @@ def _added_spec_context(remote_root: pathlib.Path, added_spec_rels: set[str]) ->
 
     Returns:
         A ``(endpoints, schemas)`` tuple — the LLM context of the added specs.
-        The schemas are attached to the prompt only, never persisted.
+        The endpoints are unioned across the added files (an endpoint declared
+        by several of them appears once); the schemas are attached to the
+        prompt only, never persisted.
 
     Raises:
         SpecParseError: when an added spec fails to parse (propagated).
     """
-    endpoints: list[str] = []
+    endpoints: set[str] = set()
     schemas: dict = {}
 
     for rel in sorted(added_spec_rels):
         spec = parse_spec(remote_root / rel)
-        endpoints.extend(extract_paths(spec))
+        endpoints.update(extract_paths(spec))
         schemas.update(extract_schemas(spec))
 
     return sorted(endpoints), schemas
@@ -365,9 +376,10 @@ def run_update(project_root: pathlib.Path) -> str:
     credentials when the diff has additions (before any mutation), prepare
     the incremental input when a graph file exists, assemble the staging
     directory, and swap it in — the rebuild inside the swap (deterministic
-    prune, incremental LLM revision, or delegated run_discover) is the single
-    rollback point whose failures are wrapped into GraphRebuildFailedError
-    after the specs have been restored.
+    prune, incremental LLM revision, or delegated run_discover; the existing
+    graph is loaded inside it too, so a corrupt graph rolls back like any
+    rebuild failure) is the single rollback point whose failures are wrapped
+    into GraphRebuildFailedError after the specs have been restored.
 
     Args:
         project_root: root of the Swax project. ``.swax/config.yml`` describes
@@ -416,7 +428,7 @@ def run_update(project_root: pathlib.Path) -> str:
             },
         )
 
-        modified_spec_rels, added_spec_rels, removed_endpoints = _classify_spec_changes(
+        modified_spec_rels, added_spec_rels, removed_endpoints, surviving_endpoints = _classify_spec_changes(
             local_root=local_root,
             remote_root=remote_root,
             changes=changes,
@@ -427,12 +439,12 @@ def run_update(project_root: pathlib.Path) -> str:
             require_vars()
 
             if graph_existed:
-                existing = load_traceability(graph_path)
                 merged = _merged_endpoint_diff(
                     local_root=local_root,
                     remote_root=remote_root,
                     modified_spec_rels=modified_spec_rels,
                     removed_endpoints=removed_endpoints,
+                    surviving_endpoints=surviving_endpoints,
                 )
                 added_endpoints, added_schemas = _added_spec_context(
                     remote_root=remote_root,
@@ -454,6 +466,7 @@ def run_update(project_root: pathlib.Path) -> str:
                         _prune_graph(graph_path, removed_endpoints)
                         graph_status = "rebuilt"
                 elif graph_existed:
+                    existing = load_traceability(graph_path)
                     logger.debug(
                         "rebuild branch: incremental",
                         extra={"existing_endpoints": len(existing.edges)},
