@@ -85,6 +85,9 @@ Annotations: |
     is revised incrementally when it exists, or built from scratch via `run_discover` when
     it does not.
 
+  Removed endpoints are reconciled against the post-update tree — an endpoint still declared
+  by any surviving, modified, or added spec is never pruned from the graph.
+
   LLM responses are parsed defensively (provider-agnostic): strip prose/code fences around
   the JSON payload; wrap json.JSONDecodeError into `LLMResponseParseError` with a raw payload
   excerpt; validate the shape dict[str, list[str]]; drop sources and targets outside the
@@ -131,8 +134,9 @@ Annotations: |
     4. Empty diff — return the up-to-date message; specs and graph stay untouched, the LLM is
        never required (even when no graph exists).
     5. Collect endpoints of removed spec files (membership in `discover_specs` over the local
-       root) from their last local content via `parse_spec` + `extract_paths` — shared by both
-       branches; the removals-only branch uses them directly as the prune list.
+       root) from their last local content via `parse_spec` + `extract_paths`, reconciled
+       against the endpoints still declared by surviving remote specs — only endpoints absent
+       from the whole post-update tree are pruned, in both branches.
     6. Otherwise — validate LLM credentials via `require_vars` BEFORE any mutation; when the
        graph file exists, prepare the incremental input: endpoint diff per modified spec-file
        pair via `diff_specs` + `classify_endpoint_changes` (merged), with the collected endpoints
@@ -141,7 +145,8 @@ Annotations: |
        added spec files via `extract_paths` + `extract_schemas` — spec files are filtered by
        membership in `discover_specs` over the local root and the clone; non-spec files are
        mirrored silently but never parsed.
-    7. Assemble staging next to the target via `copy_specs` from the clone.
+    7. Assemble staging next to the target via `copy_specs` from the clone; a stale staging
+       leftover from a crashed run is removed first.
     8. Inside `staged_specs_swap`:
        a. Removals-only — when the graph file exists: load the graph via `load_traceability`,
           drop removed endpoints via `TraceabilityGraph` remove_paths, deduplicate, persist

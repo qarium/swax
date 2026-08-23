@@ -2,7 +2,7 @@
 
 ## Domain
 
-Usage templates for the Swax CLI entry point and the `SwaxContext` pass object. Target audience: cells `commands/init/` and `commands/discover/` (registered on the `main` group and reading `SwaxContext` via `@click.pass_obj`).
+Usage templates for the Swax CLI entry point and the `SwaxContext` pass object. Target audience: the command cells `commands/init/`, `commands/discover/`, `commands/plan/`, and `commands/update/` (registered on the `main` group and reading `SwaxContext` via `@click.pass_obj`).
 
 Click is the only CLI framework in Swax. The top-level `main` group with the `--env-file` option loads the environment before any subcommand runs.
 

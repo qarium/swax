@@ -61,7 +61,7 @@ copy_specs(source=cloned_specs, destination=staging)
 with staged_specs_swap(target=target, staging=staging) as live_root:
     ...  # target now holds the new state; rebuild the graph here
 
-# normal exit — backup removed; exception — target restored, exception re-raised
+# normal exit — backup removed (best effort); exception — target restored, exception re-raised
 ```
 
 Consumer conventions:
@@ -69,7 +69,8 @@ Consumer conventions:
 - Keep staging next to the target so the swap stays on one filesystem.
 - Do the graph rebuild inside the `with` block: any exception restores the previous specs
   state automatically.
-- Intermediate artifacts (staging remains, backup) are cleaned up on every outcome.
+- Staging remains never survive; the backup is removed best effort on normal exit — a
+  leftover is removed on the next swap.
 
 ## Testing
 

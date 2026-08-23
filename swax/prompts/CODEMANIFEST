@@ -177,5 +177,5 @@ Annotations: |
 Author: Goga
 CreatedAt: 25/06/26
 Description: |
-  LLM prompt builders for the two-pass traceability graph construction scenario and
-  the single-turn change-impact report scenario.
+  LLM prompt builders: two-pass graph construction (discover), single-turn impact report
+  (plan), and single-turn incremental graph rebuild (update).

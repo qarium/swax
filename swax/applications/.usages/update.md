@@ -32,10 +32,12 @@ Consumer conventions:
 ## What runs inside
 
 1. `load_config` — read `.swax/config.yml`.
-2. `validate_specs_location` — refuse mirroring into the project root or its ancestor.
+2. `validate_specs_location` — refuse targets outside the project, the project root or its
+   ancestor, and locations covering `.swax/`.
 3. `clone_specs` (ctx-mgr) → `compare_specs` — byte-level file classification.
 4. No changes → return "Specs are up to date." — graph untouched, no LLM needed.
-5. Removals only → collect removed files' endpoints (old local content) → inside
+5. Removals only → collect removed files' endpoints (old local content), minus the
+   endpoints still declared by surviving specs → inside
    `staged_specs_swap`: graph file exists → `load_traceability` → `remove_paths` →
    `deduplicate` → atomic save, status "rebuilt"; graph file missing → specs applied,
    graph stays missing, no status line (no LLM in either case).

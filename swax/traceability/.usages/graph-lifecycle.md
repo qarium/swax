@@ -2,7 +2,7 @@
 
 ## Domain
 
-Templates for building and persisting the API traceability graph. Target audience: cell `applications/discover/` (accumulates edges from the LLM output and saves the graph to `.swax/traceability.yml`).
+Templates for building and persisting the API traceability graph. Target audience: cells `applications/discover/` (accumulates edges from the LLM output and saves the graph to `.swax/traceability.yml`) and `applications/update/` (loads, prunes, and re-saves the graph).
 
 The graph operates on paths only — no HTTP methods, no resource abstraction. This is an architectural rule of Swax: minimal abstraction. Nodes = API paths, edges = discovered dependencies between endpoints.
 

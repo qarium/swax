@@ -111,13 +111,15 @@ Annotations: |
     1. On enter: if `target` exists, rename it to a backup directory next to itself.
     2. Rename `staging` into place as the new `target`.
     3. Yield the live path.
-    4. On normal exit: remove the backup.
+    4. On normal exit: remove the backup (best effort).
     5. On exception: remove the swapped-in directory, restore the backup to `target`,
        and re-raise.
 
     Requirements:
     - The swap opens only after `staging` is complete.
-    - Every intermediate artifact (backup, swapped-in remains) is removed on every outcome.
+    - On exception the previous state is fully restored — no swapped-in remains survive.
+    - On normal exit the backup removal is best effort — a leftover is removed on the next
+      swap and logged as a warning.
     - Renames operate within the target's parent directory.
 
     Constraints:
@@ -127,16 +129,16 @@ Annotations: |
 "validate_specs_location(project_root: pathlib.Path, specs_location: pathlib.Path)":
   location: validate_specs_location.py
   annotations: |
-    Guards the mirroring target: refuses when the specs location would cover the project
-    itself.
+    Guards the mirroring target: accepts only locations strictly inside the project and
+    outside .swax/.
 
     `project_root`: root of the Swax project (where .swax/ lives).
     `specs_location`: configured local specs path.
 
     Algorithm:
-    1. Resolve both paths.
-    2. If `specs_location` equals `project_root` or is one of its ancestors, raise
-       `UnsafeSpecsLocationError`.
+    1. Resolve `project_root`, `specs_location`, and the .swax/ directory.
+    2. Raise `UnsafeSpecsLocationError` unless `specs_location` is a strict descendant of
+       `project_root` that does not cover .swax/.
 
     Requirements:
     - Runs before any mutation of the specs directory.
