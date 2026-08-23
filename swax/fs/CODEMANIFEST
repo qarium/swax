@@ -2,8 +2,10 @@ Usages:
   conventions: .goga/usages/conventions.md
 
 Annotations: |
-  Filesystem layout of a Swax project: the .swax/ directory and spec copying.
+  Filesystem layout of a Swax project: the .swax/ directory, spec copying, and spec
+  mirroring (classification, staged swap, path guard).
 
+  The remote clone is the source of truth — mirroring overwrites local spec edits silently.
   All paths are pathlib.Path. Relative imports inside the cell.
   Tests exercise filesystem operations only through tmp_path.
 
@@ -47,9 +49,110 @@ Annotations: |
     Constraints:
     - Symlinks in the clone are not dereferenced — copied as regular files.
 
+"compare_specs(local_root: pathlib.Path, remote_root: pathlib.Path) -> changes: SpecsChanges":
+  location: compare_specs.py
+  annotations: |
+    Classifies file-level differences between the local specs directory and the remote
+    clone by comparing bytes.
+
+    `local_root`: local specs directory (may not exist).
+    `remote_root`: specs directory inside the fresh clone.
+    `changes`: the classification result.
+
+    Algorithm:
+    1. Walk both trees and key every file by its path relative to the root.
+    2. Files only in `remote_root` are added; files only in `local_root` are removed.
+    3. Files in both are compared byte by byte, stopping at the first difference;
+       identical files are skipped.
+    4. Sort each list.
+
+    Requirements:
+    - Byte-level comparison — metadata (mtime, permissions) is ignored.
+    - Output is deterministic — sorted, stable across runs.
+    - A missing `local_root` classifies every remote file as added.
+    - An empty `remote_root` classifies every local file as removed.
+
+    Constraints:
+    - Read-only — modifies neither tree.
+
+"SpecsChanges(added: list[str], updated: list[str], removed: list[str])":
+  location: specs_changes.py
+  annotations: |
+    File-level classification of specification changes between the local specs directory
+    and the remote clone.
+
+    `added`: relative file paths present only in the remote state.
+    `updated`: relative file paths present in both with differing bytes.
+    `removed`: relative file paths present only in the local state.
+  properties:
+    "added -> list[str]": |
+      Relative file paths present only in the remote state.
+    "updated -> list[str]": |
+      Relative file paths present in both states with differing bytes.
+    "removed -> list[str]": |
+      Relative file paths present only in the local state.
+  methods:
+    "has_changes() -> changed: bool": |
+      True when any of the three lists is non-empty.
+    "has_additions() -> present: bool": |
+      True when the added or updated list is non-empty — drives the LLM-requiring branch.
+
+"staged_specs_swap(target: pathlib.Path, staging: pathlib.Path) -> Iterator[live_root: pathlib.Path]":
+  location: staged_specs_swap.py
+  annotations: |
+    Context manager replacing the live specs directory with a prepared staging directory
+    in one transactional step.
+
+    `target`: the live local specs directory to replace.
+    `staging`: the fully assembled new state, located next to `target`.
+    `live_root`: the target path, valid as the live directory inside the with block.
+
+    Algorithm:
+    1. On enter: if `target` exists, rename it to a backup directory next to itself.
+    2. Rename `staging` into place as the new `target`.
+    3. Yield the live path.
+    4. On normal exit: remove the backup.
+    5. On exception: remove the swapped-in directory, restore the backup to `target`,
+       and re-raise.
+
+    Requirements:
+    - The swap opens only after `staging` is complete.
+    - Every intermediate artifact (backup, swapped-in remains) is removed on every outcome.
+    - Renames operate within the target's parent directory.
+
+    Constraints:
+    - Does not build `staging` — the caller assembles it before entering.
+    - Does not touch anything outside the target's parent directory.
+
+"validate_specs_location(project_root: pathlib.Path, specs_location: pathlib.Path)":
+  location: validate_specs_location.py
+  annotations: |
+    Guards the mirroring target: refuses when the specs location would cover the project
+    itself.
+
+    `project_root`: root of the Swax project (where .swax/ lives).
+    `specs_location`: configured local specs path.
+
+    Algorithm:
+    1. Resolve both paths.
+    2. If `specs_location` equals `project_root` or is one of its ancestors, raise
+       `UnsafeSpecsLocationError`.
+
+    Requirements:
+    - Runs before any mutation of the specs directory.
+
+"UnsafeSpecsLocationError(path: pathlib.Path)":
+  location: errors.py
+  annotations: |
+    Raised by validate_specs_location when mirroring would target the project root or its
+    ancestor.
+
+    `path`: the refused location.
+
 ---
 
 Author: Goga
 CreatedAt: 25/06/26
 Description: |
-  Filesystem operations for the Swax project layout (.swax/ directory and spec copying).
+  Filesystem operations for the Swax project layout: the .swax/ directory, spec copying,
+  and transactional spec mirroring.

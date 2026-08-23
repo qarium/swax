@@ -8,6 +8,9 @@ Imports:
   - Types:
       - plan AS plan_handler
     From: swax/commands/plan
+  - Types:
+      - update AS update_handler
+    From: swax/commands/update
 
 Usages:
   conventions: .goga/usages/conventions.md
@@ -15,8 +18,9 @@ Usages:
 
 Annotations: |
   Command layer of Swax. Single facade for CLI handlers — consumers register commands
-  and pull cell-level practices (init, discover, plan) from here via Imports, not from the sub-cells.
-  The facade re-exports the `init_handler`, `discover_handler`, and `plan_handler` from their sub-cells.
+  and pull cell-level practices (init, discover, plan, update) from here via Imports, not from
+  the sub-cells. The facade re-exports the `init_handler`, `discover_handler`, `plan_handler`,
+  and `update_handler` from their sub-cells.
 
   Handlers stay thin — only argument parsing and exception mapping to click.ClickException.
   All orchestration lives in the application layer.
@@ -29,6 +33,7 @@ Annotations: |
 ->init_handler: {}
 ->discover_handler: {}
 ->plan_handler: {}
+->update_handler: {}
 
 ---
 

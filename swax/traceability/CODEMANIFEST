@@ -50,6 +50,25 @@ Annotations: |
       - Idempotent — safe to call multiple times.
       - Resulting edge lists are sorted for stable dump.
       - Sources with empty adjacency lists are preserved — a path without dependencies remains a graph node.
+    "remove_paths(paths: list[str])": |
+      Removes endpoints and every edge referencing them, preparing the graph
+      for spec files that no longer exist.
+
+      `paths`: endpoint paths to drop — typically extracted from spec files
+        removed on the remote side.
+
+      Algorithm:
+      1. Drop every `paths` entry present as an adjacency key.
+      2. Remove every `paths` entry from all remaining adjacency lists.
+
+      Requirements:
+      - Deterministic — pure in-memory mutation, no LLM involvement.
+      - Endpoints absent from the graph are ignored silently.
+      - Surviving keys and adjacency lists keep their relative order.
+
+      Constraints:
+      - Removal only — does not introduce new endpoints or edges.
+      - Persistence stays with the caller — deduplicate before saving.
 
 "load_traceability(path: pathlib.Path) -> graph: TraceabilityGraph":
   location: storage.py

@@ -10,7 +10,7 @@ Click is the only CLI framework in Swax. The top-level `main` group with the `--
 
 ## Subcommand registration
 
-The `init` and `discover` subcommands are registered on the `main` group via `main.add_command()`. To avoid circular imports between `cli/` and `commands/`, registration is performed lazily in the `__main__.py` of the `cli/` cell:
+The `init`, `discover`, `plan`, and `update` subcommands are registered on the `main` group via `main.add_command()`. To avoid circular imports between `cli/` and `commands/`, registration is performed lazily in the `__main__.py` of the `cli/` cell:
 
 ```python
 # swax/cli/__main__.py
@@ -19,9 +19,13 @@ from swax.cli import main
 # Lazy registration — breaks the cli/ <-> commands/ cycle
 from swax.commands.init import init
 from swax.commands.discover import discover
+from swax.commands.plan import plan
+from swax.commands.update import update
 
 main.add_command(init)
 main.add_command(discover)
+main.add_command(plan)
+main.add_command(update)
 
 if __name__ == "__main__":
     main()

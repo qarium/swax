@@ -1,0 +1,100 @@
+Imports:
+  - Types:
+      - SwaxContext
+    Usages:
+      - cli-facade
+    From: swax/cli
+  - Types:
+      - run_update
+      - GraphRebuildFailedError
+    Usages:
+      - update AS update-usage
+    From: swax/applications
+  - Types:
+      - MissingEnvironmentVariablesError
+    Usages:
+      - environment
+    From: swax/config
+  - Types:
+      - RepositoryCloneError
+      - SpecsNotFoundError
+    Usages:
+      - specs-repository
+    From: swax/git
+  - Types:
+      - UnsafeSpecsLocationError
+    Usages:
+      - spec-mirroring
+    From: swax/fs
+  - Types:
+      - SpecParseError
+    Usages:
+      - parsing
+    From: swax/openapi
+  - Types:
+      - LLMCallError
+      - LLMRateLimitedError
+      - LLMResponseParseError
+      - UnsupportedLLMProtocolError
+    Usages:
+      - llm-transport
+    From: swax/llm
+
+Usages:
+  conventions: .goga/usages/conventions.md
+  click: .goga/usages/cooks/click.md
+
+Annotations: |
+  Thin CLI handler: exception mapping only. All orchestration lives in `run_update`.
+  Every domain exception is mapped to click.ClickException with a user-facing message.
+  The returned summary is echoed to stdout after a successful run. The command is fully
+  non-interactive — no prompts, no options.
+
+  Use `conventions` for code writing rules and testing.
+  Use `click` for the command decorator, echo, and error mapping.
+  Use `update-usage` for `run_update` semantics and `GraphRebuildFailedError`.
+  Use `cli-facade` for the `SwaxContext` access pattern.
+  Use `environment` for `MissingEnvironmentVariablesError`.
+  Use `specs-repository` for `RepositoryCloneError` and `SpecsNotFoundError`.
+  Use `spec-mirroring` for `UnsafeSpecsLocationError`.
+  Use `parsing` for `SpecParseError`.
+  Use `llm-transport` for the LLM error types.
+
+---
+
+"update(ctx: click.Context)":
+  location: update.py
+  annotations: |
+    Click handler for the update command: delegates to `run_update`, echoes the summary,
+    and maps domain exceptions to user-facing errors.
+
+    `ctx`: Click context whose obj is a `SwaxContext`.
+
+    Algorithm:
+    1. Resolve ctx.obj as `SwaxContext` via @click.pass_obj.
+    2. Resolve project_root from the current working directory.
+    3. Delegate to `run_update` inside a try.
+    4. Echo the returned summary to stdout.
+    5. Map every documented domain exception to click.ClickException:
+       `UnsafeSpecsLocationError` → "Refusing to mirror into {path}";
+       `GraphRebuildFailedError` → "Graph rebuild failed: {reason}; specs restored.";
+       `RepositoryCloneError`, `SpecsNotFoundError`, `MissingEnvironmentVariablesError`,
+       `SpecParseError`, `LLMRateLimitedError`, `LLMCallError`, `UnsupportedLLMProtocolError`,
+       `LLMResponseParseError` — mapped per their imported practice semantics.
+
+    Requirements:
+    - No interactive prompts — update reads everything from .swax/config.yml and the environment.
+    - Exit code 0 on success, 1 on any ClickException.
+
+    Constraints:
+    - Do not catch generic Exception — only the documented domain exceptions.
+    - Do not retry rate-limited calls.
+    - SWAX_LLM_TOKEN never appears in any error message or echoed output.
+
+---
+
+Author: Goga
+CreatedAt: 23/08/26
+Description: |
+  Click handler for the update command — delegates to run_update, echoes the summary, and
+  maps domain errors to ClickException.
