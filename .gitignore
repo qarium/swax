@@ -218,6 +218,8 @@ __marimo__/
 # AI
 .claude/
 .ralphex/
+docs/defines/
+docs/proposals/
 docs/tasks/
 docs/plans/
 docs/design/
