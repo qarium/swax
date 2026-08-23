@@ -1,8 +1,8 @@
 """Contract tests for the swax.traceability cell.
 
 Pins the public surface: the TraceabilityGraph entity (kw_only constructor,
-``add_edge`` / ``deduplicate`` methods, ``edges`` field) and the
-load_traceability / save_traceability routine signatures. Fails with
+``add_edge`` / ``deduplicate`` / ``remove_paths`` methods, ``edges`` field)
+and the load_traceability / save_traceability routine signatures. Fails with
 ImportError until the modules and the facade re-exports exist (task 10).
 """
 
@@ -38,6 +38,15 @@ class TestTraceabilityContract:
         signature = inspect.signature(TraceabilityGraph.deduplicate)
 
         assert list(signature.parameters) == ["self"]
+        assert signature.return_annotation is None
+
+    def test_remove_paths_signature(self):
+        signature = inspect.signature(TraceabilityGraph.remove_paths)
+
+        assert list(signature.parameters) == ["self", "paths"]
+        # list[str] is a generic alias — fresh object per evaluation, so
+        # equality (not identity) is the comparable relation.
+        assert signature.parameters["paths"].annotation == list[str]
         assert signature.return_annotation is None
 
     def test_load_traceability_signature(self):

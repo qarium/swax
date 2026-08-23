@@ -1,9 +1,10 @@
 """Logic tests for the swax.traceability cell.
 
 Covers TraceabilityGraph.add_edge accumulation, deduplicate idempotency and
-self-loop removal (design-doc verbatim case), and the storage round-trip:
-deterministic sorted YAML, empty-file handling, scalar-to-list normalization,
-and save -> load equality. All filesystem operations use tmp_path.
+self-loop removal (design-doc verbatim case), remove_paths pruning of removed
+endpoints and their dangling edges, and the storage round-trip: deterministic
+sorted YAML, empty-file handling, scalar-to-list normalization, and save ->
+load equality. All filesystem operations use tmp_path.
 """
 
 from swax.traceability import TraceabilityGraph, load_traceability, save_traceability
@@ -42,6 +43,26 @@ class TestTraceabilityGraphLogic:
 
         graph.deduplicate()
         assert graph.edges == {"/a": []}
+
+    def test_remove_paths_drops_keys_and_adjacency_references(self):
+        graph = TraceabilityGraph(
+            edges={"/users": ["/orders", "/billing"], "/orders": ["/users"], "/billing": ["/orders"]}
+        )
+
+        graph.remove_paths(["/orders"])
+
+        # Key dropped and dangling references scrubbed — a surviving edge to a
+        # removed endpoint would corrupt swax plan results.
+        assert graph.edges == {"/users": ["/billing"], "/billing": []}
+
+    def test_remove_paths_ignores_absent_endpoints_and_preserves_order(self):
+        graph = TraceabilityGraph(edges={"/a": ["/x", "/b", "/y"], "/ghost": []})
+
+        graph.remove_paths(["/b", "/not-there"])
+
+        # Absent endpoint ignored, survivor order kept, empty-list node
+        # preserved — order stability keeps serialized graphs diff-stable.
+        assert graph.edges == {"/a": ["/x", "/y"], "/ghost": []}
 
 
 class TestStorageLogic:
