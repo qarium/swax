@@ -1,6 +1,6 @@
 ---
 title: Installation
-description: Install Swax from source with Python 3.10+.
+description: Install Swax with pipx on Python 3.10+.
 ---
 
 # Installation
@@ -13,9 +13,14 @@ description: Install Swax from source with Python 3.10+.
 ## Install
 
 ```bash
+pipx install swax
+```
+
+For contributors, from a checkout:
+
+```bash
 python -m venv .venv && source .venv/bin/activate
-pip install -e .            # runtime
-pip install -e '.[test]'    # + pytest, ruff (contributors)
+pip install -e '.[test]'    # + pytest, ruff
 pip install -e '.[docs]'    # + mkdocs (documentation site)
 ```
 

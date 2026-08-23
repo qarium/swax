@@ -18,9 +18,14 @@ persists the result as a deterministic graph.
 ## Installation
 
 ```bash
+pipx install swax
+```
+
+For contributors, from a checkout:
+
+```bash
 python -m venv .venv && source .venv/bin/activate
-pip install -e .            # runtime
-pip install -e '.[test]'    # + pytest, ruff (contributors)
+pip install -e '.[test]'    # + pytest, ruff
 pip install -e '.[docs]'    # + mkdocs (documentation site)
 ```
 
