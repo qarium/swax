@@ -30,9 +30,7 @@ def compare_specs(local_root: pathlib.Path, remote_root: pathlib.Path) -> SpecsC
         else {}
     )
 
-    remote_files = {
-        p.relative_to(remote_root).as_posix(): p for p in remote_root.rglob("*") if p.is_file()
-    }
+    remote_files = {p.relative_to(remote_root).as_posix(): p for p in remote_root.rglob("*") if p.is_file()}
 
     added = sorted(set(remote_files) - set(local_files))
     removed = sorted(set(local_files) - set(remote_files))
