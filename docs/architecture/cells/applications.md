@@ -1,15 +1,16 @@
 ---
 title: swax/applications
-description: Application-layer facade re-exporting use-cases (init, discover, plan) and their sub-cells.
+description: Application-layer facade re-exporting use-cases (init, discover, plan, update) and their sub-cells.
 ---
 
 # `swax/applications`
 
 Application layer of Swax. Single facade for the project's use-cases —
-consumers import types and cell-level practices (`init`, `discover`, `plan`)
-from here via `Imports`, not from the sub-cells. The facade re-exports
-`run_init_handler`, `run_discover_handler`, and `run_plan_handler` from their
-sub-cells.
+consumers import types and cell-level practices (`init`, `discover`, `plan`,
+`update`) from here via `Imports`, not from the sub-cells. The facade
+re-exports `run_init_handler`, `run_discover_handler`, `run_plan_handler`,
+and `run_update_handler` (plus the `GraphRebuildFailedError` domain error)
+from their sub-cells.
 
 Use-cases are hexagonal orchestrators — **no business logic, no SDK calls
 beyond delegated domain cells**. Domain exceptions propagate uncaught; mapping
@@ -22,6 +23,8 @@ to user-facing errors belongs to the command layer.
 | `run_init` | `swax/applications/init` | `run_init_handler` |
 | `run_discover` | `swax/applications/discover` | `run_discover_handler` |
 | `run_plan` | `swax/applications/plan` | `run_plan_handler` |
+| `run_update` | `swax/applications/update` | `run_update_handler` |
+| `GraphRebuildFailedError` | `swax/applications/update` | — |
 
 ---
 
@@ -278,6 +281,115 @@ Constraints:
 
 - Pure transformation — **no I/O, no LLM calls**.
 - Does **not** synthesize content not present in `report`.
+
+---
+
+## `swax/applications/update`
+
+Application-layer use-case: mirror local specs to the remote state and rebuild
+the traceability graph conditionally, **as one transaction**. The remote clone
+is the source of truth — local spec edits are overwritten silently.
+
+`staged_specs_swap` is the single rollback point: a failure of the rebuild
+block removes the swapped-in specs, restores the backup, and is wrapped into
+`GraphRebuildFailedError` (the specs have been restored at that point; a
+failed first build leaves no graph file behind). Failures before the swap
+propagate raw. Logs `INFO` at start/end, `DEBUG` for intermediate steps;
+`SWAX_LLM_TOKEN` never in logs or the returned output.
+
+### Branch priority
+
+1. **Empty diff** — `"Specs are up to date."`; nothing touched, no LLM.
+2. **Removals-only** — deterministic prune (`remove_paths` → `deduplicate` →
+   atomic save) when a graph file exists, graph stays missing when it does
+   not; still no LLM.
+3. **Added/updated** — `require_vars` **before any mutation**; incremental
+   single-turn LLM revision when the graph exists, delegated `run_discover`
+   first build when it does not.
+
+Removed endpoints are reconciled against the post-update tree — an endpoint
+still declared by any surviving, modified, or added spec stays live; only
+endpoints absent from the whole tree are pruned. LLM responses are parsed
+defensively (fence stripping, `JSONDecodeError` wrapped into
+`LLMResponseParseError`, `dict[str, list[str]]` shape validation) and
+filtered to the endpoint universe.
+
+### `run_update(project_root: pathlib.Path) -> output: str`
+
+Use-case "update": mirror specs and rebuild the graph transactionally.
+
+- `project_root`: root of the Swax project — `.swax/config.yml` describes the
+  remote source and the local specs layout; `.swax/traceability.yml` is
+  updated according to the diff.
+- `output`: the terminal summary text (change groups plus the graph status
+  line).
+
+Algorithm:
+
+1. Load the config, guard the mirroring target
+   (`validate_specs_location`), clone the remote state, classify the file
+   diff (`compare_specs`).
+2. Empty diff → return the up-to-date message.
+3. Classify the spec-file changes; collect the prune endpoints (reconciled
+   against the endpoints still declared by the post-update tree).
+4. Validate LLM credentials when the diff has additions — **before any
+   mutation**; prepare the incremental input when a graph file exists.
+5. Assemble the staging directory (a stale staging leftover from a crashed
+   run is removed first) and swap it in (`staged_specs_swap`); the rebuild
+   inside the swap — deterministic prune, incremental LLM revision, or
+   delegated `run_discover` — is the single rollback point whose failures
+   are wrapped into `GraphRebuildFailedError`. The existing graph is loaded
+   inside the swap too, so a corrupt graph file rolls back like any rebuild
+   failure.
+6. Render the summary via `render_update_summary` and return it.
+
+Constraints:
+
+- Domain exceptions outside the rebuild block propagate unwrapped.
+- Writes only inside the specs directory, its transient staging/backup
+  siblings, and `.swax/traceability.yml`.
+- Exact strings: `"Specs are up to date."`, `Traceability graph: rebuilt` /
+  `Traceability graph: built`.
+
+### `GraphRebuildFailedError(*, reason: str)`
+
+Domain error raised by `run_update` when the graph rebuild after applying
+specs fails — the specs have been restored from the backup at that point.
+Keyword-only constructor storing `self.reason`.
+
+### Cell-internal helpers
+
+- `save_traceability_atomically(graph, path)` — serialize via
+  `save_traceability` into `path.with_name(f"{path.name}.tmp")`, then
+  `os.replace`; a failed write removes the tmp file and re-raises, leaving
+  the previous file untouched. Not exposed on the facade.
+- `render_update_summary(changes, graph_status)` — pure renderer: `Added:` /
+  `Updated:` / `Removed:` groups (empty groups omitted, input order
+  preserved) plus `Traceability graph: {graph_status}` when the status is not
+  `None`. Not exposed on the facade.
+
+### Imports
+
+- `load_config`, `require_vars` ← `swax/config` (practices: `project-config`,
+  `environment`)
+- `clone_specs` ← `swax/git` (practice: `specs-repository`)
+- `compare_specs`, `copy_specs`, `staged_specs_swap`,
+  `validate_specs_location`, `SpecsChanges` ← `swax/fs`
+  (practices: `project-layout`, `spec-mirroring`)
+- `discover_specs`, `parse_spec`, `extract_paths`, `extract_schemas`,
+  `diff_specs`, `classify_endpoint_changes`, `EndpointDiff`,
+  `SpecParseError` ← `swax/openapi` (practices: `parsing`, `diff`,
+  `extraction`)
+- `TraceabilityGraph`, `load_traceability` ← `swax/traceability`
+  (practice: `graph-lifecycle`)
+- `build_incremental_graph_system_prompt`,
+  `build_incremental_graph_user_prompt` ← `swax/prompts`
+  (practice: `incremental-graph-prompts`)
+- `build_llm_client`, `LLMClient`, `LLMCallError`, `LLMRateLimitedError`,
+  `LLMResponseParseError`, `UnsupportedLLMProtocolError` ← `swax/llm`
+  (practice: `llm-transport`)
+- `run_discover` ← `swax/applications/discover` (sibling import — never via
+  the `swax.applications` facade, which would create an import cycle)
 
 ## See also
 

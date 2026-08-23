@@ -176,6 +176,7 @@ Docstring rules:
 - Include `Args` section when the function accepts parameters
 - Include `Returns` section when the function returns a value
 - Include `Raises` section when the function raises exceptions beyond built-in types
+- Test functions and classes with self-documenting names MAY omit docstrings
 
 ## Dependencies
 
@@ -209,7 +210,7 @@ Tests mirror the source code structure **directly**, without an intermediate roo
 RULES:
 1. Each test directory MUST contain an `__init__.py`
 2. Place local fixtures in `tests/<package>/conftest.py`, shared fixtures in `tests/conftest.py`
-3. Place integration tests covering multiple packages directly in `tests/` (e.g., `tests/test_integration.py`)
+3. Place integration tests covering multiple packages in `tests/integration/` (e.g., `tests/integration/test_update.py`)
 
 ## Naming
 

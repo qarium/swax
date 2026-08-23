@@ -7,7 +7,7 @@ description: CLI entry point — Click group with --env-file, SwaxContext pass o
 
 CLI entry point. The top-level Click group loads the environment and
 initializes a `SwaxContext` for subcommands. Subcommands `init`, `discover`,
-and `plan` are registered **lazily** in `__main__.py` to keep the
+`plan`, and `update` are registered **lazily** in `__main__.py` to keep the
 CODEMANIFEST contract acyclic (`commands` import from `cli`, not the reverse).
 
 `main` and `SwaxContext` are exported as the cell's public API.
@@ -55,20 +55,19 @@ Properties:
 
 ## Subcommand registration pattern
 
-The `init`, `discover`, and `plan` subcommands are registered on the `main`
-group via `main.add_command()`. To avoid circular imports between `cli/` and
-`commands/`, registration is performed lazily in `__main__.py`:
+The `init`, `discover`, `plan`, and `update` subcommands are registered on
+the `main` group via `main.add_command()`. To avoid circular imports between
+`cli/` and `commands/`, registration is performed lazily in `__main__.py`:
 
 ```python
 # swax/cli/__main__.py
-from swax.cli import main
-from swax.commands.init import init
-from swax.commands.discover import discover
-from swax.commands.plan import plan
+from ..commands import discover_handler, init_handler, plan_handler, update_handler
+from .main import main
 
-main.add_command(init)
-main.add_command(discover)
-main.add_command(plan)
+main.add_command(discover_handler, name="discover")
+main.add_command(init_handler, name="init")
+main.add_command(plan_handler, name="plan")
+main.add_command(update_handler, name="update")
 
 if __name__ == "__main__":
     main()

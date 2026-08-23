@@ -5,8 +5,8 @@ from OpenAPI / Swagger specifications, using a two-pass LLM analysis. Given a
 spec repository, it infers which API paths depend on which other paths and
 persists the result as a deterministic graph.
 
-> Status: Alpha. The `init`, `discover`, and `plan` commands are the currently
-> implemented surface.
+> Status: Alpha. The `init`, `discover`, `plan`, and `update` commands are the
+> currently implemented surface.
 
 📖 **Documentation:** https://qarium.github.io/swax/
 
@@ -28,12 +28,13 @@ This installs the `swax` console script (`swax.cli.__main__:main`).
 
 ## Environment
 
-Swax reads three environment variables for the LLM transport. Put them in a
+Swax reads four environment variables for the LLM transport. Put them in a
 `.env` file (loaded via the `--env-file` option) or export them in your shell —
 shell values take precedence over the file:
 
 | Variable | Meaning |
 | --- | --- |
+| `SWAX_LLM_MODEL` | Model name (e.g. `claude-sonnet-4-6`, `gpt-4o`). |
 | `SWAX_LLM_PROTOCOL` | Provider identifier: `anthropic` or `openai`. |
 | `SWAX_LLM_BASE_URL` | LLM API base URL (without a `/v1` or `/v2` version segment — the SDK appends it). |
 | `SWAX_LLM_TOKEN` | LLM API token. Never written to logs or error messages. |
@@ -44,6 +45,7 @@ shell values take precedence over the file:
 swax --env-file .env init
 swax --env-file .env discover
 swax --env-file .env plan
+swax --env-file .env update
 ```
 
 `--env-file` defaults to `.env`; a missing file is silently ignored.
@@ -88,13 +90,38 @@ messages such as `Missing env vars: ...`, `Failed to parse <path>: <reason>`,
 `LLM rate limited; retry later`, `LLM call failed: <reason>`,
 `Unsupported LLM protocol: <protocol>`, `LLM response parse failed: <reason>`.
 
+### `swax update`
+
+Mirrors the local specs to the remote state and rebuilds the traceability
+graph conditionally, as one transaction (no prompts; reads `.swax/config.yml`
+and the environment). The command shallow-clones the spec repository fresh
+and classifies the byte-level file diff, then branches:
+
+- **No changes** — prints `Specs are up to date.` and touches nothing.
+- **Removals only** — mirrors the specs and prunes the graph deterministically
+  without an LLM call.
+- **Added/updated files** — validates `SWAX_LLM_*` before any mutation, then
+  revises the graph incrementally with a single LLM turn
+  (`Traceability graph: rebuilt`) or builds it from scratch via the discover
+  flow when no graph exists (`Traceability graph: built`).
+
+The summary lists `Added:` / `Updated:` / `Removed:` groups plus the graph
+status. The remote is the source of truth — local spec edits are overwritten;
+a failed rebuild restores the previous specs and graph. Failures exit with
+code 1 and messages such as
+`Refusing to mirror into <path>`, `Graph rebuild failed: <reason>; specs
+restored.`, `Failed to clone <url>: <reason>`, `Specs not found at <path>`,
+`Missing env vars: ...`, `Failed to parse <path>: <reason>`,
+`LLM rate limited; retry later`, `LLM call failed: <reason>`,
+`Unsupported LLM protocol: <protocol>`, `LLM response parse failed: <reason>`.
+
 ## Project layout
 
 ```
 .swax/
   config.yml          # written by `swax init`
-  traceability.yml    # written by `swax discover`
-<download_path>/      # the copied specifications
+  traceability.yml    # written by `swax discover`, pruned/rebuilt by `swax update`
+<download_path>/      # the copied specifications (re-mirrored by `swax update`)
 ```
 
 `.swax/config.yml` shape:

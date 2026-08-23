@@ -1,12 +1,13 @@
 ---
 title: swax/prompts
-description: LLM prompt builders for the traceability graph construction (two-pass) and the change-impact report (single-turn) scenarios.
+description: LLM prompt builders for the traceability graph construction (two-pass), the change-impact report (single-turn), and the incremental graph rebuild scenarios.
 ---
 
 # `swax/prompts`
 
-LLM prompt builders for the traceability graph construction (two-pass) and the
-change-impact report (single-turn) scenarios.
+LLM prompt builders for the traceability graph construction (two-pass), the
+change-impact report (single-turn), and the incremental graph rebuild
+(single-turn) scenarios.
 
 Every routine returns a fully-formed prompt string ready for `LLMClient.ask` /
 `ask_multi_turn`. Prompts request structured JSON output; the consumer parses
@@ -154,6 +155,59 @@ Constraints:
   context is large.
 - **Never embed** filesystem paths, tokens, or secrets.
 
+## Incremental graph rebuild prompts
+
+The `swax update` scenario: revise an existing dependency graph from the
+spec-file changes, in a single turn.
+
+### `build_incremental_graph_system_prompt() -> prompt: str`
+
+Constant system prompt for the incremental revision.
+
+Requirements:
+
+- Role: "API dependency analyst revising an existing dependency graph."
+- Output contract: a JSON object mapping source path to a list of dependent
+  paths — **the full updated graph, not a delta**.
+- Universe rule: cover every endpoint of the updated universe provided in the
+  user prompt; no paths outside it.
+- JSON-only rule: the response must be parseable as JSON — no prose, code
+  fences, or commentary.
+- Paths-only rule: the graph operates on paths only, not HTTP methods — two
+  endpoints sharing a path are a single node.
+
+Constraints:
+
+- **No parameters**; no endpoint data — those go into the user prompt.
+
+### `build_incremental_graph_user_prompt(existing_edges, diff_added, diff_removed, diff_modified, added_endpoints, added_schemas) -> prompt: str`
+
+Renders the revision input: the current graph, the endpoint-level change set,
+the new-specs content, and the computed endpoint universe.
+
+- `existing_edges`: the graph as loaded (`dict[str, list[str]]`, insertion
+  order preserved).
+- `diff_added` / `diff_removed`: endpoint path lists; `diff_modified`: path →
+  change descriptions.
+- `added_endpoints` / `added_schemas`: endpoints and schema definitions of
+  the newly added spec files.
+
+Algorithm:
+
+1. Render the graph, the change set (`added` / `removed` / `modified`), and
+   the new-specs payload (`endpoints` / `schemas`) as JSON.
+2. Compute the universe
+   `sorted((set(existing_edges) - set(diff_removed)) | set(diff_added) | set(added_endpoints))`
+   and render it as a JSON array.
+3. Instruct the LLM to return the complete updated dependency mapping
+   covering exactly every endpoint of the universe.
+
+Constraints:
+
+- No truncation; the universe formula is identical to the consumer-side
+  filter in `run_update` — do not drift it.
+- **Never embed** filesystem paths, tokens, or secrets.
+
 ## See also
 
 - [Architecture / llm cell](llm.md) — transports that consume the prompts.
@@ -161,3 +215,5 @@ Constraints:
   two-pass scenario.
 - [Architecture / applications/plan cell](applications.md#swaxapplicationsplan) —
   single-turn scenario.
+- [Architecture / applications/update cell](applications.md#swaxapplicationsupdate) —
+  incremental rebuild scenario.

@@ -2,8 +2,8 @@ Usages:
   conventions: .goga/usages/conventions.md
 
 Annotations: |
-  LLM prompt builders for the traceability graph construction (two-pass) and the
-  change-impact report (single-turn) scenarios.
+  LLM prompt builders for the traceability graph construction (two-pass), the change-impact
+  report (single-turn), and the incremental graph rebuild (update) scenarios.
 
   Every routine returns a fully-formed prompt string ready for LLMClient.ask / ask_multi_turn.
   Prompts request structured JSON output; the consumer parses the response defensively.
@@ -119,10 +119,63 @@ Annotations: |
     - Do not truncate silently — the caller trims before calling if the context is large.
     - Never embed filesystem paths, tokens, or secrets.
 
+"build_incremental_graph_system_prompt() -> prompt: str":
+  location: build_incremental_graph_system_prompt.py
+  annotations: |
+    Builds the system prompt that instructs the LLM to act as an API dependency
+    analyst revising an existing graph.
+
+    `prompt`: the system message for the single-turn incremental rebuild call.
+
+    Requirements:
+    - Defines the LLM role: revise an existing dependency graph given endpoint-level changes.
+    - Mandates the output contract: a JSON object mapping source path to a list of
+      dependent paths — the full updated graph, not a delta.
+    - States explicitly that the graph operates on paths only — no HTTP methods.
+    - Restricts output to the endpoint universe provided in the user prompt — no paths
+      outside it.
+    - Forbids prose around JSON — the response must be parseable as JSON.
+
+    Constraints:
+    - No parameters — the system prompt is constant for the update use-case.
+    - No endpoint data, no graph — those go into the user prompt.
+    - Never embed filesystem paths, tokens, or secrets.
+
+"build_incremental_graph_user_prompt(existing_edges: dict[str, list[str]], diff_added: list[str], diff_removed: list[str], diff_modified: dict[str, list[str]], added_endpoints: list[str], added_schemas: dict) -> prompt: str":
+  location: build_incremental_graph_user_prompt.py
+  annotations: |
+    Builds the user prompt for the incremental graph rebuild: the existing graph,
+    endpoint-level changes of modified specs, and the content of newly added specs.
+
+    `existing_edges`: the current graph as source path -> dependent paths.
+    `diff_added`/`diff_removed`: endpoint paths added/removed by modified spec files.
+    `diff_modified`: path -> human-readable change descriptions.
+    `added_endpoints`: endpoints extracted from newly added spec files.
+    `added_schemas`: schema definitions from newly added spec files, attached as context.
+    `prompt`: the user message for LLMClient.ask.
+
+    Algorithm:
+    1. Render `existing_edges` as the graph to revise.
+    2. Render `diff_added`/`diff_removed` as JSON arrays and `diff_modified` as a JSON object.
+    3. Render `added_endpoints` as a JSON array and `added_schemas` as a JSON object keyed
+       by schema name.
+    4. Instruct the LLM to return the complete updated dependency mapping covering every
+       endpoint of the new universe.
+
+    Requirements:
+    - Output contract matches the incremental parser expectation: dict[str, list[str]].
+    - The endpoint universe is keys of `existing_edges` minus `diff_removed` plus
+      `diff_added` plus `added_endpoints`.
+    - Order follows the sorted order supplied by the caller for determinism.
+
+    Constraints:
+    - Do not truncate silently — the caller trims before calling if the context is large.
+    - Never embed filesystem paths, tokens, or secrets.
+
 ---
 
 Author: Goga
 CreatedAt: 25/06/26
 Description: |
-  LLM prompt builders for the two-pass traceability graph construction scenario and
-  the single-turn change-impact report scenario.
+  LLM prompt builders: two-pass graph construction (discover), single-turn impact report
+  (plan), and single-turn incremental graph rebuild (update).

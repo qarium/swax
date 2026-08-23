@@ -62,6 +62,26 @@ Requirements:
 - Sources with empty adjacency lists are **preserved** — a path without
   dependencies remains a graph node.
 
+#### `remove_paths(paths: list[str])`
+
+Deterministic pruning — drops endpoints from the graph in place. Used by
+`run_update` for the endpoints of removed spec files.
+
+- `paths`: API path templates (output of `extract_paths`, not file paths).
+
+Algorithm:
+
+1. Drop every entry present as an adjacency key.
+2. Remove every entry from all remaining adjacency lists.
+
+Requirements:
+
+- Absent endpoints are ignored silently.
+- Surviving keys and adjacency lists keep their relative order — serialized
+  graphs stay diff-stable.
+- Removal only — introduces no endpoints or edges; persistence stays with the
+  caller (`deduplicate`, then save).
+
 ## Persistence
 
 ### `load_traceability(path: pathlib.Path) -> graph: TraceabilityGraph`
@@ -151,3 +171,5 @@ Constraints:
   builds the graph.
 - [Architecture / applications/plan cell](applications.md#swaxapplicationsplan) —
   consumes the graph.
+- [Architecture / applications/update cell](applications.md#swaxapplicationsupdate) —
+  prunes and revises the graph.

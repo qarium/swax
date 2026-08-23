@@ -49,8 +49,8 @@ nothing about the layers above them.
 | Layer | Cells | Responsibility |
 | --- | --- | --- |
 | **CLI** | `swax/cli` | Top-level Click group, `--env-file`, `SwaxContext` pass object. |
-| **Command** | `swax/commands` (+ `init`, `discover`, `plan`) | Thin Click handlers — argument parsing and exception mapping to `click.ClickException`. No orchestration. |
-| **Application** | `swax/applications` (+ `init`, `discover`, `plan`) | Hexagonal orchestrators — sequence domain cells, no business logic, no SDK calls beyond delegated domain cells. Domain exceptions propagate uncaught. |
+| **Command** | `swax/commands` (+ `init`, `discover`, `plan`, `update`) | Thin Click handlers — argument parsing and exception mapping to `click.ClickException`. No orchestration. |
+| **Application** | `swax/applications` (+ `init`, `discover`, `plan`, `update`) | Hexagonal orchestrators — sequence domain cells, no business logic, no SDK calls beyond delegated domain cells. Domain exceptions propagate uncaught. |
 | **Domain** | `swax/config`, `swax/fs`, `swax/git`, `swax/openapi`, `swax/llm`, `swax/prompts`, `swax/traceability` | Pure domain logic — parsing, transport, models, persistence. |
 
 ## Dependency direction
@@ -74,6 +74,7 @@ the handlers / use-cases of its sub-cells:
 ->init_handler: {}
 ->discover_handler: {}
 ->plan_handler: {}
+->update_handler: {}
 ```
 
 Consumers register commands or pull cell-level practices from the facade via

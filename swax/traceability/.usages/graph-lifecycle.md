@@ -2,7 +2,7 @@
 
 ## Domain
 
-Templates for building and persisting the API traceability graph. Target audience: cell `applications/discover/` (accumulates edges from the LLM output and saves the graph to `.swax/traceability.yml`).
+Templates for building and persisting the API traceability graph. Target audience: cells `applications/discover/` (accumulates edges from the LLM output and saves the graph to `.swax/traceability.yml`) and `applications/update/` (loads, prunes, and re-saves the graph).
 
 The graph operates on paths only — no HTTP methods, no resource abstraction. This is an architectural rule of Swax: minimal abstraction. Nodes = API paths, edges = discovered dependencies between endpoints.
 
@@ -97,3 +97,29 @@ def reload(project_root: Path):
 ```
 
 Reading is used for subsequent graph analysis; the `discover` scenario only writes the graph, it does not read it.
+
+---
+
+## Pruning removed endpoints
+
+When spec files disappear from the remote side, their endpoints leave the graph
+deterministically — no LLM pass is needed. Extract the endpoint paths from the removed
+files' last local content, then:
+
+```python
+from swax.traceability import TraceabilityGraph
+
+
+def prune_removed(graph: TraceabilityGraph, removed_endpoints: list[str]) -> TraceabilityGraph:
+    graph.remove_paths(paths=removed_endpoints)
+    graph.deduplicate()
+    return graph
+```
+
+Consumer conventions:
+- `paths` are API path templates (output of `extract_paths` over the removed files) — not
+  file paths.
+- Endpoints of surviving files and edges between them are preserved untouched.
+- Call `deduplicate` before persisting — the pruned graph follows the same save contract as
+  a fresh one.
+- Save the result atomically when the write must not damage the previous graph on failure.

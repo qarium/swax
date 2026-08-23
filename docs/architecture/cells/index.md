@@ -17,25 +17,28 @@ API and link into the architectural details.
 ## Command layer (facades + handlers)
 
 - [**`swax/commands`**](commands.md) — facade re-exporting `init_handler`,
-  `discover_handler`, `plan_handler`.
-  - Subcells: `commands/init`, `commands/discover`, `commands/plan`.
+  `discover_handler`, `plan_handler`, `update_handler`.
+  - Subcells: `commands/init`, `commands/discover`, `commands/plan`,
+    `commands/update`.
 
 ## Application layer (facades + use-cases)
 
 - [**`swax/applications`**](applications.md) — facade re-exporting
-  `run_init_handler`, `run_discover_handler`, `run_plan_handler`.
-  - Subcells: `applications/init`, `applications/discover`, `applications/plan`.
+  `run_init_handler`, `run_discover_handler`, `run_plan_handler`,
+  `run_update_handler` (+ `GraphRebuildFailedError`).
+  - Subcells: `applications/init`, `applications/discover`,
+    `applications/plan`, `applications/update`.
 
 ## Domain cells
 
 | Cell | Responsibility |
 | --- | --- |
 | [**`swax/config`**](config.md) | Project configuration model, `.env` loading, `SWAX_*` validation. |
-| [**`swax/fs`**](fs.md) | `.swax/` directory management and spec copying. |
+| [**`swax/fs`**](fs.md) | `.swax/` directory management, spec copying, and transactional spec mirroring. |
 | [**`swax/git`**](git.md) | Read-only git repository cloning (context manager). |
 | [**`swax/openapi`**](openapi.md) | OpenAPI/Swagger parsing, extraction, structural diffing, classification. |
 | [**`swax/llm`**](llm.md) | Provider-agnostic LLM transport (Anthropic + OpenAI adapters). |
-| [**`swax/prompts`**](prompts.md) | Prompt builders for graph construction and impact report. |
+| [**`swax/prompts`**](prompts.md) | Prompt builders for graph construction, impact report, and incremental graph rebuild. |
 | [**`swax/traceability`**](traceability.md) | Graph model, YAML persistence, transitive-impact traversal. |
 
 ## Architectural rules (cross-cutting)

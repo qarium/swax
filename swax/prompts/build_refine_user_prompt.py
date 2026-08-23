@@ -21,7 +21,9 @@ def build_refine_user_prompt(ambiguous_pairs: list[str], schemas: dict) -> str:
         The user message for the final turn of LLMClient.ask_multi_turn.
     """
     pairs_payload = json.dumps({"ambiguous_pairs": ambiguous_pairs})
-    schemas_payload = json.dumps({"schemas": schemas})
+    # default=str: parsed YAML carries non-JSON-native scalars (unquoted dates
+    # become datetime.date), which would otherwise raise mid-rebuild.
+    schemas_payload = json.dumps({"schemas": schemas}, default=str)
 
     return f"""Refine these ambiguous dependency pairs using schemas:
 

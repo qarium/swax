@@ -10,8 +10,8 @@ from OpenAPI / Swagger specifications, using a two-pass LLM analysis. Given a
 spec repository, it infers which API paths depend on which other paths and
 persists the result as a deterministic graph.
 
-> **Status:** Alpha. The `init`, `discover`, and `plan` commands are the
-> currently implemented surface.
+> **Status:** Alpha. The `init`, `discover`, `plan`, and `update` commands are
+> the currently implemented surface.
 
 ## What you can do
 
@@ -20,6 +20,8 @@ persists the result as a deterministic graph.
   (`swax discover`).
 - **Plan** testing impact from spec changes with an LLM-generated Markdown
   report (`swax plan`).
+- **Update** local specs to the remote state and incrementally rebuild the
+  graph (`swax update`).
 
 ## Where to go next
 
@@ -34,8 +36,8 @@ persists the result as a deterministic graph.
 ```
 .swax/
   config.yml          # written by `swax init`
-  traceability.yml    # written by `swax discover`
-<download_path>/      # the copied specifications
+  traceability.yml    # written by `swax discover`, pruned/rebuilt by `swax update`
+<download_path>/      # the copied specifications (re-mirrored by `swax update`)
 ```
 
 ## License

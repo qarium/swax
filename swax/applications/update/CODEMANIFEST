@@ -1,0 +1,237 @@
+Imports:
+  - Types:
+      - load_config
+      - require_vars
+      - Config
+    Usages:
+      - project-config
+      - environment
+    From: swax/config
+  - Types:
+      - clone_specs
+      - RepositoryCloneError
+      - SpecsNotFoundError
+    Usages:
+      - specs-repository
+    From: swax/git
+  - Types:
+      - copy_specs
+      - compare_specs
+      - SpecsChanges
+      - staged_specs_swap
+      - validate_specs_location
+    Usages:
+      - project-layout
+      - spec-mirroring
+    From: swax/fs
+  - Types:
+      - discover_specs
+      - parse_spec
+      - extract_paths
+      - extract_schemas
+      - diff_specs
+      - classify_endpoint_changes
+      - EndpointDiff
+      - SpecParseError
+    Usages:
+      - parsing
+      - diff
+      - extraction
+    From: swax/openapi
+  - Types:
+      - TraceabilityGraph
+      - load_traceability
+      - save_traceability
+    Usages:
+      - graph-lifecycle
+    From: swax/traceability
+  - Types:
+      - build_incremental_graph_system_prompt
+      - build_incremental_graph_user_prompt
+    Usages:
+      - incremental-graph-prompts
+    From: swax/prompts
+  - Types:
+      - build_llm_client
+      - LLMClient
+      - LLMCallError
+      - LLMRateLimitedError
+      - LLMResponseParseError
+    Usages:
+      - llm-transport
+    From: swax/llm
+  - Types:
+      - run_discover
+    From: swax/applications/discover
+
+Usages:
+  conventions: .goga/usages/conventions.md
+  json: |
+    Python stdlib json module. Use json.loads for parsing LLM responses and
+    catch json.JSONDecodeError to wrap into a domain error. Defensive parsing only —
+    never trust LLM output structure without schema validation.
+
+Annotations: |
+  Application-layer use-case: bring local specs to the remote state by the saved configuration
+  and rebuild the traceability graph conditionally, as one transaction. The remote clone is
+  the source of truth — local spec edits are overwritten silently. Any failure leaves the
+  specs and the graph exactly as before the attempt.
+
+  Branch priority, checked top to bottom:
+  - Empty file diff — nothing is touched, no LLM, the graph stays as is (or stays missing).
+  - Removals-only diff — when a graph file exists it is pruned deterministically, no LLM;
+    when it does not, the specs are applied and the graph stays missing — still no LLM.
+  - Added/updated present — LLM credentials are validated BEFORE specs are applied; the graph
+    is revised incrementally when it exists, or built from scratch via `run_discover` when
+    it does not.
+
+  Removed endpoints are reconciled against the post-update tree — an endpoint still declared
+  by any surviving, modified, or added spec is never pruned from the graph.
+
+  LLM responses are parsed defensively (provider-agnostic): strip prose/code fences around
+  the JSON payload; wrap json.JSONDecodeError into `LLMResponseParseError` with a raw payload
+  excerpt; validate the shape dict[str, list[str]]; drop sources and targets outside the
+  endpoint universe.
+
+  Domain exceptions propagate uncaught with one exception: the rebuild block is the single
+  rollback point — its failures are wrapped into `GraphRebuildFailedError` after
+  `staged_specs_swap` has restored the specs. Raw `load_config` failures propagate unwrapped.
+  The CLI handler maps domain errors to user-facing errors.
+  Logs INFO at start/end, DEBUG for intermediate steps; SWAX_LLM_TOKEN never in logs.
+
+  Use `conventions` for code writing rules and testing.
+  Use `project-config` for `load_config` and the `Config` shape.
+  Use `environment` for `require_vars` (lazy LLM credential validation before applying specs).
+  Use `specs-repository` for `clone_specs`, `RepositoryCloneError`, and `SpecsNotFoundError`.
+  Use `spec-mirroring` for `compare_specs`, `staged_specs_swap`, `validate_specs_location`.
+  Use `project-layout` for `copy_specs` (staging assembly).
+  Use `parsing` for `discover_specs`, `parse_spec`, and `SpecParseError`.
+  Use `diff` for `diff_specs`, `classify_endpoint_changes`, and `EndpointDiff`.
+  Use `extraction` for `extract_paths` and `extract_schemas`.
+  Use `graph-lifecycle` for `TraceabilityGraph`, `load_traceability`, `save_traceability`.
+  Use `incremental-graph-prompts` for prompt assembly.
+  Use `llm-transport` for `build_llm_client`, `LLMClient`, `LLMCallError`, `LLMRateLimitedError`,
+  and `LLMResponseParseError`.
+  Use `json` for defensive parsing of the LLM JSON response.
+
+---
+
+"run_update(project_root: pathlib.Path) -> output: str":
+  location: run_update.py
+  annotations: |
+    Use-case "update": mirror local specs to the remote state by the saved configuration and
+    rebuild the traceability graph conditionally — non-interactive, transactional.
+
+    `project_root`: root of the Swax project — .swax/config.yml describes the source and
+      layout, .swax/traceability.yml is updated according to the diff.
+    `output`: the terminal summary text (change groups plus graph status line) for the CLI
+      handler to echo.
+
+    Algorithm:
+    1. Read `Config` via `load_config` — raw failures propagate unwrapped.
+    2. Guard the target via `validate_specs_location`.
+    3. Inside `clone_specs`: classify differences via `compare_specs`.
+    4. Empty diff — return the up-to-date message; specs and graph stay untouched, the LLM is
+       never required (even when no graph exists).
+    5. Collect endpoints of removed spec files (membership in `discover_specs` over the local
+       root) from their last local content via `parse_spec` + `extract_paths`, reconciled
+       against the endpoints still declared by surviving remote specs — only endpoints absent
+       from the whole post-update tree are pruned, in both branches.
+    6. Otherwise — validate LLM credentials via `require_vars` BEFORE any mutation; when the
+       graph file exists, prepare the incremental input: endpoint diff per modified spec-file
+       pair via `diff_specs` + `classify_endpoint_changes` (merged), with the collected endpoints
+       of removed spec files folded into the merged removed list — whole-file removals are pruned
+       in the same revision; endpoints and schemas of
+       added spec files via `extract_paths` + `extract_schemas` — spec files are filtered by
+       membership in `discover_specs` over the local root and the clone; non-spec files are
+       mirrored silently but never parsed.
+    7. Assemble staging next to the target via `copy_specs` from the clone; a stale staging
+       leftover from a crashed run is removed first.
+    8. Inside `staged_specs_swap`:
+       8.1. Removals-only — when the graph file exists: load the graph via `load_traceability`,
+          drop removed endpoints via `TraceabilityGraph` remove_paths, deduplicate, persist
+          via `save_traceability_atomically`; graph status "rebuilt". When it does not exist:
+          skip graph work entirely — the graph stays missing and no status line is rendered.
+       8.2. Incremental — build prompts via `build_incremental_graph_system_prompt` /
+          `build_incremental_graph_user_prompt`, ask via `LLMClient` built by
+          `build_llm_client`, parse defensively, filter to the endpoint universe, construct
+          the `TraceabilityGraph`, deduplicate, persist via `save_traceability_atomically`;
+          graph status "rebuilt".
+       8.3. No graph file — delegate the full rebuild to `run_discover`; graph status "built".
+    9. Wrap failures of the rebuild block into `GraphRebuildFailedError` — by that point
+       `staged_specs_swap` has restored the previous specs state; when no graph file existed
+       before the attempt and the failed build left one behind, remove
+       .swax/traceability.yml first.
+    10. Render the summary via `render_update_summary` and return it.
+
+    Requirements:
+    - The whole path is one transaction: on any failure the specs and the graph are exactly
+      as before the attempt; a repeated run sees the same diff and converges.
+    - A failed first build (no graph file before the attempt) leaves no graph file behind —
+      a partially written .swax/traceability.yml is removed before the failure is wrapped.
+    - LLM credentials are validated before specs are applied whenever the LLM branch is taken.
+    - All network operations and staging assembly happen before the live directory is mutated.
+    - The final graph write is atomic — the previous graph survives a failed write.
+    - SWAX_LLM_TOKEN never appears in logs or the returned output.
+
+    Constraints:
+    - Do not catch domain exceptions except inside the rebuild block (the rollback point);
+      never catch generic Exception.
+    - Do not write anything outside the specs directory and .swax/traceability.yml — the
+      config and the rest of the project stay untouched.
+    - No interactive prompts — all inputs come from .swax/config.yml and the environment.
+
+"GraphRebuildFailedError(reason: str)":
+  location: errors.py
+  annotations: |
+    Raised by run_update when the graph rebuild after applying specs fails — the specs have
+    been restored from the backup at that point.
+
+    `reason`: short diagnostic reason carried from the underlying failure.
+
+"save_traceability_atomically(graph: TraceabilityGraph, path: pathlib.Path)":
+  location: save_traceability_atomically.py
+  annotations: |
+    Persists the graph so the previous file survives a failed write.
+
+    `graph`: graph to write, deduplicated by the caller.
+    `path`: destination file path (.swax/traceability.yml).
+
+    Algorithm:
+    1. Serialize via `save_traceability` into a temporary file next to `path`.
+    2. Replace `path` with the temporary file in a single rename.
+    3. On any failure, remove the temporary file and let the error propagate.
+
+    Requirements:
+    - The destination is replaced in one uninterrupted operation — no partially written target.
+    - The temporary file lives next to the destination.
+
+    Constraints:
+    - Serialization semantics stay with `save_traceability` — no format changes.
+
+"render_update_summary(changes: SpecsChanges, graph_status: str | None) -> output: str":
+  location: render_update_summary.py
+  annotations: |
+    Renders the terminal summary of an applied update.
+
+    `changes`: the applied file classification (paths relative to the specs location).
+    `graph_status`: "rebuilt" for incremental/prune updates, "built" for a from-scratch
+      build, None (omitted) when no graph existed and none was produced — the graph status
+      line is skipped.
+    `output`: the Added:, Updated:, and Removed: groups (sorted relative paths, empty groups
+      omitted) followed by the graph status line when `graph_status` is not None.
+
+    Requirements:
+    - English output; paths relative to the specs location; sorted alphabetically within groups.
+    - Empty groups are not printed.
+
+    Constraints:
+    - Pure transformation — no I/O, no LLM calls.
+
+---
+
+Author: Goga
+CreatedAt: 23/08/26
+Description: |
+  Application-layer use-case for updating local specs to the remote state and rebuilding
+  the traceability graph conditionally, as one transaction.

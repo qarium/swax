@@ -78,6 +78,11 @@ def test_main_registers_init_and_discover_lazily():
     assert "discover" in main.commands
 
 
+def test_main_registers_update_command():
+    assert "update" in main.commands
+    assert main.commands["update"].name == "update"
+
+
 def test_swax_context_default_config_is_none():
     assert SwaxContext(env_file=pathlib.Path(".env")).config is None
 

@@ -46,6 +46,31 @@ class TraceabilityGraph(BaseModel):
             if source in self.edges[source]:
                 self.edges[source] = [target for target in self.edges[source] if target != source]
 
+    def remove_paths(self, paths: list[str]) -> None:
+        """Remove endpoints and every edge referencing them, in place.
+
+        Algorithm:
+        1. Drop every ``paths`` entry present as an adjacency key.
+        2. Remove every ``paths`` entry from all remaining adjacency lists.
+
+        Endpoints absent from the graph are ignored silently. Surviving keys
+        and adjacency lists keep their relative order. Removal only — no new
+        endpoints or edges are introduced. Persistence stays with the caller:
+        invoke ``deduplicate`` before saving.
+
+        Args:
+            paths: endpoint paths to drop — API path templates extracted from
+                spec files removed on the remote side, not file paths.
+        """
+        drop = set(paths)
+
+        for key in list(self.edges.keys()):
+            if key in drop:
+                del self.edges[key]
+
+        for source in self.edges:
+            self.edges[source] = [target for target in self.edges[source] if target not in drop]
+
 
 __all__: list[str] = [
     "TraceabilityGraph",
