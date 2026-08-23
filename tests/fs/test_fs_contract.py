@@ -2,8 +2,9 @@
 
 These tests pin the public surface and signatures of ensure_swax_dir,
 copy_specs, the spec-mirroring foundation entities (SpecsChanges,
-UnsafeSpecsLocationError), the change classifier compare_specs, and the
-mirroring path guard validate_specs_location.
+UnsafeSpecsLocationError), the change classifier compare_specs, the
+mirroring path guard validate_specs_location, and the transactional
+directory replacement staged_specs_swap.
 """
 
 import inspect
@@ -16,6 +17,7 @@ from swax.fs import (
     compare_specs,
     copy_specs,
     ensure_swax_dir,
+    staged_specs_swap,
     validate_specs_location,
 )
 
@@ -26,6 +28,7 @@ class TestFsContract:
         assert callable(copy_specs)
         assert callable(compare_specs)
         assert callable(validate_specs_location)
+        assert callable(staged_specs_swap)
 
     def test_ensure_swax_dir_signature(self):
         signature = inspect.signature(ensure_swax_dir)
@@ -55,6 +58,24 @@ class TestFsContract:
         assert list(signature.parameters) == ["project_root", "specs_location"]
         assert signature.parameters["project_root"].annotation is pathlib.Path
         assert signature.parameters["specs_location"].annotation is pathlib.Path
+
+    def test_staged_specs_swap_signature(self):
+        signature = inspect.signature(staged_specs_swap)
+
+        assert list(signature.parameters) == ["target", "staging"]
+        assert signature.parameters["target"].annotation is pathlib.Path
+        assert signature.parameters["staging"].annotation is pathlib.Path
+
+    def test_staged_specs_swap_supports_context_manager_protocol(self, tmp_path):
+        target = tmp_path / "target"
+        staging = tmp_path / "staging"
+        target.mkdir()
+        staging.mkdir()
+        (staging / "new.yaml").write_text("new", encoding="utf-8")
+
+        with staged_specs_swap(target=target, staging=staging) as live_root:
+            assert isinstance(live_root, pathlib.Path)
+            assert (live_root / "new.yaml").read_text(encoding="utf-8") == "new"
 
 
 class TestSpecsChangesContract:
