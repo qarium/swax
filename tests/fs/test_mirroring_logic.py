@@ -144,9 +144,8 @@ class TestStagedSpecsSwap:
         (target / "old.txt").write_text("old", encoding="utf-8")
         (staging / "new.txt").write_text("new", encoding="utf-8")
 
-        with pytest.raises(RuntimeError):
-            with staged_specs_swap(target=target, staging=staging):
-                raise RuntimeError("graph rebuild failed")
+        with pytest.raises(RuntimeError), staged_specs_swap(target=target, staging=staging):
+            raise RuntimeError("graph rebuild failed")
 
         assert (target / "old.txt").exists()
         assert not (target / "new.txt").exists()

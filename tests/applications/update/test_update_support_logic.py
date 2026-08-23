@@ -14,6 +14,7 @@ import inspect
 import pathlib
 
 import pytest
+import swax.applications.update as update_facade
 from swax.applications.update import GraphRebuildFailedError
 from swax.applications.update.render_update_summary import render_update_summary
 from swax.applications.update.save_traceability_atomically import save_traceability_atomically
@@ -52,9 +53,7 @@ class TestSaveTraceabilityAtomicallyContract:
         assert signature.return_annotation is None
 
     def test_not_exposed_on_facade(self):
-        import swax.applications.update as facade
-
-        assert "save_traceability_atomically" not in facade.__all__
+        assert "save_traceability_atomically" not in update_facade.__all__
 
 
 class TestSaveTraceabilityAtomicallyLogic:
@@ -107,9 +106,7 @@ class TestRenderUpdateSummaryContract:
         assert signature.return_annotation is str
 
     def test_not_exposed_on_facade(self):
-        import swax.applications.update as facade
-
-        assert "render_update_summary" not in facade.__all__
+        assert "render_update_summary" not in update_facade.__all__
 
 
 class TestRenderUpdateSummaryLogic:
