@@ -117,6 +117,28 @@ class TestValidateSpecsLocation:
 
         assert exc_info.value.path == ancestor
 
+    def test_validate_specs_location_rejects_swax_dir(self, tmp_path):
+        # Mirroring into .swax/ would delete config.yml and the traceability
+        # graph together with the mirrored specs — the same destruction the
+        # project-root refusal exists to prevent.
+        swax_dir = tmp_path / ".swax"
+        swax_dir.mkdir()
+
+        with pytest.raises(UnsafeSpecsLocationError) as exc_info:
+            validate_specs_location(project_root=tmp_path, specs_location=swax_dir)
+
+        assert exc_info.value.path == swax_dir
+
+    def test_validate_specs_location_accepts_specs_inside_swax_dir(self, tmp_path):
+        # A child of .swax/ replaces only itself — config.yml and the graph
+        # live one level above it and stay untouched.
+        nested = tmp_path / ".swax" / "specs"
+        nested.mkdir(parents=True)
+
+        result = validate_specs_location(project_root=tmp_path, specs_location=nested)
+
+        assert result is None
+
 
 class TestStagedSpecsSwap:
     def test_staged_specs_swap_replaces_target_and_removes_backup(self, tmp_path):
@@ -183,3 +205,37 @@ class TestStagedSpecsSwap:
         assert (target / "new.txt").exists()
         assert not stale_backup.exists()
         assert not staging.exists()
+
+    def test_staged_specs_swap_first_swap_rollback_removes_swapped_in_directory(self, tmp_path):
+        # First-ever mirror: no prior target exists, so the rollback path must
+        # remove the swapped-in directory without restoring anything.
+        target = tmp_path / "target"  # never created
+        staging = tmp_path / "staging"
+        staging.mkdir()
+        (staging / "new.txt").write_text("new", encoding="utf-8")
+
+        with pytest.raises(RuntimeError), staged_specs_swap(target=target, staging=staging):
+            raise RuntimeError("graph rebuild failed")
+
+        assert not target.exists()
+        assert not (tmp_path / ".target.backup").exists()
+        assert not staging.exists()
+
+    def test_staged_specs_swap_tolerates_backup_cleanup_failure(self, tmp_path, mocker):
+        # The transaction has already succeeded when the backup is removed —
+        # a failing cleanup must not surface as a swap failure. The no-op
+        # rmtree simulates ignore_errors swallowing an undeletable backup.
+        target = tmp_path / "target"
+        staging = tmp_path / "staging"
+        target.mkdir()
+        staging.mkdir()
+        (target / "old.txt").write_text("old", encoding="utf-8")
+        (staging / "new.txt").write_text("new", encoding="utf-8")
+        mocker.patch("swax.fs.staged_specs_swap.shutil.rmtree")
+
+        with staged_specs_swap(target=target, staging=staging) as live_root:
+            assert (live_root / "new.txt").read_text(encoding="utf-8") == "new"
+
+        assert (target / "new.txt").exists()
+        # The stale backup stays behind for the next swap to remove.
+        assert (tmp_path / ".target.backup").exists()

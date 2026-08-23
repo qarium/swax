@@ -5,9 +5,11 @@ description: Initialize a project, discover the traceability graph, and generate
 
 # Quickstart
 
-This walkthrough runs the three Swax commands end-to-end:
+This walkthrough runs the core Swax commands end-to-end:
 `init → discover → plan`. By the end you will have a traceability graph and a
-Markdown impact report on disk.
+Markdown impact report on disk. When the remote specs change later,
+`swax update` mirrors them and rebuilds the graph in one step (see
+[Commands reference](../guide/commands.md)).
 
 ## 0. Prerequisites
 
@@ -80,6 +82,14 @@ After this walkthrough your project contains:
   traceability.yml    # written by discover
 <download_path>/      # the copied specifications
 ```
+
+## Keeping the project current
+
+When the remote spec repository moves on, `swax --env-file .env update`
+mirrors the local specs to the remote state and rebuilds the graph
+conditionally: removals only are pruned deterministically without an LLM
+call, and added/updated specs get a single-turn incremental revision (or a
+first build via the discover flow when no graph exists yet).
 
 ## Next steps
 

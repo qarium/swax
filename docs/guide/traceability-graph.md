@@ -5,8 +5,9 @@ description: In-memory model and YAML persistence of API path dependencies — p
 
 # Traceability graph
 
-The traceability graph is the central artifact produced by `swax discover` and
-consumed by `swax plan`. It models **API path → list of dependent paths**.
+The traceability graph is the central artifact produced by `swax discover`,
+pruned and incrementally revised by `swax update`, and consumed by
+`swax plan`. It models **API path → list of dependent paths**.
 
 ## Architectural rule
 
@@ -71,6 +72,27 @@ graph.deduplicate()
   `deduplicate`.
 - Self-loops are permitted at insert time and filtered by `deduplicate`.
 - `deduplicate` is **idempotent** — safe to call multiple times.
+
+## Pruning the graph
+
+`TraceabilityGraph.remove_paths` drops endpoints deterministically — used by
+`swax update` when spec files are removed from the remote repository:
+
+```python
+graph = TraceabilityGraph(edges={"/users": ["/legacy"], "/legacy": ["/users"]})
+graph.remove_paths(["/legacy"])
+graph.deduplicate()
+# edges == {"/users": []}
+```
+
+- Drops every entry present as an adjacency **key**.
+- Removes the entries from every **surviving adjacency list** (dangling
+  references would corrupt `swax plan` results).
+- **Preserves** the relative order of surviving keys and lists — serialized
+  graphs stay diff-stable.
+- Absent endpoints are ignored silently; removal only — no new endpoints or
+  edges are introduced.
+- Persistence stays with the caller: `deduplicate`, then save.
 
 ## Loading the graph
 

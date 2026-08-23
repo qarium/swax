@@ -65,7 +65,10 @@ def test_update_command_echoes_summary(mocker, swax_context):
         (LLMResponseParseError(reason="r", excerpt="e"), "LLM response parse failed: r"),
     ],
 )
-def test_update_maps_domain_errors(mocker, swax_context, exception, expected_message):
+def test_update_maps_domain_errors(mocker, swax_context, monkeypatch, exception, expected_message):
+    # The token value is in the environment for every case — if the handler
+    # ever read it into a message, this assertion would fail.
+    monkeypatch.setenv("SWAX_LLM_TOKEN", "test-token")
     mocker.patch(PATCH_RUN_UPDATE, side_effect=exception)
     runner = CliRunner()
 

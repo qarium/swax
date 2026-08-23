@@ -1,14 +1,15 @@
 ---
 title: swax/commands
-description: Command-layer facade re-exporting CLI handlers (init, discover, plan) and their sub-cells.
+description: Command-layer facade re-exporting CLI handlers (init, discover, plan, update) and their sub-cells.
 ---
 
 # `swax/commands`
 
 Command layer of Swax. Single facade for CLI handlers — consumers register
-commands and pull cell-level practices (`init`, `discover`, `plan`) from here
-via `Imports`, not from the sub-cells. The facade re-exports `init_handler`,
-`discover_handler`, and `plan_handler` from their sub-cells.
+commands and pull cell-level practices (`init`, `discover`, `plan`, `update`)
+from here via `Imports`, not from the sub-cells. The facade re-exports
+`init_handler`, `discover_handler`, `plan_handler`, and `update_handler` from
+their sub-cells.
 
 Handlers stay **thin** — only argument parsing and exception mapping to
 `click.ClickException`. All orchestration lives in the application layer.
@@ -20,6 +21,7 @@ Handlers stay **thin** — only argument parsing and exception mapping to
 | `init` | `swax/commands/init` | `init_handler` |
 | `discover` | `swax/commands/discover` | `discover_handler` |
 | `plan` | `swax/commands/plan` | `plan_handler` |
+| `update` | `swax/commands/update` | `update_handler` |
 
 ---
 
@@ -146,6 +148,56 @@ Constraints:
   (practice: `specs-repository`)
 - `TraceabilityGraphMissingError` ← `swax/traceability`
   (practice: `affected-endpoints`)
+- `LLMCallError`, `LLMRateLimitedError`, `LLMResponseParseError`,
+  `UnsupportedLLMProtocolError` ← `swax/llm` (practice: `llm-transport`)
+
+---
+
+## `swax/commands/update`
+
+Click handler for the `update` command: delegates to `run_update`, echoes the
+summary, and maps domain exceptions. No interactive prompts — all inputs come
+from `.swax/config.yml` and the environment.
+
+### `update(ctx: click.Context)`
+
+- `ctx`: Click context whose `obj` is a `SwaxContext` (unused — accepted for
+  handler parity).
+
+Algorithm:
+
+1. Resolve `ctx.obj` as `SwaxContext` via `@click.pass_obj`.
+2. Resolve `project_root` from the current working directory.
+3. Delegate to `run_update` inside a `try`.
+4. Echo the returned summary to stdout.
+5. Map every documented domain exception to `click.ClickException`:
+   `UnsafeSpecsLocationError` (`Refusing to mirror into {path}`),
+   `GraphRebuildFailedError` (`Graph rebuild failed: {reason}; specs
+   restored.`), `RepositoryCloneError`, `SpecsNotFoundError`
+   (`Specs not found at {path}`), `MissingEnvironmentVariablesError`,
+   `SpecParseError`, `LLMRateLimitedError`, `LLMCallError`,
+   `UnsupportedLLMProtocolError`, `LLMResponseParseError`.
+
+Requirements:
+
+- No options, no interactive prompts.
+- Exit code 0 on success, 1 on any `ClickException`.
+
+Constraints:
+
+- Does **not** catch generic `Exception`.
+- `SWAX_LLM_TOKEN` never appears in any error message or echoed output.
+
+### Imports
+
+- `SwaxContext` ← `swax/cli` (practice: `cli-facade`, `TYPE_CHECKING` only)
+- `run_update` ← `swax/applications` (practice: `update-usage`)
+- `GraphRebuildFailedError` ← `swax/applications`
+- `MissingEnvironmentVariablesError` ← `swax/config` (practice: `environment`)
+- `UnsafeSpecsLocationError` ← `swax/fs` (practice: `spec-mirroring`)
+- `RepositoryCloneError`, `SpecsNotFoundError` ← `swax/git`
+  (practice: `specs-repository`)
+- `SpecParseError` ← `swax/openapi` (practice: `parsing`)
 - `LLMCallError`, `LLMRateLimitedError`, `LLMResponseParseError`,
   `UnsupportedLLMProtocolError` ← `swax/llm` (practice: `llm-transport`)
 

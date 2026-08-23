@@ -16,6 +16,7 @@ the non-spec-file mirroring edge (q3) and the stale-staging guard.
 
 import contextlib
 import pathlib
+import shutil
 
 import pytest
 import yaml
@@ -33,21 +34,11 @@ ENV_VARS = {
 }
 
 CONFIG_YML = (
-    "git:\n"
-    "  url: https://example.com/repo.git\n"
-    "  location: specs/\n"
-    "specs:\n"
-    "  type: openapi\n"
-    "  location: specs\n"
+    "git:\n  url: https://example.com/repo.git\n  location: specs/\nspecs:\n  type: openapi\n  location: specs\n"
 )
 
 UNSAFE_CONFIG_YML = (
-    "git:\n"
-    "  url: https://example.com/repo.git\n"
-    "  location: specs/\n"
-    "specs:\n"
-    "  type: openapi\n"
-    "  location: .\n"
+    "git:\n  url: https://example.com/repo.git\n  location: specs/\nspecs:\n  type: openapi\n  location: .\n"
 )
 
 BASELINE_SPEC = (
@@ -59,12 +50,7 @@ BASELINE_SPEC = (
     "      responses: {'200': {description: ok}}\n"
 )
 
-UPDATED_SPEC = (
-    BASELINE_SPEC
-    + "  /billing:\n"
-    + "    get:\n"
-    + "      responses: {'200': {description: ok}}\n"
-)
+UPDATED_SPEC = BASELINE_SPEC + "  /billing:\n" + "    get:\n" + "      responses: {'200': {description: ok}}\n"
 
 LEGACY_SPEC = (
     "openapi: 3.0.0\n"
@@ -73,6 +59,52 @@ LEGACY_SPEC = (
     "  /legacy:\n"
     "    get:\n"
     "      responses: {'200': {description: ok}}\n"
+)
+
+API_SPEC_WITH_SHARED = (
+    "openapi: 3.0.0\n"
+    "info: {title: Test, version: 1.0.0}\n"
+    "paths:\n"
+    "  /users:\n"
+    "    get:\n"
+    "      responses: {'200': {description: ok}}\n"
+    "  /shared:\n"
+    "    get:\n"
+    "      responses: {'200': {description: ok}}\n"
+)
+
+LEGACY_SPEC_WITH_SHARED = (
+    "openapi: 3.0.0\n"
+    "info: {title: Test, version: 1.0.0}\n"
+    "paths:\n"
+    "  /shared:\n"
+    "    get:\n"
+    "      responses: {'200': {description: ok}}\n"
+    "  /legacy:\n"
+    "    get:\n"
+    "      responses: {'200': {description: ok}}\n"
+)
+
+BILLING_SPEC = (
+    "openapi: 3.0.0\n"
+    "info: {title: Billing, version: 1.0.0}\n"
+    "paths:\n"
+    "  /billing:\n"
+    "    get:\n"
+    "      responses: {'200': {description: ok}}\n"
+    "components:\n"
+    "  schemas:\n"
+    "    Billing:\n"
+    "      type: object\n"
+)
+
+MODIFIED_RESPONSE_SPEC = (
+    "openapi: 3.0.0\n"
+    "info: {title: Test, version: 1.0.0}\n"
+    "paths:\n"
+    "  /users:\n"
+    "    get:\n"
+    "      responses: {'200': {description: 'ok v2'}}\n"
 )
 
 CLONE_SPECS = "swax.applications.update.run_update.clone_specs"
@@ -115,6 +147,19 @@ def _patch_client(mocker, behavior):
     return calls
 
 
+def _patch_capturing_client(mocker, response: str) -> dict:
+    captured: dict = {}
+
+    class _CapturingClient:
+        def ask(self, system, user):
+            captured["system"] = system
+            captured["user"] = user
+            return response
+
+    mocker.patch(BUILD_CLIENT, return_value=_CapturingClient())
+    return captured
+
+
 def _make_remote(tmp_path, files: dict[str, str]) -> pathlib.Path:
     remote = tmp_path / "remote"
     for rel, content in files.items():
@@ -146,7 +191,10 @@ class TestRunUpdatePositiveFlows:
         assert (tmp_path / "specs" / "api.yaml").read_text(encoding="utf-8") == BASELINE_SPEC
 
     def test_run_update_removals_only_prunes_graph_without_llm(self, update_project, mocker, tmp_path):
-        graph_file = _write_graph(tmp_path, "/users:\n- /orders\n/orders:\n- /users\n")
+        # /legacy is a graph key AND a dangling adjacency target — the run must
+        # drop the key and scrub the reference (an assertion against a graph
+        # not mentioning /legacy would pass with pruning disabled).
+        graph_file = _write_graph(tmp_path, "/users:\n- /legacy\n/orders:\n- /users\n/legacy:\n- /users\n")
         (tmp_path / "specs" / "legacy.yaml").write_text(LEGACY_SPEC, encoding="utf-8")
         remote = _make_remote(tmp_path, {"api.yaml": BASELINE_SPEC})
         _patch_clone(mocker, remote)
@@ -157,10 +205,30 @@ class TestRunUpdatePositiveFlows:
         assert output == "Removed:\n  - legacy.yaml\nTraceability graph: rebuilt"
         client_tripwire.assert_not_called()
         assert yaml.safe_load(graph_file.read_text(encoding="utf-8")) == {
-            "/users": ["/orders"],
+            "/users": [],
             "/orders": ["/users"],
         }
         assert not (tmp_path / "specs" / "legacy.yaml").exists()
+
+    def test_run_update_keeps_endpoints_still_declared_by_surviving_specs(self, update_project, mocker, tmp_path):
+        # /shared is declared by BOTH the removed legacy.yaml and the surviving
+        # api.yaml — it stays live, only /legacy (absent from the whole remote
+        # tree) is pruned.
+        graph_file = _write_graph(tmp_path, "/users:\n- /shared\n/shared:\n- /users\n/legacy:\n- /users\n")
+        (tmp_path / "specs" / "api.yaml").write_text(API_SPEC_WITH_SHARED, encoding="utf-8")
+        (tmp_path / "specs" / "legacy.yaml").write_text(LEGACY_SPEC_WITH_SHARED, encoding="utf-8")
+        remote = _make_remote(tmp_path, {"api.yaml": API_SPEC_WITH_SHARED})
+        _patch_clone(mocker, remote)
+        client_tripwire = mocker.patch(BUILD_CLIENT)
+
+        output = run_update(tmp_path)
+
+        assert output == "Removed:\n  - legacy.yaml\nTraceability graph: rebuilt"
+        client_tripwire.assert_not_called()
+        assert yaml.safe_load(graph_file.read_text(encoding="utf-8")) == {
+            "/users": ["/shared"],
+            "/shared": ["/users"],
+        }
 
     def test_run_update_removals_only_without_graph_applies_specs_and_omits_status(
         self, update_project, mocker, tmp_path
@@ -231,6 +299,46 @@ class TestRunUpdatePositiveFlows:
 
         mock_discover.assert_called_once_with(tmp_path)
         assert output == "Updated:\n  - api.yaml\nTraceability graph: built"
+
+    def test_run_update_added_spec_file_feeds_endpoints_and_schemas_into_revision(
+        self, update_project, mocker, tmp_path
+    ):
+        # A brand-new spec file in the remote: its endpoints join the revision
+        # universe (becoming graph nodes) and its schemas reach the prompt.
+        graph_file = _write_graph(tmp_path, "/users:\n- /orders\n/orders: []\n")
+        remote = _make_remote(tmp_path, {"api.yaml": BASELINE_SPEC, "billing.yaml": BILLING_SPEC})
+        _patch_clone(mocker, remote)
+        captured = _patch_capturing_client(mocker, '{"/users": ["/orders"], "/orders": [], "/billing": ["/users"]}')
+
+        output = run_update(tmp_path)
+
+        assert output == "Added:\n  - billing.yaml\nTraceability graph: rebuilt"
+        assert '"/billing"' in captured["user"]
+        assert "Billing" in captured["user"]
+        assert yaml.safe_load(graph_file.read_text(encoding="utf-8")) == {
+            "/users": ["/orders"],
+            "/orders": [],
+            "/billing": ["/users"],
+        }
+        assert (tmp_path / "specs" / "billing.yaml").read_text(encoding="utf-8") == BILLING_SPEC
+
+    def test_run_update_prompt_carries_modified_endpoint_descriptions(self, update_project, mocker, tmp_path):
+        # A changed response description classifies as a modification (not an
+        # added endpoint); its description must reach the revision prompt.
+        graph_file = _write_graph(tmp_path, "/users:\n- /orders\n/orders: []\n")
+        remote = _make_remote(tmp_path, {"api.yaml": MODIFIED_RESPONSE_SPEC})
+        _patch_clone(mocker, remote)
+        captured = _patch_capturing_client(mocker, '{"/users": ["/orders"], "/orders": []}')
+
+        output = run_update(tmp_path)
+
+        assert output == "Updated:\n  - api.yaml\nTraceability graph: rebuilt"
+        assert '"modified"' in captured["user"]
+        assert "get responses 200 description changed" in captured["user"]
+        assert yaml.safe_load(graph_file.read_text(encoding="utf-8")) == {
+            "/users": ["/orders"],
+            "/orders": [],
+        }
 
 
 class TestRunUpdateNegativeFlows:
@@ -320,6 +428,54 @@ class TestRunUpdateNegativeFlows:
         assert "Expecting" in exc_info.value.reason
         assert (tmp_path / "specs" / "api.yaml").read_text(encoding="utf-8") == BASELINE_SPEC
 
+    def test_run_update_wrong_llm_json_shape_wraps_into_graph_rebuild_failed(self, update_project, mocker, tmp_path):
+        # Valid JSON, wrong shape (a nested mapping instead of dict[str, list[str]])
+        # — the shape check, not the JSON decoder, rejects it.
+        _write_graph(tmp_path, "/users:\n- /orders\n/orders: []\n")
+        remote = _make_remote(tmp_path, {"api.yaml": UPDATED_SPEC})
+        _patch_clone(mocker, remote)
+        _patch_client(mocker, '{"dependencies": {"/users": ["/orders"]}}')
+
+        with pytest.raises(GraphRebuildFailedError) as exc_info:
+            run_update(tmp_path)
+
+        assert "shape mismatch" in exc_info.value.reason
+        assert (tmp_path / "specs" / "api.yaml").read_text(encoding="utf-8") == BASELINE_SPEC
+
+    def test_run_update_graph_write_failure_restores_specs_and_wraps(self, update_project, mocker, tmp_path):
+        graph_content = "/users:\n- /orders\n/orders: []\n"
+        graph_file = _write_graph(tmp_path, graph_content)
+        remote = _make_remote(tmp_path, {"api.yaml": UPDATED_SPEC})
+        _patch_clone(mocker, remote)
+        mocker.patch(
+            "swax.applications.update.save_traceability_atomically.save_traceability",
+            side_effect=OSError("disk full"),
+        )
+        _patch_client(mocker, '{"/users": ["/orders"], "/orders": []}')
+
+        with pytest.raises(GraphRebuildFailedError) as exc_info:
+            run_update(tmp_path)
+
+        assert "disk full" in exc_info.value.reason
+        assert (tmp_path / "specs" / "api.yaml").read_text(encoding="utf-8") == BASELINE_SPEC
+        assert graph_file.read_text(encoding="utf-8") == graph_content
+        assert not (tmp_path / ".swax" / "traceability.yml.tmp").exists()
+
+    def test_run_update_corrupt_graph_file_wraps_into_graph_rebuild_failed(self, update_project, mocker, tmp_path):
+        # A malformed traceability.yml fails inside the rebuild block (the
+        # prune branch loads it there) — wrapped like every other rebuild
+        # failure, not a raw yaml traceback.
+        _write_graph(tmp_path, "broken: [unclosed\n")
+        (tmp_path / "specs" / "legacy.yaml").write_text(LEGACY_SPEC, encoding="utf-8")
+        remote = _make_remote(tmp_path, {"api.yaml": BASELINE_SPEC})
+        _patch_clone(mocker, remote)
+
+        with pytest.raises(GraphRebuildFailedError) as exc_info:
+            run_update(tmp_path)
+
+        assert "expected" in exc_info.value.reason.lower() or "yaml" in exc_info.value.reason.lower()
+        assert (tmp_path / "specs" / "legacy.yaml").exists()
+
 
 class TestRunUpdateEdgeCases:
     def test_run_update_ignores_non_spec_files_but_mirrors_them(self, update_project, mocker, tmp_path):
@@ -363,3 +519,20 @@ class TestRunUpdateEdgeCases:
 
         assert not (tmp_path / ".specs-staging").exists()
         assert not (tmp_path / "specs" / "junk.yaml").exists()
+
+    def test_run_update_missing_local_specs_dir_mirrors_and_delegates(self, update_project, mocker, tmp_path):
+        # First-ever mirror into an absent specs directory: every remote file
+        # is added, the swap creates the directory, and the first build is
+        # delegated to run_discover.
+        shutil.rmtree(tmp_path / "specs")
+        remote = _make_remote(tmp_path, {"api.yaml": BASELINE_SPEC})
+        _patch_clone(mocker, remote)
+        mock_discover = mocker.patch(RUN_DISCOVER)
+
+        output = run_update(tmp_path)
+
+        mock_discover.assert_called_once_with(tmp_path)
+        assert output == "Added:\n  - api.yaml\nTraceability graph: built"
+        assert (tmp_path / "specs" / "api.yaml").read_text(encoding="utf-8") == BASELINE_SPEC
+        assert not (tmp_path / ".specs-staging").exists()
+        assert not (tmp_path / ".specs.backup").exists()

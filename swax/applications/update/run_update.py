@@ -28,6 +28,8 @@ import logging
 import pathlib
 import shutil
 
+import yaml
+
 from ...config import load_config, require_vars
 from ...fs import SpecsChanges, compare_specs, copy_specs, staged_specs_swap, validate_specs_location
 from ...git import clone_specs
@@ -105,8 +107,7 @@ def _parse_incremental_response(raw: str) -> dict[str, list[str]]:
         raise LLMResponseParseError(reason=str(exc), excerpt=raw[:_EXCERPT_LENGTH]) from exc
 
     shape_matches = isinstance(parsed, dict) and all(
-        isinstance(value, list) and all(isinstance(item, str) for item in value)
-        for value in parsed.values()
+        isinstance(value, list) and all(isinstance(item, str) for item in value) for value in parsed.values()
     )
     if not shape_matches:
         raise LLMResponseParseError(
@@ -166,8 +167,11 @@ def _classify_spec_changes(
 
     Spec files are filtered by membership in discover_specs over both roots;
     non-spec files are mirrored silently but never parsed. The endpoints of
-    the removed spec files are read from their last local content — the prune
-    list shared by both branches.
+    the removed spec files are read from their last local content and
+    reconciled against the surviving (remote) specs: an endpoint dropped with
+    one file but still declared by any surviving spec stays live — the prune
+    list shared by both branches covers only endpoints absent from the whole
+    post-update tree.
 
     Args:
         local_root: local specs directory (still the pre-swap content).
@@ -178,7 +182,8 @@ def _classify_spec_changes(
         A ``(modified_spec_rels, added_spec_rels, removed_endpoints)`` tuple.
 
     Raises:
-        SpecParseError: when a removed spec fails to parse (propagated).
+        SpecParseError: when a removed or surviving spec fails to parse
+            (propagated).
     """
     local_spec_rels = _relative_spec_files(local_root)
     remote_spec_rels = _relative_spec_files(remote_root)
@@ -186,11 +191,14 @@ def _classify_spec_changes(
     modified_spec_rels = set(changes.updated) & local_spec_rels & remote_spec_rels
     added_spec_rels = set(changes.added) & remote_spec_rels
 
-    removed_endpoints = sorted(
-        endpoint
-        for rel in sorted(removed_spec_rels)
-        for endpoint in extract_paths(parse_spec(local_root / rel))
-    )
+    dropped_endpoints = {
+        endpoint for rel in removed_spec_rels for endpoint in extract_paths(parse_spec(local_root / rel))
+    }
+    surviving_endpoints = {
+        endpoint for rel in remote_spec_rels for endpoint in extract_paths(parse_spec(remote_root / rel))
+    }
+
+    removed_endpoints = sorted(dropped_endpoints - surviving_endpoints)
 
     return modified_spec_rels, added_spec_rels, removed_endpoints
 
@@ -225,9 +233,7 @@ def _merged_endpoint_diff(
     modified: dict[str, set[str]] = {}
 
     for rel in sorted(modified_spec_rels):
-        pair = classify_endpoint_changes(
-            diff_specs(parse_spec(local_root / rel), parse_spec(remote_root / rel))
-        )
+        pair = classify_endpoint_changes(diff_specs(parse_spec(local_root / rel), parse_spec(remote_root / rel)))
         added.update(pair.added)
         removed.update(pair.removed)
         for endpoint, descriptions in pair.modified.items():
@@ -417,11 +423,6 @@ def run_update(project_root: pathlib.Path) -> str:
         )
         graph_existed = graph_path.exists()
 
-        existing: TraceabilityGraph | None = None
-        merged = EndpointDiff()
-        added_endpoints: list[str] = []
-        added_schemas: dict = {}
-
         if changes.has_additions():
             require_vars()
 
@@ -479,6 +480,7 @@ def run_update(project_root: pathlib.Path) -> str:
             UnsupportedLLMProtocolError,
             LLMResponseParseError,
             OSError,
+            yaml.YAMLError,
         ) as exc:
             if not graph_existed and graph_path.exists():
                 graph_path.unlink()
