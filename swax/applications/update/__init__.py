@@ -7,5 +7,6 @@ GraphRebuildFailedError. Cell-internal helpers stay off the facade.
 """
 
 from .errors import GraphRebuildFailedError
+from .run_update import run_update
 
-__all__: list[str] = ["GraphRebuildFailedError"]
+__all__: list[str] = ["GraphRebuildFailedError", "run_update"]
