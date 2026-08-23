@@ -307,10 +307,11 @@ propagate raw. Logs `INFO` at start/end, `DEBUG` for intermediate steps;
    single-turn LLM revision when the graph exists, delegated `run_discover`
    first build when it does not.
 
-Endpoints shared between a removed spec file and a surviving spec stay live —
-only endpoints absent from the whole post-update tree are pruned. LLM
-responses are parsed defensively (fence stripping, `JSONDecodeError` wrapped
-into `LLMResponseParseError`, `dict[str, list[str]]` shape validation) and
+Removed endpoints are reconciled against the post-update tree — an endpoint
+still declared by any surviving, modified, or added spec stays live; only
+endpoints absent from the whole tree are pruned. LLM responses are parsed
+defensively (fence stripping, `JSONDecodeError` wrapped into
+`LLMResponseParseError`, `dict[str, list[str]]` shape validation) and
 filtered to the endpoint universe.
 
 ### `run_update(project_root: pathlib.Path) -> output: str`
@@ -330,13 +331,16 @@ Algorithm:
    diff (`compare_specs`).
 2. Empty diff → return the up-to-date message.
 3. Classify the spec-file changes; collect the prune endpoints (reconciled
-   against surviving specs).
+   against the endpoints still declared by the post-update tree).
 4. Validate LLM credentials when the diff has additions — **before any
    mutation**; prepare the incremental input when a graph file exists.
-5. Assemble the staging directory and swap it in (`staged_specs_swap`); the
-   rebuild inside the swap — deterministic prune, incremental LLM revision,
-   or delegated `run_discover` — is the single rollback point whose failures
-   are wrapped into `GraphRebuildFailedError`.
+5. Assemble the staging directory (a stale staging leftover from a crashed
+   run is removed first) and swap it in (`staged_specs_swap`); the rebuild
+   inside the swap — deterministic prune, incremental LLM revision, or
+   delegated `run_discover` — is the single rollback point whose failures
+   are wrapped into `GraphRebuildFailedError`. The existing graph is loaded
+   inside the swap too, so a corrupt graph file rolls back like any rebuild
+   failure.
 6. Render the summary via `render_update_summary` and return it.
 
 Constraints:

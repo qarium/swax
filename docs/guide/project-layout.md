@@ -35,6 +35,9 @@ this directory holds a copy of the specifications from the remote repository.
 - `swax update` re-mirrors the directory to the current remote state in one
   transactional swap — the remote clone is the source of truth, local edits
   are overwritten, and a failed run restores the previous directory.
+- The configured location must be **strictly inside the project** and must
+  not cover `.swax/` — `swax update` refuses unsafe targets
+  (`UnsafeSpecsLocationError`, exit code 1).
 - The directory structure of the source repository is preserved.
 - **Symlinks** in the clone are **not** dereferenced — copied as regular files.
 

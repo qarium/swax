@@ -125,9 +125,11 @@ clone, and then branches:
 
 - **No changes** — prints `Specs are up to date.` Nothing is touched, no LLM.
 - **Removals only** — the specs are mirrored and the graph is pruned
-  deterministically (endpoints of removed spec files) **without an LLM call**;
-  the summary ends with `Traceability graph: rebuilt`. If no graph file
-  exists, the graph work is skipped and the summary has no status line.
+  deterministically (only endpoints absent from the whole post-update tree —
+  an endpoint still declared by a surviving, modified, or added spec stays
+  live) **without an LLM call**; the summary ends with
+  `Traceability graph: rebuilt`. If no graph file exists, the graph work is
+  skipped and the summary has no status line.
 - **Added/updated files** — `SWAX_LLM_*` credentials are validated **before
   any mutation**; then the graph is revised incrementally with a single-turn
   LLM analysis (`Traceability graph: rebuilt`) or, when no graph exists,

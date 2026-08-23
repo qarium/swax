@@ -98,9 +98,12 @@ Pydantic value object (`kw_only=True`, list fields with `default_factory=list`).
 
 Path guard for the mirroring target. Runs before any mutation.
 
-- Refuses when `specs_location` equals the project root, is one of its
-  ancestors, or otherwise covers the `.swax/` directory — mirroring would
-  destroy the project or its saved state.
+- Accepts only locations **strictly inside the project** that do not cover
+  `.swax/` — the swap replaces the whole directory, so swax must not delete
+  a directory it does not own.
+- Refuses targets outside the project, the project root itself, its
+  ancestors, and anything covering the `.swax/` directory — mirroring would
+  destroy a directory swax does not own, the project, or its saved state.
 - Raises `UnsafeSpecsLocationError` carrying the refused location.
 
 ### `UnsafeSpecsLocationError(*, path: pathlib.Path)`
