@@ -10,7 +10,11 @@ import pathlib
 
 
 class UnsafeSpecsLocationError(Exception):
-    """Raised by validate_specs_location when mirroring would target the project root or its ancestor.
+    """Raised by validate_specs_location when mirroring would leave the project or cover .swax.
+
+    Refused locations: anything outside the project (swax would delete a
+    directory it does not own), the project root itself, its ancestors, and
+    the .swax/ directory.
 
     Args:
         path: the refused location.

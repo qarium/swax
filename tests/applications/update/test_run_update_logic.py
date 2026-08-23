@@ -124,6 +124,19 @@ SHARED_SPEC = (
     "      responses: {'200': {description: ok}}\n"
 )
 
+# Valid YAML that fails prance resolution — a plausible WIP spec whose $ref
+# target is missing. Byte-identical locally and remotely in the tests below.
+UNPARSEABLE_UNTOUCHED_SPEC = (
+    "openapi: 3.0.0\n"
+    "info: {title: Wip, version: 1.0.0}\n"
+    "paths:\n"
+    "  /wip:\n"
+    "    get:\n"
+    "      responses:\n"
+    "        '200':\n"
+    "          $ref: './missing.yaml#/responses/OK'\n"
+)
+
 MODIFIED_RESPONSE_SPEC = (
     "openapi: 3.0.0\n"
     "info: {title: Test, version: 1.0.0}\n"
@@ -273,6 +286,70 @@ class TestRunUpdatePositiveFlows:
         output = run_update(tmp_path)
 
         assert output == "Updated:\n  - api.yaml\nTraceability graph: rebuilt"
+        assert '"removed": []' in captured["user"]
+        assert yaml.safe_load(graph_file.read_text(encoding="utf-8")) == {
+            "/users": ["/shared"],
+            "/shared": ["/users"],
+        }
+
+    def test_run_update_removals_only_skips_unparseable_untouched_spec(self, update_project, mocker, tmp_path):
+        # wip.yaml is byte-identical locally and remotely but unresolvable —
+        # untouched specs are outside the pinned parse scope, so they must
+        # never abort the run: the mirror applies and the prune proceeds.
+        graph_file = _write_graph(tmp_path, "/users:\n- /legacy\n/legacy:\n- /users\n")
+        specs = tmp_path / "specs"
+        (specs / "wip.yaml").write_text(UNPARSEABLE_UNTOUCHED_SPEC, encoding="utf-8")
+        (specs / "legacy.yaml").write_text(LEGACY_SPEC, encoding="utf-8")
+        remote = _make_remote(tmp_path, {"api.yaml": BASELINE_SPEC, "wip.yaml": UNPARSEABLE_UNTOUCHED_SPEC})
+        _patch_clone(mocker, remote)
+        client_tripwire = mocker.patch(BUILD_CLIENT)
+
+        output = run_update(tmp_path)
+
+        assert output == "Removed:\n  - legacy.yaml\nTraceability graph: rebuilt"
+        client_tripwire.assert_not_called()
+        assert yaml.safe_load(graph_file.read_text(encoding="utf-8")) == {"/users": []}
+        assert (specs / "wip.yaml").read_text(encoding="utf-8") == UNPARSEABLE_UNTOUCHED_SPEC
+        assert not (specs / "legacy.yaml").exists()
+
+    def test_run_update_pure_additions_never_parses_untouched_specs(self, update_project, mocker, tmp_path):
+        # Nothing can be dropped, so no untouched survivor is read at all —
+        # an unparseable one is not even noticed by the incremental branch.
+        graph_file = _write_graph(tmp_path, "/users:\n- /orders\n/orders: []\n")
+        specs = tmp_path / "specs"
+        (specs / "wip.yaml").write_text(UNPARSEABLE_UNTOUCHED_SPEC, encoding="utf-8")
+        remote = _make_remote(
+            tmp_path,
+            {"api.yaml": BASELINE_SPEC, "wip.yaml": UNPARSEABLE_UNTOUCHED_SPEC, "billing.yaml": BILLING_SPEC},
+        )
+        _patch_clone(mocker, remote)
+        calls = _patch_client(mocker, '{"/users": ["/orders"], "/billing": ["/users"]}')
+
+        output = run_update(tmp_path)
+
+        assert calls["ask"] == 1
+        assert output == "Added:\n  - billing.yaml\nTraceability graph: rebuilt"
+        assert yaml.safe_load(graph_file.read_text(encoding="utf-8")) == {
+            "/users": ["/orders"],
+            "/orders": [],
+            "/billing": ["/users"],
+        }
+
+    def test_run_update_keeps_endpoints_dropped_by_modified_spec_when_an_added_spec_declares_them(
+        self, update_project, mocker, tmp_path
+    ):
+        # /shared is dropped by the MODIFIED api.yaml but declared by the
+        # ADDED b.yaml — the reconciliation set covers the added specs too,
+        # so /shared never reaches the LLM as a removal.
+        graph_file = _write_graph(tmp_path, "/users:\n- /shared\n/shared:\n- /users\n")
+        (tmp_path / "specs" / "api.yaml").write_text(API_SPEC_WITH_SHARED, encoding="utf-8")
+        remote = _make_remote(tmp_path, {"api.yaml": BASELINE_SPEC, "b.yaml": SHARED_SPEC})
+        _patch_clone(mocker, remote)
+        captured = _patch_capturing_client(mocker, '{"/users": ["/shared"], "/shared": ["/users"]}')
+
+        output = run_update(tmp_path)
+
+        assert output == "Added:\n  - b.yaml\nUpdated:\n  - api.yaml\nTraceability graph: rebuilt"
         assert '"removed": []' in captured["user"]
         assert yaml.safe_load(graph_file.read_text(encoding="utf-8")) == {
             "/users": ["/shared"],

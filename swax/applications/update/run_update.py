@@ -162,16 +162,21 @@ def _classify_spec_changes(
     local_root: pathlib.Path,
     remote_root: pathlib.Path,
     changes: SpecsChanges,
-) -> tuple[set[str], set[str], list[str]]:
+) -> tuple[set[str], set[str], list[str], set[str]]:
     """Filter the file classification to spec files and collect prune endpoints.
 
     Spec files are filtered by membership in discover_specs over both roots;
     non-spec files are mirrored silently but never parsed. The endpoints of
     the removed spec files are read from their last local content and
-    reconciled against the surviving (remote) specs: an endpoint dropped with
-    one file but still declared by any surviving spec stays live — the prune
-    list shared by both branches covers only endpoints absent from the whole
-    post-update tree.
+    reconciled against the untouched surviving (remote) specs: an endpoint
+    dropped with one file but still declared by any surviving spec stays
+    live — the prune list shared by both branches covers only endpoints
+    absent from the whole post-update tree. Surviving endpoints are read
+    only when something can be dropped (removed spec files or modified
+    pairs); an untouched survivor that fails to parse is skipped with a
+    warning instead of failing the run — untouched files are outside the
+    parse scope the contract pins (removed, modified, and added files only),
+    so a broken untouched spec must not block the mirroring.
 
     Args:
         local_root: local specs directory (still the pre-swap content).
@@ -180,13 +185,13 @@ def _classify_spec_changes(
 
     Returns:
         A ``(modified_spec_rels, added_spec_rels, removed_endpoints,
-        surviving_endpoints)`` tuple — surviving_endpoints is every endpoint
-        declared by the post-update remote tree, reused to reconcile the
-        per-pair removals of the incremental branch the same way.
+        surviving_endpoints)`` tuple — surviving_endpoints is the endpoint
+        set of the untouched remote specs (empty when nothing can be
+        dropped), reused to reconcile the per-pair removals of the
+        incremental branch the same way.
 
     Raises:
-        SpecParseError: when a removed or surviving spec fails to parse
-            (propagated).
+        SpecParseError: when a removed spec fails to parse (propagated).
     """
     local_spec_rels = _relative_spec_files(local_root)
     remote_spec_rels = _relative_spec_files(remote_root)
@@ -197,39 +202,72 @@ def _classify_spec_changes(
     dropped_endpoints = {
         endpoint for rel in removed_spec_rels for endpoint in extract_paths(parse_spec(local_root / rel))
     }
-    surviving_endpoints = {
-        endpoint for rel in remote_spec_rels for endpoint in extract_paths(parse_spec(remote_root / rel))
-    }
 
+    if not dropped_endpoints and not modified_spec_rels:
+        return modified_spec_rels, added_spec_rels, [], set()
+
+    untouched_rels = remote_spec_rels - modified_spec_rels - added_spec_rels
+    surviving_endpoints = _untouched_surviving_endpoints(remote_root, untouched_rels)
     removed_endpoints = sorted(dropped_endpoints - surviving_endpoints)
 
     return modified_spec_rels, added_spec_rels, removed_endpoints, surviving_endpoints
 
 
-def _merged_endpoint_diff(
+def _untouched_surviving_endpoints(remote_root: pathlib.Path, untouched_rels: set[str]) -> set[str]:
+    """Collect the endpoints of the untouched remote specs, best effort.
+
+    Args:
+        remote_root: specs directory inside the fresh clone.
+        untouched_rels: relative spec paths neither removed nor modified
+            nor added — byte-identical in both trees.
+
+    Returns:
+        The union of the specs' endpoint sets. An untouched spec that fails
+        to parse contributes nothing and is skipped with a warning: the run
+        must not abort on files the mirroring itself never parses.
+    """
+    surviving: set[str] = set()
+
+    for rel in sorted(untouched_rels):
+        try:
+            surviving.update(extract_paths(parse_spec(remote_root / rel)))
+        except SpecParseError:
+            logger.warning(
+                "surviving spec not parseable; skipped by endpoint reconciliation",
+                extra={"spec": rel},
+            )
+
+    return surviving
+
+
+def _merged_endpoint_diff(  # noqa: PLR0913, PLR0917 — the reconciliation set needs the added endpoints
     local_root: pathlib.Path,
     remote_root: pathlib.Path,
     modified_spec_rels: set[str],
     removed_endpoints: list[str],
     surviving_endpoints: set[str],
+    added_endpoints: list[str],
 ) -> EndpointDiff:
     """Classify and merge the endpoint diff of every modified spec-file pair.
 
     Each modified spec file is parsed on both sides and diffed; the per-pair
     buckets are unioned as sets and sorted once at the end for determinism.
     The endpoints of the whole-file removals are folded into the merged
-    removed list — removed spec files are pruned in the same revision. Per-pair
-    removals are reconciled against the surviving (remote) endpoints first: an
-    endpoint dropped by one modified file but still declared by any surviving
-    spec stays live, exactly like a whole-file removal.
+    removed list — removed spec files are pruned in the same revision. All
+    removals are reconciled against the endpoints still declared by the
+    post-update tree — the untouched survivors, the modified pairs' remote
+    sides, and the added specs: an endpoint dropped by one file but still
+    declared anywhere stays live, exactly like a whole-file removal.
 
     Args:
         local_root: local specs directory (still the pre-swap content).
         remote_root: specs directory inside the fresh clone.
         modified_spec_rels: relative paths changed and present on both sides.
         removed_endpoints: endpoints of the locally removed spec files.
-        surviving_endpoints: every endpoint declared by the post-update remote
-            tree (from _classify_spec_changes).
+        surviving_endpoints: endpoints of the untouched remote specs (from
+            _classify_spec_changes).
+        added_endpoints: endpoints of the newly added spec files (from
+            _added_spec_context) — the last member of the reconciliation set.
 
     Returns:
         A single EndpointDiff with deterministic, sorted buckets.
@@ -240,13 +278,19 @@ def _merged_endpoint_diff(
     added: set[str] = set()
     removed: set[str] = set(removed_endpoints)
     modified: dict[str, set[str]] = {}
+    still_declared: set[str] = set(surviving_endpoints) | set(added_endpoints)
 
     for rel in sorted(modified_spec_rels):
-        pair = classify_endpoint_changes(diff_specs(parse_spec(local_root / rel), parse_spec(remote_root / rel)))
+        local_spec = parse_spec(local_root / rel)
+        remote_spec = parse_spec(remote_root / rel)
+        still_declared.update(extract_paths(remote_spec))
+        pair = classify_endpoint_changes(diff_specs(local_spec, remote_spec))
         added.update(pair.added)
-        removed.update(set(pair.removed) - surviving_endpoints)
+        removed.update(pair.removed)
         for endpoint, descriptions in pair.modified.items():
             modified.setdefault(endpoint, set()).update(descriptions)
+
+    removed -= still_declared
 
     return EndpointDiff(
         added=sorted(added),
@@ -439,16 +483,17 @@ def run_update(project_root: pathlib.Path) -> str:
             require_vars()
 
             if graph_existed:
+                added_endpoints, added_schemas = _added_spec_context(
+                    remote_root=remote_root,
+                    added_spec_rels=added_spec_rels,
+                )
                 merged = _merged_endpoint_diff(
                     local_root=local_root,
                     remote_root=remote_root,
                     modified_spec_rels=modified_spec_rels,
                     removed_endpoints=removed_endpoints,
                     surviving_endpoints=surviving_endpoints,
-                )
-                added_endpoints, added_schemas = _added_spec_context(
-                    remote_root=remote_root,
-                    added_spec_rels=added_spec_rels,
+                    added_endpoints=added_endpoints,
                 )
 
         staging = _assemble_staging(remote_root=remote_root, local_root=local_root)

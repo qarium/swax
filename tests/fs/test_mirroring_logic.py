@@ -139,6 +139,28 @@ class TestValidateSpecsLocation:
 
         assert result is None
 
+    def test_validate_specs_location_rejects_outside_directory(self, tmp_path):
+        # The swap replaces the whole target directory, and swax must not
+        # delete a directory it does not own — a sibling project (or any
+        # absolute location) is refused like the project root itself.
+        sibling = tmp_path.parent / "other-project"
+        sibling.mkdir()
+
+        with pytest.raises(UnsafeSpecsLocationError) as exc_info:
+            validate_specs_location(project_root=tmp_path, specs_location=sibling)
+
+        assert exc_info.value.path == sibling
+
+    def test_validate_specs_location_rejects_parent_escape(self, tmp_path):
+        # A relative location with enough ../ segments resolves outside the
+        # project even though the configured string looks harmless.
+        escaped = tmp_path / ".." / ".." / "elsewhere"
+
+        with pytest.raises(UnsafeSpecsLocationError) as exc_info:
+            validate_specs_location(project_root=tmp_path, specs_location=escaped)
+
+        assert exc_info.value.path == escaped
+
 
 class TestStagedSpecsSwap:
     def test_staged_specs_swap_replaces_target_and_removes_backup(self, tmp_path):

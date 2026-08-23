@@ -34,8 +34,9 @@ Consumer conventions:
 
 ## Guarding the target path
 
-Call `validate_specs_location` before assembling staging — it refuses degenerate targets that
-would swallow the project together with `.swax/`:
+Call `validate_specs_location` before assembling staging — it refuses targets outside the
+project (the swap replaces the whole directory, and swax must not delete a directory it does
+not own) and degenerate targets that would swallow the project together with `.swax/`:
 
 ```python
 from swax.fs import validate_specs_location
