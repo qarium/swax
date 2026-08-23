@@ -80,7 +80,7 @@ Annotations: |
   Branch priority, checked top to bottom:
   - Empty file diff — nothing is touched, no LLM, the graph stays as is (or stays missing).
   - Removals-only diff — when a graph file exists it is pruned deterministically, no LLM;
-    when it does not, the specs are applied and the graph stays missing — still no LLM (AC8).
+    when it does not, the specs are applied and the graph stays missing — still no LLM.
   - Added/updated present — LLM credentials are validated BEFORE specs are applied; the graph
     is revised incrementally when it exists, or built from scratch via `run_discover` when
     it does not.
@@ -148,16 +148,16 @@ Annotations: |
     7. Assemble staging next to the target via `copy_specs` from the clone; a stale staging
        leftover from a crashed run is removed first.
     8. Inside `staged_specs_swap`:
-       a. Removals-only — when the graph file exists: load the graph via `load_traceability`,
+       8.1. Removals-only — when the graph file exists: load the graph via `load_traceability`,
           drop removed endpoints via `TraceabilityGraph` remove_paths, deduplicate, persist
           via `save_traceability_atomically`; graph status "rebuilt". When it does not exist:
           skip graph work entirely — the graph stays missing and no status line is rendered.
-       b. Incremental — build prompts via `build_incremental_graph_system_prompt` /
+       8.2. Incremental — build prompts via `build_incremental_graph_system_prompt` /
           `build_incremental_graph_user_prompt`, ask via `LLMClient` built by
           `build_llm_client`, parse defensively, filter to the endpoint universe, construct
           the `TraceabilityGraph`, deduplicate, persist via `save_traceability_atomically`;
           graph status "rebuilt".
-       c. No graph file — delegate the full rebuild to `run_discover`; graph status "built".
+       8.3. No graph file — delegate the full rebuild to `run_discover`; graph status "built".
     9. Wrap failures of the rebuild block into `GraphRebuildFailedError` — by that point
        `staged_specs_swap` has restored the previous specs state; when no graph file existed
        before the attempt and the failed build left one behind, remove
