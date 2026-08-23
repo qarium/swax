@@ -3,11 +3,12 @@
 Covers the SpecsChanges predicates that drive every downstream branch of
 run_update (has_changes: any list non-empty; has_additions: added or updated
 non-empty — the LLM-requiring branch selector, False for a removals-only
-diff) and the byte-level tree classification of compare_specs.
+diff), the byte-level tree classification of compare_specs, and the
+mirroring path guard validate_specs_location.
 """
 
 import pytest
-from swax.fs import SpecsChanges, compare_specs
+from swax.fs import SpecsChanges, UnsafeSpecsLocationError, compare_specs, validate_specs_location
 
 
 class TestSpecsChangesPredicates:
@@ -84,3 +85,27 @@ class TestCompareSpecs:
         assert changes.added == []
         assert changes.updated == []
         assert changes.has_additions() is False
+
+
+class TestValidateSpecsLocation:
+    def test_validate_specs_location_accepts_nested_specs_dir(self, tmp_path):
+        specs = tmp_path / "specs"
+        specs.mkdir()
+
+        result = validate_specs_location(project_root=tmp_path, specs_location=specs)
+
+        assert result is None
+
+    def test_validate_specs_location_rejects_project_root(self, tmp_path):
+        with pytest.raises(UnsafeSpecsLocationError) as exc_info:
+            validate_specs_location(project_root=tmp_path, specs_location=tmp_path)
+
+        assert exc_info.value.path == tmp_path
+
+    def test_validate_specs_location_rejects_ancestor(self, tmp_path):
+        ancestor = tmp_path.parent
+
+        with pytest.raises(UnsafeSpecsLocationError) as exc_info:
+            validate_specs_location(project_root=tmp_path, specs_location=ancestor)
+
+        assert exc_info.value.path == ancestor

@@ -2,7 +2,8 @@
 
 These tests pin the public surface and signatures of ensure_swax_dir,
 copy_specs, the spec-mirroring foundation entities (SpecsChanges,
-UnsafeSpecsLocationError), and the change classifier compare_specs.
+UnsafeSpecsLocationError), the change classifier compare_specs, and the
+mirroring path guard validate_specs_location.
 """
 
 import inspect
@@ -15,6 +16,7 @@ from swax.fs import (
     compare_specs,
     copy_specs,
     ensure_swax_dir,
+    validate_specs_location,
 )
 
 
@@ -23,6 +25,7 @@ class TestFsContract:
         assert callable(ensure_swax_dir)
         assert callable(copy_specs)
         assert callable(compare_specs)
+        assert callable(validate_specs_location)
 
     def test_ensure_swax_dir_signature(self):
         signature = inspect.signature(ensure_swax_dir)
@@ -45,6 +48,13 @@ class TestFsContract:
         assert signature.parameters["local_root"].annotation is pathlib.Path
         assert signature.parameters["remote_root"].annotation is pathlib.Path
         assert signature.return_annotation is SpecsChanges
+
+    def test_validate_specs_location_signature(self):
+        signature = inspect.signature(validate_specs_location)
+
+        assert list(signature.parameters) == ["project_root", "specs_location"]
+        assert signature.parameters["project_root"].annotation is pathlib.Path
+        assert signature.parameters["specs_location"].annotation is pathlib.Path
 
 
 class TestSpecsChangesContract:
