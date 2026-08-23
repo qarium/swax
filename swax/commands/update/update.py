@@ -50,6 +50,14 @@ def update(_ctx: SwaxContext) -> None:  # noqa: C901 — one except row per docu
 
     The project root is the current working directory. No prompts are issued;
     update reads its inputs from ``.swax/config.yml`` and the environment.
+
+    Args:
+        _ctx: Click context whose obj is a SwaxContext — unused, accepted for
+            handler parity with the init, discover, and plan handlers.
+
+    Raises:
+        click.ClickException: on any documented domain failure of run_update,
+            with a user-facing message (exit code 1).
     """
     project_root = pathlib.Path.cwd()
 

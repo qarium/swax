@@ -118,8 +118,9 @@ graph conditionally, as one transaction.
 swax --env-file .env update
 ```
 
-Reads `.swax/config.yml` and the environment (no prompts; the project root is
-the current working directory). Shallow-clones the spec repository fresh,
+Requires an initialized project: reads `.swax/config.yml` (written by
+`swax init`) and the environment (no prompts; the project root is the
+current working directory). Shallow-clones the spec repository fresh,
 classifies the byte-level file diff between the local specs directory and the
 clone, and then branches:
 
@@ -137,9 +138,14 @@ clone, and then branches:
   (`Traceability graph: built`).
 
 The summary lists `Added:` / `Updated:` / `Removed:` groups (empty groups
-omitted) plus the graph status line. The remote clone is the source of truth —
-local spec edits are overwritten silently. A failure during the rebuild
-restores the previous specs (and the previous graph) before exiting.
+omitted) plus the graph status line.
+
+!!! warning "Local spec edits are overwritten"
+    The remote clone is the source of truth — local spec edits are
+    overwritten silently.
+
+A failure during the rebuild restores the previous specs (and the previous
+graph) before exiting.
 
 | Exit code | Cause |
 | --- | --- |

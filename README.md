@@ -28,12 +28,13 @@ This installs the `swax` console script (`swax.cli.__main__:main`).
 
 ## Environment
 
-Swax reads three environment variables for the LLM transport. Put them in a
+Swax reads four environment variables for the LLM transport. Put them in a
 `.env` file (loaded via the `--env-file` option) or export them in your shell —
 shell values take precedence over the file:
 
 | Variable | Meaning |
 | --- | --- |
+| `SWAX_LLM_MODEL` | Model name (e.g. `claude-sonnet-4-6`, `gpt-4o`). |
 | `SWAX_LLM_PROTOCOL` | Provider identifier: `anthropic` or `openai`. |
 | `SWAX_LLM_BASE_URL` | LLM API base URL (without a `/v1` or `/v2` version segment — the SDK appends it). |
 | `SWAX_LLM_TOKEN` | LLM API token. Never written to logs or error messages. |
@@ -93,17 +94,21 @@ messages such as `Missing env vars: ...`, `Failed to parse <path>: <reason>`,
 
 Mirrors the local specs to the remote state and rebuilds the traceability
 graph conditionally, as one transaction (no prompts; reads `.swax/config.yml`
-and the environment). It shallow-clones the spec repository fresh and
-classifies the byte-level file diff, then branches: with no changes it prints
-`Specs are up to date.` and touches nothing; with removals only it mirrors the
-specs and prunes the graph deterministically without an LLM call; with
-added/updated files it validates `SWAX_LLM_*` before any mutation and then
-revises the graph incrementally with a single LLM turn (`Traceability graph:
-rebuilt`) or builds it from scratch via the discover flow when no graph exists
-(`Traceability graph: built`). The summary lists `Added:` / `Updated:` /
-`Removed:` groups plus the graph status. The remote is the source of truth —
-local spec edits are overwritten; a failed rebuild restores the previous specs
-and graph. Failures exit with code 1 and messages such as
+and the environment). The command shallow-clones the spec repository fresh
+and classifies the byte-level file diff, then branches:
+
+- **No changes** — prints `Specs are up to date.` and touches nothing.
+- **Removals only** — mirrors the specs and prunes the graph deterministically
+  without an LLM call.
+- **Added/updated files** — validates `SWAX_LLM_*` before any mutation, then
+  revises the graph incrementally with a single LLM turn
+  (`Traceability graph: rebuilt`) or builds it from scratch via the discover
+  flow when no graph exists (`Traceability graph: built`).
+
+The summary lists `Added:` / `Updated:` / `Removed:` groups plus the graph
+status. The remote is the source of truth — local spec edits are overwritten;
+a failed rebuild restores the previous specs and graph. Failures exit with
+code 1 and messages such as
 `Refusing to mirror into <path>`, `Graph rebuild failed: <reason>; specs
 restored.`, `Failed to clone <url>: <reason>`, `Specs not found at <path>`,
 `Missing env vars: ...`, `Failed to parse <path>: <reason>`,

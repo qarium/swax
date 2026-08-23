@@ -61,11 +61,11 @@ the `main` group via `main.add_command()`. To avoid circular imports between
 
 ```python
 # swax/cli/__main__.py
-from swax.cli import main
-from swax.commands import discover_handler, init_handler, plan_handler, update_handler
+from ..commands import discover_handler, init_handler, plan_handler, update_handler
+from .main import main
 
-main.add_command(init_handler, name="init")
 main.add_command(discover_handler, name="discover")
+main.add_command(init_handler, name="init")
 main.add_command(plan_handler, name="plan")
 main.add_command(update_handler, name="update")
 

@@ -1,27 +1,13 @@
-"""Logic tests for the incremental-graph prompt builders.
+"""Tests for build_incremental_graph_user_prompt.
 
-Tests cover the five contract fragments pinned in the system prompt and the
-full revision payload of the user prompt: current graph, change set, new-specs
-content, the computed sorted universe, and the closing instruction.
+Covers the full revision payload of the user prompt: current graph, change
+set, new-specs content, the computed sorted universe, the closing
+instruction, and the serialization of non-JSON-native scalars.
 """
 
 import datetime
 
-from swax.prompts import (
-    build_incremental_graph_system_prompt,
-    build_incremental_graph_user_prompt,
-)
-
-
-class TestBuildIncrementalSystemPrompt:
-    def test_build_incremental_system_prompt_pins_contract_fragments(self):
-        prompt = build_incremental_graph_system_prompt()
-
-        assert "revising an existing dependency graph" in prompt
-        assert "complete updated graph, not a delta" in prompt
-        assert "do not include paths outside it" in prompt
-        assert "parseable as JSON" in prompt
-        assert "paths only, not HTTP methods" in prompt
+from swax.prompts import build_incremental_graph_user_prompt
 
 
 class TestBuildIncrementalUserPrompt:

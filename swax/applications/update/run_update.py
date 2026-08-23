@@ -525,7 +525,7 @@ def run_update(project_root: pathlib.Path) -> str:
                     )
                     graph_status = "rebuilt"
                 else:
-                    logger.debug("rebuild branch: full")
+                    logger.debug("rebuild branch: full", extra={"project_root": str(project_root)})
                     run_discover(project_root)
                     graph_status = "built"
 

@@ -49,8 +49,9 @@ this directory holds a copy of the specifications from the remote repository.
   directory next to `<specs.location>/` and swaps it in via
   `staged_specs_swap`; the swap backs the old directory up to
   `.<specs.location>.backup` and removes the backup on success. Both
-  transient directories are gone after every run (a stale leftover from a
-  crashed run is removed on the next swap).
+  transient directories are gone after every successful run — the backup
+  removal is best effort (a stale leftover from a crashed or failed-cleanup
+  run is removed on the next swap).
 - `.swax/` itself is never deleted automatically — only its files are
   overwritten.
 

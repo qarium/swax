@@ -118,9 +118,11 @@ directory; the single rollback point of the update transaction.
 
 - Enter: remove a stale leftover backup, rename `target` to
   `.{target.name}.backup`, rename `staging` into place, yield the live root.
+  A missing `target` is a defined case — nothing is backed up.
 - Normal exit: remove the backup (best effort — a stale leftover is removed
   on the next swap).
-- Exception: remove the swapped-in directory, restore the backup, re-raise.
+- Exception: remove the swapped-in directory, restore the backup (nothing to
+  restore when `target` was missing), re-raise.
 
 Constraints:
 

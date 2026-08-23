@@ -1,21 +1,29 @@
-"""Logic tests for the swax.commands.update cell.
+"""Tests for the swax.commands.update cell — the `update` Click command.
 
-run_update is mocked at its use site (swax.commands.update.update.run_update) so
-no real config/clone/spec/LLM work runs. The CliRunner drives the Click command.
-The scenarios verify the core contract: the ten documented domain exceptions map
-to click.ClickException (exit code 1, user-facing message per the pinned table,
-no SWAX_LLM_TOKEN value leak), and a successful run_update echoes the update
-summary and exits 0 without issuing any prompts.
+The contract blocks pin the public surface: the Click command `update` must
+be importable from the facade (``swax.commands.update``), be a registered
+``click.Command`` whose callback is wired with ``@click.pass_obj``, have no
+options, and the facade must expose exactly ``["update"]``.
 
-The update handler accepts the Click ctx.obj (a SwaxContext under the real main
-group) but intentionally does not read it, so a real SwaxContext instance stands
-in for the obj. Only the ten documented domain exceptions are caught — generic
-Exception is never handled.
+The logic block drives the command through CliRunner with run_update mocked
+at its use site (swax.commands.update.update.run_update) so no real
+config/clone/spec/LLM work runs. The scenarios verify the core contract: the
+ten documented domain exceptions map to click.ClickException (exit code 1,
+user-facing message per the pinned table, no SWAX_LLM_TOKEN value leak), and
+a successful run_update echoes the update summary and exits 0 without
+issuing any prompts.
+
+The update handler accepts the Click ctx.obj (a SwaxContext under the real
+main group) but intentionally does not read it, so a real SwaxContext
+instance stands in for the obj. Only the ten documented domain exceptions are
+caught — generic Exception is never handled.
 """
 
 import pathlib
 
+import click
 import pytest
+import swax.commands.update as update_cell
 from click.testing import CliRunner
 from swax.applications import GraphRebuildFailedError
 from swax.cli import SwaxContext
@@ -37,6 +45,30 @@ PATCH_RUN_UPDATE = "swax.commands.update.update.run_update"
 @pytest.fixture
 def swax_context() -> SwaxContext:
     return SwaxContext(env_file=pathlib.Path(".env"))
+
+
+class TestUpdateContract:
+    def test_update_is_importable_from_facade(self):
+        assert callable(update)
+
+    def test_update_is_a_click_command(self):
+        assert isinstance(update, click.Command)
+
+    def test_update_callback_is_attached(self):
+        assert update.callback is not None
+
+    def test_update_callback_is_decorated_with_pass_obj(self):
+        """``@click.pass_obj`` wraps the callback with ``functools.wraps``."""
+        assert hasattr(update.callback, "__wrapped__")
+        assert update.callback.__wrapped__.__name__ == "update"
+
+    def test_update_command_has_no_options(self):
+        assert update.params == []
+
+
+class TestFacadeExposure:
+    def test_facade_all_contains_only_update(self):
+        assert update_cell.__all__ == ["update"]
 
 
 def test_update_command_echoes_summary(mocker, swax_context):

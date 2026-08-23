@@ -97,6 +97,7 @@ def _materialize_project(tmp_path: pathlib.Path, *, with_legacy: bool = False) -
     specs_dir = tmp_path / "specs"
     specs_dir.mkdir(exist_ok=True)
     (specs_dir / "api.yaml").write_text(BASELINE_SPEC, encoding="utf-8")
+
     if with_legacy:
         (specs_dir / "legacy.yaml").write_text(LEGACY_SPEC, encoding="utf-8")
 
@@ -105,8 +106,10 @@ def _fresh_root(tmp_path: pathlib.Path, files: dict[str, str]) -> pathlib.Path:
     """Create a fresh clone dir carrying the given spec files."""
     fresh = tmp_path / "fresh"
     fresh.mkdir(exist_ok=True)
+
     for rel, content in files.items():
         (fresh / rel).write_text(content, encoding="utf-8")
+
     return fresh
 
 
@@ -115,6 +118,7 @@ def _patch_clone(mocker, fresh_root: pathlib.Path):
     mock_clone = mocker.patch(CLONE_SPECS)
     mock_clone.return_value.__enter__.return_value = fresh_root
     mock_clone.return_value.__exit__.return_value = False
+
     return mock_clone
 
 
@@ -155,8 +159,10 @@ def test_swax_update_removals_only_prunes_graph_without_llm(tmp_path, monkeypatc
 
 def test_swax_update_missing_env_vars_aborts_before_any_mutation(tmp_path, monkeypatch, mocker):
     monkeypatch.chdir(tmp_path)
+
     for name in ENV_VARS:
         monkeypatch.delenv(name, raising=False)
+
     _materialize_project(tmp_path)
     graph_file = tmp_path / ".swax" / "traceability.yml"
     graph_content = "/users:\n- /orders\n"

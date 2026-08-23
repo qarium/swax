@@ -58,7 +58,7 @@ Constraints:
 ### Imports
 
 - `SwaxContext` ← `swax/cli` (practice: `cli-facade`)
-- `run_init` ← `swax/applications` (practice: `init`)
+- `run_init` ← `swax/applications` (practice: `init-usage`)
 - `RepositoryCloneError`, `SpecsNotFoundError` ← `swax/git`
   (practice: `specs-repository`)
 
@@ -98,7 +98,7 @@ Constraints:
 ### Imports
 
 - `SwaxContext` ← `swax/cli` (practice: `cli-facade`)
-- `run_discover` ← `swax/applications` (practice: `discover`)
+- `run_discover` ← `swax/applications` (practice: `discover-usage`)
 - `MissingEnvironmentVariablesError` ← `swax/config` (practice: `environment`)
 - `SpecParseError` ← `swax/openapi` (practice: `parsing`)
 - `LLMCallError`, `LLMRateLimitedError`, `LLMResponseParseError`,
@@ -141,7 +141,7 @@ Constraints:
 ### Imports
 
 - `SwaxContext` ← `swax/cli` (practice: `cli-facade`)
-- `run_plan` ← `swax/applications` (practice: `plan`)
+- `run_plan` ← `swax/applications` (practice: `plan-usage`)
 - `MissingEnvironmentVariablesError` ← `swax/config` (practice: `environment`)
 - `SpecParseError` ← `swax/openapi` (practice: `parsing`)
 - `RepositoryCloneError`, `SpecsNotFoundError` ← `swax/git`

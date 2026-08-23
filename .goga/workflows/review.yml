@@ -1,2 +1,10 @@
 prompt: |
   Answer (feedbacks, proposes, questions and etc) in Russian language.
+
+stages:
+  code-review:
+    approve: dialog
+  contracts-review:
+    approve: dialog
+  documentation-review:
+    approve: dialog

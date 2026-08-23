@@ -1,10 +1,16 @@
-"""Logic tests for run_update — the update transaction (task 10).
+"""Tests for run_update — the update transaction orchestrator (task 10).
 
-Exercises the full transaction against the real filesystem, the real
-compare_specs / staged_specs_swap / parse_spec stack, and mocked boundaries
-at the import points: clone_specs is replaced by a context manager yielding
-a prepared directory, build_llm_client by a fake client that counts ask
-calls, and run_discover / require_vars where a test isolates a layer.
+The contract block pins the public surface: run_update is importable from the
+swax.applications.update facade, its signature is
+(project_root: pathlib.Path) -> str, the domain error stays importable, and
+the facade exposes exactly the two-name final surface
+["GraphRebuildFailedError", "run_update"].
+
+The logic blocks exercise the full transaction against the real filesystem,
+the real compare_specs / staged_specs_swap / parse_spec stack, and mocked
+boundaries at the import points: clone_specs is replaced by a context manager
+yielding a prepared directory, build_llm_client by a fake client that counts
+ask calls, and run_discover / require_vars where a test isolates a layer.
 
 Scenarios follow the design's flow list: empty diff, removals-only with and
 without a graph file, incremental revision via a single ask, mixed diff with
@@ -15,10 +21,12 @@ the non-spec-file mirroring edge (q3) and the stale-staging guard.
 """
 
 import contextlib
+import inspect
 import pathlib
 import shutil
 
 import pytest
+import swax.applications.update as update_facade
 import yaml
 from swax.applications.update import GraphRebuildFailedError, run_update
 from swax.config import MissingEnvironmentVariablesError
@@ -152,6 +160,25 @@ REQUIRE_VARS = "swax.applications.update.run_update.require_vars"
 RUN_DISCOVER = "swax.applications.update.run_update.run_discover"
 
 
+class TestRunUpdateContract:
+    def test_importable_from_facade(self):
+        assert callable(run_update)
+
+    def test_domain_error_still_importable_from_facade(self):
+        assert issubclass(GraphRebuildFailedError, Exception)
+
+    def test_signature(self):
+        signature = inspect.signature(run_update)
+
+        parameters = list(signature.parameters)
+        assert parameters == ["project_root"]
+        assert signature.parameters["project_root"].annotation is pathlib.Path
+        assert signature.return_annotation is str
+
+    def test_facade_all_is_final_two_name_surface(self):
+        assert update_facade.__all__ == ["GraphRebuildFailedError", "run_update"]
+
+
 @pytest.fixture
 def update_project(tmp_path, monkeypatch):
     (tmp_path / ".swax").mkdir()
@@ -159,8 +186,10 @@ def update_project(tmp_path, monkeypatch):
     specs = tmp_path / "specs"
     specs.mkdir()
     (specs / "api.yaml").write_text(BASELINE_SPEC, encoding="utf-8")
+
     for key, value in ENV_VARS.items():
         monkeypatch.setenv(key, value)
+
     return tmp_path
 
 
@@ -178,11 +207,14 @@ def _patch_client(mocker, behavior):
     class _FakeClient:
         def ask(self, system, user):
             calls["ask"] += 1
+
             if isinstance(behavior, Exception):
                 raise behavior
+
             return behavior
 
     mocker.patch(BUILD_CLIENT, return_value=_FakeClient())
+
     return calls
 
 
@@ -193,24 +225,29 @@ def _patch_capturing_client(mocker, response: str) -> dict:
         def ask(self, system, user):
             captured["system"] = system
             captured["user"] = user
+
             return response
 
     mocker.patch(BUILD_CLIENT, return_value=_CapturingClient())
+
     return captured
 
 
 def _make_remote(tmp_path, files: dict[str, str]) -> pathlib.Path:
     remote = tmp_path / "remote"
+
     for rel, content in files.items():
         path = remote / rel
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(content, encoding="utf-8")
+
     return remote
 
 
 def _write_graph(tmp_path, content: str) -> pathlib.Path:
     graph_file = tmp_path / ".swax" / "traceability.yml"
     graph_file.write_text(content, encoding="utf-8")
+
     return graph_file
 
 

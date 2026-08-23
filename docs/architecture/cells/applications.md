@@ -346,7 +346,8 @@ Algorithm:
 Constraints:
 
 - Domain exceptions outside the rebuild block propagate unwrapped.
-- Writes only inside the specs directory and `.swax/traceability.yml`.
+- Writes only inside the specs directory, its transient staging/backup
+  siblings, and `.swax/traceability.yml`.
 - Exact strings: `"Specs are up to date."`, `Traceability graph: rebuilt` /
   `Traceability graph: built`.
 
@@ -385,7 +386,8 @@ Keyword-only constructor storing `self.reason`.
   `build_incremental_graph_user_prompt` ← `swax/prompts`
   (practice: `incremental-graph-prompts`)
 - `build_llm_client`, `LLMClient`, `LLMCallError`, `LLMRateLimitedError`,
-  `LLMResponseParseError` ← `swax/llm` (practice: `llm-transport`)
+  `LLMResponseParseError`, `UnsupportedLLMProtocolError` ← `swax/llm`
+  (practice: `llm-transport`)
 - `run_discover` ← `swax/applications/discover` (sibling import — never via
   the `swax.applications` facade, which would create an import cycle)
 
