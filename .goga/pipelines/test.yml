@@ -1,0 +1,17 @@
+name: MyTest
+description: test
+---
+
+- name: test1
+  roles:
+    - planner
+    - executor
+  communication: true
+  before_script: |
+    echo "Test1"
+  prompt: |
+    test
+  after_script: |
+    echo "test"
+
+- name: test2
