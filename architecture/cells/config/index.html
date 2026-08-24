@@ -1,0 +1,1938 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Project configuration model, .env loading, and SWAX_* environment variable validation.">
+      
+      
+      
+        <link rel="canonical" href="https://qarium.github.io/swax/architecture/cells/config/">
+      
+      
+        <link rel="prev" href="../applications/">
+      
+      
+        <link rel="next" href="../fs/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>swax/config - Swax</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  
+  <style>
+    /* Dark navbar — override palette in both themes */
+    [data-md-color-scheme=default][data-md-color-primary=custom],
+    [data-md-color-scheme=slate][data-md-color-primary=custom] {
+      --md-primary-fg-color: #0a0a13;
+      --md-primary-fg-color--light: #0a0a13cc;
+      --md-primary-bg-color: #ffffff;
+    }
+
+    .md-header__button.md-logo img,
+    .md-header__button.md-logo svg {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+    }
+
+    /* Search form — visible on dark header */
+    .md-search__overlay {
+      background-color: transparent !important;
+    }
+    [data-md-toggle=search]:checked~.md-header .md-search__overlay {
+      background-color: #0000008a !important;
+    }
+    .md-search__inner {
+      background-color: transparent !important;
+    }
+    .md-search__form {
+      background-color: #3a3a3a !important;
+      border-radius: 0.5rem;
+    }
+    .md-search__form:hover {
+      background-color: #4a4a4a !important;
+    }
+    .md-search__input {
+      color: #e0e0e0 !important;
+    }
+    .md-search__input::placeholder {
+      color: #999999 !important;
+    }
+    .md-search__icon {
+      color: #999999 !important;
+    }
+    .md-search__form:hover .md-search__icon,
+    .md-search__input:focus-visible ~ .md-search__icon {
+      color: #e0e0e0 !important;
+    }
+
+    /* Links in dark theme — readable on dark background */
+    [data-md-color-scheme=slate] .md-nav__link,
+    [data-md-color-scheme=slate] .md-toc__link,
+    [data-md-color-scheme=slate] article a {
+      color: #cbd5e0 !important;
+    }
+    [data-md-color-scheme=slate] .md-nav__link--passed,
+    [data-md-color-scheme=slate] .md-toc__link--passed {
+      color: #718096 !important;
+    }
+    [data-md-color-scheme=slate] .md-nav__link:hover,
+    [data-md-color-scheme=slate] .md-toc__link:hover,
+    [data-md-color-scheme=slate] article a:hover {
+      color: var(--md-accent-fg-color) !important;
+    }
+  </style>
+
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#swaxconfig" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="Swax" class="md-header__button md-logo" aria-label="Swax" data-md-component="logo">
+      
+  <img src="https://avatars.githubusercontent.com/u/262344922?s=200&v=4" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Swax
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              swax/config
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/qarium/swax" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../getting-started/installation/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Getting started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guide/commands/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../../overview/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Architecture
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="Swax" class="md-nav__button md-logo" aria-label="Swax" data-md-component="logo">
+      
+  <img src="https://avatars.githubusercontent.com/u/262344922?s=200&v=4" alt="logo">
+
+    </a>
+    Swax
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/qarium/swax" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../getting-started/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../getting-started/configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../getting-started/quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guide/commands/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Commands
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guide/project-layout/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Project layout
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guide/traceability-graph/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Traceability graph
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guide/impact-report/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Impact Report
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_2" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cells
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4_2" id="__nav_4_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Cells
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    cli
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../commands/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    commands
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../applications/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    applications
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    config
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    config
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#configuration-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration models
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Configuration models">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#configgit-gitconfig-specs-specsconfig" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Config(git: GitConfig, specs: SpecsConfig)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gitconfigurl-str-location-str" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GitConfig(url: str, location: str)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#specsconfigtype-literalswagger-openapi-location-str" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SpecsConfig(type: Literal['swagger', 'openapi'], location: str)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#environment-routines" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Environment routines
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Environment routines">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#load_envenv_file-pathlibpath" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        load_env(env_file: pathlib.Path)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#require_vars-vars-dictstr-str" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        require_vars() -&gt; vars: dict[str, str]
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#parse_protocolvalue-str-protocol-str" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        parse_protocol(value: str) -&gt; protocol: str
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#parse_base_urlvalue-str-base_url-str" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        parse_base_url(value: str) -&gt; base_url: str
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#persistence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Persistence
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Persistence">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#load_configpath-pathlibpath-config-config" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        load_config(path: pathlib.Path) -&gt; config: Config
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#save_configconfig-config-path-pathlibpath" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        save_config(config: Config, path: pathlib.Path)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Errors
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#see-also" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        See also
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    fs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../git/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    git
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../openapi/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    openapi
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../llm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    llm
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../prompts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    prompts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../traceability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    traceability
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#configuration-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration models
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Configuration models">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#configgit-gitconfig-specs-specsconfig" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Config(git: GitConfig, specs: SpecsConfig)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gitconfigurl-str-location-str" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GitConfig(url: str, location: str)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#specsconfigtype-literalswagger-openapi-location-str" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SpecsConfig(type: Literal['swagger', 'openapi'], location: str)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#environment-routines" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Environment routines
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Environment routines">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#load_envenv_file-pathlibpath" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        load_env(env_file: pathlib.Path)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#require_vars-vars-dictstr-str" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        require_vars() -&gt; vars: dict[str, str]
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#parse_protocolvalue-str-protocol-str" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        parse_protocol(value: str) -&gt; protocol: str
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#parse_base_urlvalue-str-base_url-str" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        parse_base_url(value: str) -&gt; base_url: str
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#persistence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Persistence
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Persistence">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#load_configpath-pathlibpath-config-config" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        load_config(path: pathlib.Path) -&gt; config: Config
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#save_configconfig-config-path-pathlibpath" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        save_config(config: Config, path: pathlib.Path)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Errors
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#see-also" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        See also
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="swaxconfig"><code>swax/config</code></h1>
+<p>Project configuration and environment. Holds the project model and validates
+<code>SWAX_*</code> credentials for LLM access.</p>
+<p>All pydantic models use <code>kw_only</code>. Relative imports inside the cell.
+<code>SWAX_LLM_TOKEN</code> never appears in logs.</p>
+<h2 id="configuration-models">Configuration models</h2>
+<h3 id="configgit-gitconfig-specs-specsconfig"><code>Config(git: GitConfig, specs: SpecsConfig)</code></h3>
+<p>Root configuration model of a Swax project, persisted to <code>.swax/config.yml</code>.</p>
+<ul>
+<li><code>git</code>: git repository coordinates for the source specifications.</li>
+<li><code>specs</code>: local layout of downloaded specifications.</li>
+</ul>
+<p>Constraints:</p>
+<ul>
+<li>Both fields are required — a project without git or specs is invalid.</li>
+</ul>
+<h3 id="gitconfigurl-str-location-str"><code>GitConfig(url: str, location: str)</code></h3>
+<p>Coordinates of the remote git repository holding API specifications.</p>
+<ul>
+<li><code>url</code>: clone URL consumed by <code>clone_specs</code>.</li>
+<li><code>location</code>: subdirectory inside the repository where specs live.</li>
+</ul>
+<p>Constraints:</p>
+<ul>
+<li>URL must <strong>not</strong> embed credentials — private repositories are served via
+  git credential helpers.</li>
+</ul>
+<h3 id="specsconfigtype-literalswagger-openapi-location-str"><code>SpecsConfig(type: Literal['swagger', 'openapi'], location: str)</code></h3>
+<p>Local layout of downloaded specifications.</p>
+<ul>
+<li><code>type</code>: declared spec format (<code>swagger</code> or <code>openapi</code>). Informational only —
+  the parser detects the actual version at parse time.</li>
+<li><code>location</code>: local path where <code>copy_specs</code> writes specs.</li>
+</ul>
+<h2 id="environment-routines">Environment routines</h2>
+<h3 id="load_envenv_file-pathlibpath"><code>load_env(env_file: pathlib.Path)</code></h3>
+<p>Loads <code>.env</code> into the process environment before any command handler runs.</p>
+<ul>
+<li><code>env_file</code>: path to the dotenv file from the <code>--env-file</code> option.</li>
+</ul>
+<p>Algorithm:</p>
+<ol>
+<li>If the file does not exist, return without error.</li>
+<li>Load it so <strong>real shell variables keep precedence</strong> over file values.</li>
+</ol>
+<p>Requirements:</p>
+<ul>
+<li>Missing file is <strong>not</strong> an error — return silently.</li>
+<li>Real environment variables take precedence over file values.</li>
+</ul>
+<h3 id="require_vars-vars-dictstr-str"><code>require_vars() -&gt; vars: dict[str, str]</code></h3>
+<p>Validates that all mandatory <code>SWAX_*</code> variables are present in the environment.</p>
+<ul>
+<li><code>vars</code>: mapping of variable name to its value, returned for caller
+  convenience.</li>
+</ul>
+<p>Algorithm:</p>
+<ol>
+<li>Read each mandatory variable name from the environment.</li>
+<li>Treat empty and whitespace-only values as missing.</li>
+<li>If any are missing, raise <code>MissingEnvironmentVariablesError</code>.</li>
+<li>Otherwise return the name-to-value mapping.</li>
+</ol>
+<p>Requirements:</p>
+<ul>
+<li><strong>Lazy validation</strong> — called only from use-cases that need LLM credentials
+  (<code>run_discover</code>). <code>run_init</code> bypasses it.</li>
+<li>Whitespace-only values count as missing.</li>
+<li>Mandatory set: <code>SWAX_LLM_MODEL</code>, <code>SWAX_LLM_PROTOCOL</code>, <code>SWAX_LLM_BASE_URL</code>,
+  <code>SWAX_LLM_TOKEN</code>.</li>
+</ul>
+<h3 id="parse_protocolvalue-str-protocol-str"><code>parse_protocol(value: str) -&gt; protocol: str</code></h3>
+<p>Validates <code>SWAX_LLM_PROTOCOL</code> as a supported provider identifier.</p>
+<ul>
+<li><code>value</code>: raw value from the environment.</li>
+<li><code>protocol</code>: validated protocol string, unchanged.</li>
+</ul>
+<p>Algorithm:</p>
+<ol>
+<li>Compare <code>value</code> against the accepted protocol set.</li>
+<li>On mismatch, raise <code>InvalidLLMProtocolError</code>.</li>
+<li>Otherwise return <code>value</code> unchanged.</li>
+</ol>
+<p>Constraints:</p>
+<ul>
+<li>Values outside <code>("anthropic", "openai")</code> raise <code>InvalidLLMProtocolError</code>.</li>
+</ul>
+<h3 id="parse_base_urlvalue-str-base_url-str"><code>parse_base_url(value: str) -&gt; base_url: str</code></h3>
+<p>Rejects <code>SWAX_LLM_BASE_URL</code> that includes a version segment.</p>
+<ul>
+<li><code>value</code>: raw value from the environment.</li>
+<li><code>base_url</code>: validated URL, unchanged.</li>
+</ul>
+<p>Algorithm:</p>
+<ol>
+<li>Strip trailing slashes from <code>value</code>.</li>
+<li>If the result ends with a version segment, raise <code>InvalidLLMBaseURLError</code>.</li>
+<li>Otherwise return the stripped URL.</li>
+</ol>
+<p>Constraints:</p>
+<ul>
+<li>URL ending with <code>/v1</code> or <code>/v2</code> raises <code>InvalidLLMBaseURLError</code>.</li>
+</ul>
+<h2 id="persistence">Persistence</h2>
+<h3 id="load_configpath-pathlibpath-config-config"><code>load_config(path: pathlib.Path) -&gt; config: Config</code></h3>
+<p>Reads <code>.swax/config.yml</code> and validates it into a <code>Config</code> model.</p>
+<ul>
+<li><code>path</code>: path to the configuration file.</li>
+<li><code>config</code>: parsed and validated configuration.</li>
+</ul>
+<p>Algorithm:</p>
+<ol>
+<li>Read the file as UTF-8 text.</li>
+<li>Parse YAML with the safe loader.</li>
+<li>Validate the resulting structure into the <code>Config</code> model.</li>
+</ol>
+<p>Requirements:</p>
+<ul>
+<li>File is read as UTF-8.</li>
+<li>Parsing uses a <strong>safe</strong> YAML loader — no arbitrary deserialization.</li>
+<li>Structure is validated against the <code>Config</code> model before returning.</li>
+</ul>
+<h3 id="save_configconfig-config-path-pathlibpath"><code>save_config(config: Config, path: pathlib.Path)</code></h3>
+<p>Persists <code>Config</code> to <code>.swax/config.yml</code> deterministically.</p>
+<ul>
+<li><code>config</code>: configuration to write.</li>
+<li><code>path</code>: destination file path.</li>
+</ul>
+<p>Algorithm:</p>
+<ol>
+<li>Convert the model into YAML-safe primitives.</li>
+<li>Create parent directories as needed.</li>
+<li>Dump YAML in a stable form (key order preserved, Unicode allowed, block
+   style).</li>
+<li>Write text as UTF-8.</li>
+</ol>
+<p>Requirements:</p>
+<ul>
+<li>Parent directories are created as needed.</li>
+<li>Output is <strong>stable across runs</strong> for clean diffs.</li>
+</ul>
+<h2 id="errors">Errors</h2>
+<table>
+<thead>
+<tr>
+<th>Exception</th>
+<th>Cause</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>MissingEnvironmentVariablesError(missing: list[str])</code></td>
+<td>Raised by <code>require_vars</code> when one or more mandatory <code>SWAX_*</code> variables are missing.</td>
+</tr>
+<tr>
+<td><code>InvalidLLMProtocolError(value: str, allowed: tuple[str, ...])</code></td>
+<td>Raised by <code>parse_protocol</code> on an unsupported <code>SWAX_LLM_PROTOCOL</code> value.</td>
+</tr>
+<tr>
+<td><code>InvalidLLMBaseURLError(value: str)</code></td>
+<td>Raised by <code>parse_base_url</code> when <code>SWAX_LLM_BASE_URL</code> contains a version segment (<code>/v1</code>, <code>/v2</code>).</td>
+</tr>
+</tbody>
+</table>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="../../../getting-started/configuration/">Configuration</a> — end-user guide to
+  <code>.env</code> and <code>.swax/config.yml</code>.</li>
+</ul>
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.tabs", "navigation.indexes", "search.suggest", "search.highlight", "content.code.copy"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

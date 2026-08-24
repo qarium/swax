@@ -1,0 +1,1809 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="CLI surface — init, discover, plan, update, the global --env-file option, and exit codes.">
+      
+      
+      
+        <link rel="canonical" href="https://qarium.github.io/swax/guide/commands/">
+      
+      
+        <link rel="prev" href="../../getting-started/quickstart/">
+      
+      
+        <link rel="next" href="../project-layout/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Commands - Swax</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  
+  <style>
+    /* Dark navbar — override palette in both themes */
+    [data-md-color-scheme=default][data-md-color-primary=custom],
+    [data-md-color-scheme=slate][data-md-color-primary=custom] {
+      --md-primary-fg-color: #0a0a13;
+      --md-primary-fg-color--light: #0a0a13cc;
+      --md-primary-bg-color: #ffffff;
+    }
+
+    .md-header__button.md-logo img,
+    .md-header__button.md-logo svg {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+    }
+
+    /* Search form — visible on dark header */
+    .md-search__overlay {
+      background-color: transparent !important;
+    }
+    [data-md-toggle=search]:checked~.md-header .md-search__overlay {
+      background-color: #0000008a !important;
+    }
+    .md-search__inner {
+      background-color: transparent !important;
+    }
+    .md-search__form {
+      background-color: #3a3a3a !important;
+      border-radius: 0.5rem;
+    }
+    .md-search__form:hover {
+      background-color: #4a4a4a !important;
+    }
+    .md-search__input {
+      color: #e0e0e0 !important;
+    }
+    .md-search__input::placeholder {
+      color: #999999 !important;
+    }
+    .md-search__icon {
+      color: #999999 !important;
+    }
+    .md-search__form:hover .md-search__icon,
+    .md-search__input:focus-visible ~ .md-search__icon {
+      color: #e0e0e0 !important;
+    }
+
+    /* Links in dark theme — readable on dark background */
+    [data-md-color-scheme=slate] .md-nav__link,
+    [data-md-color-scheme=slate] .md-toc__link,
+    [data-md-color-scheme=slate] article a {
+      color: #cbd5e0 !important;
+    }
+    [data-md-color-scheme=slate] .md-nav__link--passed,
+    [data-md-color-scheme=slate] .md-toc__link--passed {
+      color: #718096 !important;
+    }
+    [data-md-color-scheme=slate] .md-nav__link:hover,
+    [data-md-color-scheme=slate] .md-toc__link:hover,
+    [data-md-color-scheme=slate] article a:hover {
+      color: var(--md-accent-fg-color) !important;
+    }
+  </style>
+
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#commands" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Swax" class="md-header__button md-logo" aria-label="Swax" data-md-component="logo">
+      
+  <img src="https://avatars.githubusercontent.com/u/262344922?s=200&v=4" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Swax
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Commands
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/qarium/swax" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../getting-started/installation/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Getting started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="./" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../architecture/overview/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Architecture
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Swax" class="md-nav__button md-logo" aria-label="Swax" data-md-component="logo">
+      
+  <img src="https://avatars.githubusercontent.com/u/262344922?s=200&v=4" alt="logo">
+
+    </a>
+    Swax
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/qarium/swax" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Commands
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Commands
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#global-env-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Global: --env-file
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#swax-init" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        swax init
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#swax-discover" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        swax discover
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#swax-plan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        swax plan
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#swax-update" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        swax update
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#see-also" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        See also
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../project-layout/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Project layout
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../traceability-graph/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Traceability graph
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../impact-report/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Impact Report
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../architecture/cells/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cells
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4_2" id="__nav_4_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Cells
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/cells/cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    cli
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/cells/commands/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    commands
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/cells/applications/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    applications
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/cells/config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    config
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/cells/fs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    fs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/cells/git/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    git
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/cells/openapi/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    openapi
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/cells/llm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    llm
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/cells/prompts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    prompts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/cells/traceability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    traceability
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#global-env-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Global: --env-file
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#swax-init" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        swax init
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#swax-discover" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        swax discover
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#swax-plan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        swax plan
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#swax-update" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        swax update
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#see-also" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        See also
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="commands">Commands</h1>
+<p>Swax exposes four subcommands on the <code>swax</code> Click group. All commands share
+the global <code>--env-file</code> option and the <code>SwaxContext</code> pass object.</p>
+<h2 id="global-env-file">Global: <code>--env-file</code></h2>
+<pre><code class="language-bash">swax --env-file &lt;path&gt; &lt;subcommand&gt;
+</code></pre>
+<ul>
+<li>Default: <code>.env</code> (relative to the current working directory).</li>
+<li>A <strong>missing</strong> file is silently ignored — real shell variables still apply.</li>
+<li><strong>Shell variables take precedence over file values</strong> (<code>override=False</code>).</li>
+</ul>
+<p><code>load_env</code> runs in the top-level group callback <strong>before</strong> any subcommand, so
+the environment is always populated when a handler runs.</p>
+<h2 id="swax-init"><code>swax init</code></h2>
+<p>Initialize a project from a remote spec repository.</p>
+<pre><code class="language-bash">swax --env-file .env init
+</code></pre>
+<p>Interactive prompts:</p>
+<ol>
+<li><strong>Repository URL</strong> — git source of the specifications.</li>
+<li><strong>Path to specs inside the repo</strong> — the subdirectory to copy.</li>
+<li><strong>Local download path</strong> — where the specs land in the project.</li>
+</ol>
+<p>Internally <code>init</code> writes <code>.swax/config.yml</code>, shallow-clones the repository
+(<code>depth=1</code>), and copies the specs into the local download path. <strong>Configuration
+is written before cloning</strong> so you can inspect it even if the clone fails.</p>
+<table>
+<thead>
+<tr>
+<th>Exit code</th>
+<th>Cause</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>0</code></td>
+<td>Success.</td>
+</tr>
+<tr>
+<td><code>1</code></td>
+<td><code>RepositoryCloneError</code> — <code>Failed to clone &lt;url&gt;: &lt;reason&gt;</code>.</td>
+</tr>
+<tr>
+<td><code>1</code></td>
+<td><code>SpecsNotFoundError</code> — <code>Specs not found at &lt;path&gt;</code>.</td>
+</tr>
+</tbody>
+</table>
+<p><code>init</code> does <strong>not</strong> validate <code>SWAX_LLM_*</code> variables — it doesn't need LLM
+credentials.</p>
+<h2 id="swax-discover"><code>swax discover</code></h2>
+<p>Rebuild the traceability graph from scratch.</p>
+<pre><code class="language-bash">swax --env-file .env discover
+</code></pre>
+<p>Reads <code>.swax/config.yml</code> and the environment (no prompts). Discovers and parses
+the local specs, runs a two-pass LLM analysis, deduplicates edges, and
+overwrites <code>.swax/traceability.yml</code>.</p>
+<p><strong>Always builds a fresh graph</strong> — the existing <code>traceability.yml</code> is ignored.</p>
+<table>
+<thead>
+<tr>
+<th>Exit code</th>
+<th>Cause</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>0</code></td>
+<td>Success.</td>
+</tr>
+<tr>
+<td><code>1</code></td>
+<td><code>MissingEnvironmentVariablesError</code> — <code>Missing env vars: ...</code>.</td>
+</tr>
+<tr>
+<td><code>1</code></td>
+<td><code>SpecParseError</code> — <code>Failed to parse &lt;path&gt;: &lt;reason&gt;</code>.</td>
+</tr>
+<tr>
+<td><code>1</code></td>
+<td><code>LLMRateLimitedError</code> — <code>LLM rate limited; retry later</code>.</td>
+</tr>
+<tr>
+<td><code>1</code></td>
+<td><code>LLMCallError</code> — <code>LLM call failed: &lt;reason&gt;</code>.</td>
+</tr>
+<tr>
+<td><code>1</code></td>
+<td><code>UnsupportedLLMProtocolError</code> — <code>Unsupported LLM protocol: &lt;protocol&gt;</code>.</td>
+</tr>
+<tr>
+<td><code>1</code></td>
+<td><code>LLMResponseParseError</code> — <code>LLM response parse failed: &lt;reason&gt;</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>The command does <strong>not</strong> retry rate-limited calls and does <strong>not</strong> log
+<code>SWAX_LLM_TOKEN</code>.</p>
+<h2 id="swax-plan"><code>swax plan</code></h2>
+<p>Generate a Markdown Impact Report from spec changes.</p>
+<pre><code class="language-bash">swax --env-file .env plan
+</code></pre>
+<p>Reads <code>.swax/config.yml</code>, the environment, and <code>.swax/traceability.yml</code>
+(produced by <code>swax discover</code>). Parses the local baseline specs, shallow-clones
+the spec repository fresh, classifies the endpoint diff
+(added / removed / modified), maps the changed endpoints onto the
+traceability graph to find transitively affected endpoints, and runs a
+single-turn LLM analysis.</p>
+<p>With <strong>no changes</strong>, it skips the LLM and prints a <code>LOW</code>-risk
+"No changes detected" report.</p>
+<p>Report sections: <strong>Summary, Risk (<code>HIGH</code> / <code>MEDIUM</code> / <code>LOW</code>), Modified
+Endpoints, Affected Endpoints, Requirements, Checklist</strong>.</p>
+<table>
+<thead>
+<tr>
+<th>Exit code</th>
+<th>Cause</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>0</code></td>
+<td>Success.</td>
+</tr>
+<tr>
+<td><code>1</code></td>
+<td><code>MissingEnvironmentVariablesError</code> — <code>Missing env vars: ...</code>.</td>
+</tr>
+<tr>
+<td><code>1</code></td>
+<td><code>SpecParseError</code> — <code>Failed to parse &lt;path&gt;: &lt;reason&gt;</code>.</td>
+</tr>
+<tr>
+<td><code>1</code></td>
+<td><code>RepositoryCloneError</code> — <code>Failed to clone &lt;url&gt;: &lt;reason&gt;</code>.</td>
+</tr>
+<tr>
+<td><code>1</code></td>
+<td><code>SpecsNotFoundError</code> — <code>Specs directory not found at &lt;path&gt;</code>.</td>
+</tr>
+<tr>
+<td><code>1</code></td>
+<td><code>TraceabilityGraphMissingError</code> — <code>Traceability graph not found at &lt;path&gt; — run \</code>swax discover` first`.</td>
+</tr>
+<tr>
+<td><code>1</code></td>
+<td><code>LLMRateLimitedError</code> — <code>LLM rate limited; retry later</code>.</td>
+</tr>
+<tr>
+<td><code>1</code></td>
+<td><code>LLMCallError</code> — <code>LLM call failed: &lt;reason&gt;</code>.</td>
+</tr>
+<tr>
+<td><code>1</code></td>
+<td><code>UnsupportedLLMProtocolError</code> — <code>Unsupported LLM protocol: &lt;protocol&gt;</code>.</td>
+</tr>
+<tr>
+<td><code>1</code></td>
+<td><code>LLMResponseParseError</code> — <code>LLM response parse failed: &lt;reason&gt;</code>.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="swax-update"><code>swax update</code></h2>
+<p>Mirror the local specs to the remote state and rebuild the traceability
+graph conditionally, as one transaction.</p>
+<pre><code class="language-bash">swax --env-file .env update
+</code></pre>
+<p>Requires an initialized project: reads <code>.swax/config.yml</code> (written by
+<code>swax init</code>) and the environment (no prompts; the project root is the
+current working directory). Shallow-clones the spec repository fresh,
+classifies the byte-level file diff between the local specs directory and the
+clone, and then branches:</p>
+<ul>
+<li><strong>No changes</strong> — prints <code>Specs are up to date.</code> Nothing is touched, no LLM.</li>
+<li><strong>Removals only</strong> — the specs are mirrored and the graph is pruned
+  deterministically (only endpoints absent from the whole post-update tree —
+  an endpoint still declared by a surviving, modified, or added spec stays
+  live) <strong>without an LLM call</strong>; the summary ends with
+  <code>Traceability graph: rebuilt</code>. If no graph file exists, the graph work is
+  skipped and the summary has no status line.</li>
+<li><strong>Added/updated files</strong> — <code>SWAX_LLM_*</code> credentials are validated <strong>before
+  any mutation</strong>; then the graph is revised incrementally with a single-turn
+  LLM analysis (<code>Traceability graph: rebuilt</code>) or, when no graph exists,
+  built from scratch by the same logic as <code>swax discover</code>
+  (<code>Traceability graph: built</code>).</li>
+</ul>
+<p>The summary lists <code>Added:</code> / <code>Updated:</code> / <code>Removed:</code> groups (empty groups
+omitted) plus the graph status line.</p>
+<p>!!! warning "Local spec edits are overwritten"
+    The remote clone is the source of truth — local spec edits are
+    overwritten silently.</p>
+<p>A failure during the rebuild restores the previous specs (and the previous
+graph) before exiting.</p>
+<table>
+<thead>
+<tr>
+<th>Exit code</th>
+<th>Cause</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>0</code></td>
+<td>Success.</td>
+</tr>
+<tr>
+<td><code>1</code></td>
+<td><code>UnsafeSpecsLocationError</code> — <code>Refusing to mirror into &lt;path&gt;</code>.</td>
+</tr>
+<tr>
+<td><code>1</code></td>
+<td><code>GraphRebuildFailedError</code> — <code>Graph rebuild failed: &lt;reason&gt;; specs restored.</code>.</td>
+</tr>
+<tr>
+<td><code>1</code></td>
+<td><code>RepositoryCloneError</code> — <code>Failed to clone &lt;url&gt;: &lt;reason&gt;</code>.</td>
+</tr>
+<tr>
+<td><code>1</code></td>
+<td><code>SpecsNotFoundError</code> — <code>Specs not found at &lt;path&gt;</code>.</td>
+</tr>
+<tr>
+<td><code>1</code></td>
+<td><code>MissingEnvironmentVariablesError</code> — <code>Missing env vars: ...</code>.</td>
+</tr>
+<tr>
+<td><code>1</code></td>
+<td><code>SpecParseError</code> — <code>Failed to parse &lt;path&gt;: &lt;reason&gt;</code>.</td>
+</tr>
+<tr>
+<td><code>1</code></td>
+<td><code>LLMRateLimitedError</code> — <code>LLM rate limited; retry later</code>.</td>
+</tr>
+<tr>
+<td><code>1</code></td>
+<td><code>LLMCallError</code> — <code>LLM call failed: &lt;reason&gt;</code>.</td>
+</tr>
+<tr>
+<td><code>1</code></td>
+<td><code>UnsupportedLLMProtocolError</code> — <code>Unsupported LLM protocol: &lt;protocol&gt;</code>.</td>
+</tr>
+<tr>
+<td><code>1</code></td>
+<td><code>LLMResponseParseError</code> — <code>LLM response parse failed: &lt;reason&gt;</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>The command does <strong>not</strong> log <code>SWAX_LLM_TOKEN</code>.</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="../../getting-started/quickstart/">Quickstart</a> — <code>init → discover → plan</code> walkthrough.</li>
+<li><a href="../project-layout/">Project layout</a> — what each file means.</li>
+<li><a href="../../architecture/cells/cli/">Architecture / CLI cell</a> — Click group internals.</li>
+</ul>
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.indexes", "search.suggest", "search.highlight", "content.code.copy"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

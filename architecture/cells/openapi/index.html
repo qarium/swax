@@ -1,0 +1,1924 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Parsing of OpenAPI/Swagger specifications, extraction of paths and schemas, structural diffing, and endpoint change classification.">
+      
+      
+      
+        <link rel="canonical" href="https://qarium.github.io/swax/architecture/cells/openapi/">
+      
+      
+        <link rel="prev" href="../git/">
+      
+      
+        <link rel="next" href="../llm/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>swax/openapi - Swax</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  
+  <style>
+    /* Dark navbar — override palette in both themes */
+    [data-md-color-scheme=default][data-md-color-primary=custom],
+    [data-md-color-scheme=slate][data-md-color-primary=custom] {
+      --md-primary-fg-color: #0a0a13;
+      --md-primary-fg-color--light: #0a0a13cc;
+      --md-primary-bg-color: #ffffff;
+    }
+
+    .md-header__button.md-logo img,
+    .md-header__button.md-logo svg {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+    }
+
+    /* Search form — visible on dark header */
+    .md-search__overlay {
+      background-color: transparent !important;
+    }
+    [data-md-toggle=search]:checked~.md-header .md-search__overlay {
+      background-color: #0000008a !important;
+    }
+    .md-search__inner {
+      background-color: transparent !important;
+    }
+    .md-search__form {
+      background-color: #3a3a3a !important;
+      border-radius: 0.5rem;
+    }
+    .md-search__form:hover {
+      background-color: #4a4a4a !important;
+    }
+    .md-search__input {
+      color: #e0e0e0 !important;
+    }
+    .md-search__input::placeholder {
+      color: #999999 !important;
+    }
+    .md-search__icon {
+      color: #999999 !important;
+    }
+    .md-search__form:hover .md-search__icon,
+    .md-search__input:focus-visible ~ .md-search__icon {
+      color: #e0e0e0 !important;
+    }
+
+    /* Links in dark theme — readable on dark background */
+    [data-md-color-scheme=slate] .md-nav__link,
+    [data-md-color-scheme=slate] .md-toc__link,
+    [data-md-color-scheme=slate] article a {
+      color: #cbd5e0 !important;
+    }
+    [data-md-color-scheme=slate] .md-nav__link--passed,
+    [data-md-color-scheme=slate] .md-toc__link--passed {
+      color: #718096 !important;
+    }
+    [data-md-color-scheme=slate] .md-nav__link:hover,
+    [data-md-color-scheme=slate] .md-toc__link:hover,
+    [data-md-color-scheme=slate] article a:hover {
+      color: var(--md-accent-fg-color) !important;
+    }
+  </style>
+
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#swaxopenapi" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="Swax" class="md-header__button md-logo" aria-label="Swax" data-md-component="logo">
+      
+  <img src="https://avatars.githubusercontent.com/u/262344922?s=200&v=4" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Swax
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              swax/openapi
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/qarium/swax" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../getting-started/installation/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Getting started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guide/commands/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../../overview/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Architecture
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="Swax" class="md-nav__button md-logo" aria-label="Swax" data-md-component="logo">
+      
+  <img src="https://avatars.githubusercontent.com/u/262344922?s=200&v=4" alt="logo">
+
+    </a>
+    Swax
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/qarium/swax" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../getting-started/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../getting-started/configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../getting-started/quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guide/commands/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Commands
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guide/project-layout/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Project layout
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guide/traceability-graph/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Traceability graph
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guide/impact-report/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Impact Report
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_2" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cells
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4_2" id="__nav_4_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Cells
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    cli
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../commands/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    commands
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../applications/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    applications
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    config
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    fs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../git/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    git
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    openapi
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    openapi
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#parsing-extraction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Parsing &amp; extraction
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Parsing &amp; extraction">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#parse_specspec_path-pathlibpath-spec-dict" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        parse_spec(spec_path: pathlib.Path) -&gt; spec: dict
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#extract_pathsspec-dict-paths-liststr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        extract_paths(spec: dict) -&gt; paths: list[str]
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#extract_schemasspec-dict-schemas-dict" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        extract_schemas(spec: dict) -&gt; schemas: dict
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#discover_specsroot-pathlibpath-specs-listpathlibpath" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        discover_specs(root: pathlib.Path) -&gt; specs: list[pathlib.Path]
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#diffing-classification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Diffing &amp; classification
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Diffing &amp; classification">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#diff_specsbase-dict-current-dict-diff-deepdiff" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        diff_specs(base: dict, current: dict) -&gt; diff: DeepDiff
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#classify_endpoint_changesdiff-deepdiff-changes-endpointdiff" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        classify_endpoint_changes(diff: DeepDiff) -&gt; changes: EndpointDiff
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#endpointdiffadded-removed-modified" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        EndpointDiff(added, removed, modified)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Errors
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#see-also" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        See also
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../llm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    llm
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../prompts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    prompts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../traceability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    traceability
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#parsing-extraction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Parsing &amp; extraction
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Parsing &amp; extraction">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#parse_specspec_path-pathlibpath-spec-dict" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        parse_spec(spec_path: pathlib.Path) -&gt; spec: dict
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#extract_pathsspec-dict-paths-liststr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        extract_paths(spec: dict) -&gt; paths: list[str]
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#extract_schemasspec-dict-schemas-dict" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        extract_schemas(spec: dict) -&gt; schemas: dict
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#discover_specsroot-pathlibpath-specs-listpathlibpath" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        discover_specs(root: pathlib.Path) -&gt; specs: list[pathlib.Path]
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#diffing-classification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Diffing &amp; classification
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Diffing &amp; classification">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#diff_specsbase-dict-current-dict-diff-deepdiff" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        diff_specs(base: dict, current: dict) -&gt; diff: DeepDiff
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#classify_endpoint_changesdiff-deepdiff-changes-endpointdiff" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        classify_endpoint_changes(diff: DeepDiff) -&gt; changes: EndpointDiff
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#endpointdiffadded-removed-modified" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        EndpointDiff(added, removed, modified)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Errors
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#see-also" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        See also
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="swaxopenapi"><code>swax/openapi</code></h1>
+<p>Parsing of OpenAPI/Swagger specifications and extraction of paths and schemas
+for the traceability graph, plus structural diffing of two dereferenced specs
+and classification of endpoint/schema changes.</p>
+<p>The graph operates on <strong>paths only</strong> — no HTTP methods, no resource abstraction
+(architectural rule: minimal abstraction). Swagger 2.0 and OpenAPI 3.x are
+handled transparently — both store paths under <code>paths</code>. The diff sees
+methods/parameters/schemas for analysis only — classified changes surface as
+paths with descriptions, <strong>never</strong> as method/schema-level entries.</p>
+<h2 id="parsing-extraction">Parsing &amp; extraction</h2>
+<h3 id="parse_specspec_path-pathlibpath-spec-dict"><code>parse_spec(spec_path: pathlib.Path) -&gt; spec: dict</code></h3>
+<p>Parses a specification file into a fully dereferenced dict (all non-cyclic
+<code>$ref</code> inlined).</p>
+<ul>
+<li><code>spec_path</code>: path to a <code>.yaml</code> / <code>.yml</code> / <code>.json</code> spec file.</li>
+<li><code>spec</code>: dereferenced specification containing paths and schemas.</li>
+</ul>
+<p>Algorithm:</p>
+<ol>
+<li>Read the file and parse it via Prance's formats helper.</li>
+<li>Construct a Prance reference resolver over the parsed spec (strict mode
+   off, resolve all reference types).</li>
+<li>Configure the resolver to <strong>terminate reference cycles</strong> by emitting a
+   <code>$ref</code> marker instead of raising — prevents failure on self-referential
+   and mutually-recursive schemas.</li>
+<li>Return the dereferenced specification.</li>
+<li>On any parser failure, raise <code>SpecParseError</code> with the path and original
+   reason.</li>
+</ol>
+<p>Requirements:</p>
+<ul>
+<li>Non-cyclic <code>$ref</code> is resolved in memory — downstream code never resolves
+  those references manually.</li>
+<li>Cyclic <code>$ref</code> terminates at the cycle point with a <code>$ref</code> marker preserving
+  structural information.</li>
+</ul>
+<p>Constraints:</p>
+<ul>
+<li>RAM usage scales with spec size and reference count (known limitation,
+  accepted).</li>
+<li>The Prance post-resolve spec validator is <strong>intentionally bypassed</strong> — it
+  rejects otherwise valid recursive schemas after dereferencing.</li>
+</ul>
+<h3 id="extract_pathsspec-dict-paths-liststr"><code>extract_paths(spec: dict) -&gt; paths: list[str]</code></h3>
+<p>Collects API path templates from a parsed specification, discarding HTTP
+methods.</p>
+<ul>
+<li><code>spec</code>: dereferenced dict (output of <code>parse_spec</code>).</li>
+<li><code>paths</code>: sorted list of path templates (e.g. <code>/users</code>, <code>/users/{id}</code>).</li>
+</ul>
+<p>Algorithm:</p>
+<ol>
+<li>Read the <code>paths</code> mapping from <code>spec</code>.</li>
+<li>Return its keys as a sorted list.</li>
+</ol>
+<p>Requirements:</p>
+<ul>
+<li>Result feeds the traceability graph nodes directly — no method-level
+  entries.</li>
+</ul>
+<h3 id="extract_schemasspec-dict-schemas-dict"><code>extract_schemas(spec: dict) -&gt; schemas: dict</code></h3>
+<p>Collects schema definitions from a parsed specification for LLM context
+enrichment.</p>
+<ul>
+<li><code>spec</code>: dereferenced dict.</li>
+<li><code>schemas</code>: mapping of schema name to its definition (already inlined by the
+  parser).</li>
+</ul>
+<p>Algorithm:</p>
+<ol>
+<li>If <code>spec</code> exposes OpenAPI 3.x <code>components</code>, return its schemas sub-mapping.</li>
+<li>Otherwise return the Swagger 2.0 <code>definitions</code> sub-mapping.</li>
+</ol>
+<p>Requirements:</p>
+<ul>
+<li>Transparently distinguishes OpenAPI 3.x (<code>components.schemas</code>) from
+  Swagger 2.0 (<code>definitions</code>).</li>
+<li>Schemas are used <strong>only</strong> by <code>build_refine_user_prompt</code> — never stored in
+  the graph.</li>
+</ul>
+<h3 id="discover_specsroot-pathlibpath-specs-listpathlibpath"><code>discover_specs(root: pathlib.Path) -&gt; specs: list[pathlib.Path]</code></h3>
+<p>Enumerates spec files under <code>root</code> by extension and a lightweight content
+heuristic.</p>
+<ul>
+<li><code>root</code>: directory to search (typically the local specs path from
+  <code>SpecsConfig</code>).</li>
+<li><code>specs</code>: sorted list of spec file paths.</li>
+</ul>
+<p>Algorithm:</p>
+<ol>
+<li>Walk <code>root</code> recursively.</li>
+<li>Keep files with extension <code>.yaml</code> / <code>.yml</code> / <code>.json</code>.</li>
+<li>Keep files whose head contains an <code>openapi</code> or <code>swagger</code> key.</li>
+</ol>
+<p>Requirements:</p>
+<ul>
+<li>The heuristic is cheap — full parsing happens later via <code>parse_spec</code>.</li>
+<li>Returned order is deterministic (sorted).</li>
+</ul>
+<h2 id="diffing-classification">Diffing &amp; classification</h2>
+<h3 id="diff_specsbase-dict-current-dict-diff-deepdiff"><code>diff_specs(base: dict, current: dict) -&gt; diff: DeepDiff</code></h3>
+<p>Computes a structural diff between two dereferenced specifications.</p>
+<ul>
+<li><code>base</code>: baseline (local) spec dict — output of <code>parse_spec</code>.</li>
+<li><code>current</code>: fresh (cloned repo) spec dict — output of <code>parse_spec</code>.</li>
+<li><code>diff</code>: a <code>DeepDiff</code> result consumed by <code>classify_endpoint_changes</code>.</li>
+</ul>
+<p>Algorithm:</p>
+<ol>
+<li>Build a <code>DeepDiff</code> over <code>base</code> and <code>current</code> with <code>ignore_order</code> and the
+   cutoff option from <code>deepdiff</code>.</li>
+<li>Return the result unchanged — classification happens in
+   <code>classify_endpoint_changes</code>.</li>
+</ol>
+<p>Requirements:</p>
+<ul>
+<li>Both inputs are fully dereferenced (Prance already inlined <code>$ref</code> via
+  <code>parse_spec</code>).</li>
+<li>List order is ignored — endpoint order is not significant.</li>
+</ul>
+<p>Constraints:</p>
+<ul>
+<li><strong>Do not classify changes here</strong> — this routine only computes the raw
+  structural diff.</li>
+<li>Avoid <code>verbose_level=2</code> in the production path.</li>
+</ul>
+<h3 id="classify_endpoint_changesdiff-deepdiff-changes-endpointdiff"><code>classify_endpoint_changes(diff: DeepDiff) -&gt; changes: EndpointDiff</code></h3>
+<p>Classifies a raw structural diff into endpoint-level changes.</p>
+<ul>
+<li><code>diff</code>: <code>DeepDiff</code> result from <code>diff_specs</code>.</li>
+<li><code>changes</code>: an <code>EndpointDiff</code> aggregating added, removed, and modified
+  endpoints with schema detail.</li>
+</ul>
+<p>Algorithm:</p>
+<ol>
+<li>Walk the diff change sets (<code>dictionary_item_added</code>, <code>dictionary_item_removed</code>,
+   <code>values_changed</code>) by their path strings. These are the deepdiff categories
+   produced by <code>diff_specs</code>.</li>
+<li>Paths under the <code>paths</code> key become endpoint changes: added / removed /
+   modified.</li>
+<li>Paths under the <code>components</code>/<code>definitions</code> keys are schema changes —
+   because <code>$ref</code> is already dereferenced, each affected endpoint surfaces the
+   change directly; attribute it to that endpoint.</li>
+<li>Aggregate multiple changes on the same path into a single <code>modified</code> entry
+   with a list of descriptions.</li>
+<li>Return the <code>EndpointDiff</code>.</li>
+</ol>
+<p>Requirements:</p>
+<ul>
+<li>Swagger 2.0 (<code>definitions</code>) and OpenAPI 3.x (<code>components.schemas</code>) handled
+  transparently.</li>
+<li>Modified entries carry human-readable change descriptions for the Impact
+  Report.</li>
+</ul>
+<p>Constraints:</p>
+<ul>
+<li><strong>Do not</strong> emit method-level or schema-level entries as separate paths —
+  paths only.</li>
+<li><strong>Do not</strong> introduce endpoints outside the union of base and current path
+  keys.</li>
+</ul>
+<h3 id="endpointdiffadded-removed-modified"><code>EndpointDiff(added, removed, modified)</code></h3>
+<p>Classified change result between baseline and current specifications.</p>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>added</code></td>
+<td><code>list[str]</code></td>
+<td>Endpoint paths present in the current spec but not in the baseline.</td>
+</tr>
+<tr>
+<td><code>removed</code></td>
+<td><code>list[str]</code></td>
+<td>Endpoint paths present in the baseline but not in the current spec.</td>
+</tr>
+<tr>
+<td><code>modified</code></td>
+<td><code>dict[str, list[str]]</code></td>
+<td>Endpoint path → list of human-readable change descriptions.</td>
+</tr>
+</tbody>
+</table>
+<p>Methods:</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Return</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>has_changes()</code></td>
+<td><code>bool</code></td>
+<td>True when any endpoint was added, removed, or modified.</td>
+</tr>
+<tr>
+<td><code>changed_paths()</code></td>
+<td><code>list[str]</code></td>
+<td>Union of added, removed, and modified endpoint paths — sorted and deduplicated. Deterministic; each path appears once.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="errors">Errors</h2>
+<table>
+<thead>
+<tr>
+<th>Exception</th>
+<th>Cause</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SpecParseError(path: pathlib.Path, reason: str)</code></td>
+<td>Raised by <code>parse_spec</code> when parsing or dereferencing a specification fails. Carries the offending spec file path and the original Prance error message.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="../../../guide/traceability-graph/">Traceability graph</a> — what <code>extract_paths</code> feeds.</li>
+<li><a href="../../../guide/impact-report/">Impact Report</a> — what <code>EndpointDiff</code> feeds.</li>
+<li><a href="../applications/#swaxapplicationsplan">Architecture / applications/plan cell</a> —
+  consumes the diff API.</li>
+</ul>
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.tabs", "navigation.indexes", "search.suggest", "search.highlight", "content.code.copy"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

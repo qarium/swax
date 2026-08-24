@@ -1,0 +1,1903 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="LLM prompt builders for the traceability graph construction (two-pass), the change-impact report (single-turn), and the incremental graph rebuild scenarios.">
+      
+      
+      
+        <link rel="canonical" href="https://qarium.github.io/swax/architecture/cells/prompts/">
+      
+      
+        <link rel="prev" href="../llm/">
+      
+      
+        <link rel="next" href="../traceability/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>swax/prompts - Swax</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  
+  <style>
+    /* Dark navbar — override palette in both themes */
+    [data-md-color-scheme=default][data-md-color-primary=custom],
+    [data-md-color-scheme=slate][data-md-color-primary=custom] {
+      --md-primary-fg-color: #0a0a13;
+      --md-primary-fg-color--light: #0a0a13cc;
+      --md-primary-bg-color: #ffffff;
+    }
+
+    .md-header__button.md-logo img,
+    .md-header__button.md-logo svg {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+    }
+
+    /* Search form — visible on dark header */
+    .md-search__overlay {
+      background-color: transparent !important;
+    }
+    [data-md-toggle=search]:checked~.md-header .md-search__overlay {
+      background-color: #0000008a !important;
+    }
+    .md-search__inner {
+      background-color: transparent !important;
+    }
+    .md-search__form {
+      background-color: #3a3a3a !important;
+      border-radius: 0.5rem;
+    }
+    .md-search__form:hover {
+      background-color: #4a4a4a !important;
+    }
+    .md-search__input {
+      color: #e0e0e0 !important;
+    }
+    .md-search__input::placeholder {
+      color: #999999 !important;
+    }
+    .md-search__icon {
+      color: #999999 !important;
+    }
+    .md-search__form:hover .md-search__icon,
+    .md-search__input:focus-visible ~ .md-search__icon {
+      color: #e0e0e0 !important;
+    }
+
+    /* Links in dark theme — readable on dark background */
+    [data-md-color-scheme=slate] .md-nav__link,
+    [data-md-color-scheme=slate] .md-toc__link,
+    [data-md-color-scheme=slate] article a {
+      color: #cbd5e0 !important;
+    }
+    [data-md-color-scheme=slate] .md-nav__link--passed,
+    [data-md-color-scheme=slate] .md-toc__link--passed {
+      color: #718096 !important;
+    }
+    [data-md-color-scheme=slate] .md-nav__link:hover,
+    [data-md-color-scheme=slate] .md-toc__link:hover,
+    [data-md-color-scheme=slate] article a:hover {
+      color: var(--md-accent-fg-color) !important;
+    }
+  </style>
+
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#swaxprompts" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="Swax" class="md-header__button md-logo" aria-label="Swax" data-md-component="logo">
+      
+  <img src="https://avatars.githubusercontent.com/u/262344922?s=200&v=4" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Swax
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              swax/prompts
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/qarium/swax" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../getting-started/installation/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Getting started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guide/commands/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../../overview/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Architecture
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="Swax" class="md-nav__button md-logo" aria-label="Swax" data-md-component="logo">
+      
+  <img src="https://avatars.githubusercontent.com/u/262344922?s=200&v=4" alt="logo">
+
+    </a>
+    Swax
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/qarium/swax" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../getting-started/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../getting-started/configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../getting-started/quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guide/commands/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Commands
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guide/project-layout/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Project layout
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guide/traceability-graph/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Traceability graph
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guide/impact-report/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Impact Report
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_2" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cells
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4_2" id="__nav_4_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Cells
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    cli
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../commands/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    commands
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../applications/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    applications
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    config
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    fs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../git/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    git
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../openapi/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    openapi
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../llm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    llm
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    prompts
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    prompts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#traceability-graph-prompts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Traceability graph prompts
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Traceability graph prompts">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#build_graph_system_prompt-prompt-str" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        build_graph_system_prompt() -&gt; prompt: str
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#build_graph_user_promptendpoints-liststr-prompt-str" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        build_graph_user_prompt(endpoints: list[str]) -&gt; prompt: str
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#build_refine_user_promptambiguous_pairs-liststr-schemas-dict-prompt-str" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        build_refine_user_prompt(ambiguous_pairs: list[str], schemas: dict) -&gt; prompt: str
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#impact-report-prompts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Impact report prompts
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Impact report prompts">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#build_impact_report_system_prompt-prompt-str" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        build_impact_report_system_prompt() -&gt; prompt: str
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#build_impact_report_user_promptadded-removed-modified-affected-graph_context-prompt-str" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        build_impact_report_user_prompt(added, removed, modified, affected, graph_context) -&gt; prompt: str
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#incremental-graph-rebuild-prompts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Incremental graph rebuild prompts
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Incremental graph rebuild prompts">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#build_incremental_graph_system_prompt-prompt-str" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        build_incremental_graph_system_prompt() -&gt; prompt: str
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#build_incremental_graph_user_promptexisting_edges-diff_added-diff_removed-diff_modified-added_endpoints-added_schemas-prompt-str" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        build_incremental_graph_user_prompt(existing_edges, diff_added, diff_removed, diff_modified, added_endpoints, added_schemas) -&gt; prompt: str
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#see-also" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        See also
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../traceability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    traceability
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#traceability-graph-prompts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Traceability graph prompts
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Traceability graph prompts">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#build_graph_system_prompt-prompt-str" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        build_graph_system_prompt() -&gt; prompt: str
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#build_graph_user_promptendpoints-liststr-prompt-str" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        build_graph_user_prompt(endpoints: list[str]) -&gt; prompt: str
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#build_refine_user_promptambiguous_pairs-liststr-schemas-dict-prompt-str" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        build_refine_user_prompt(ambiguous_pairs: list[str], schemas: dict) -&gt; prompt: str
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#impact-report-prompts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Impact report prompts
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Impact report prompts">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#build_impact_report_system_prompt-prompt-str" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        build_impact_report_system_prompt() -&gt; prompt: str
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#build_impact_report_user_promptadded-removed-modified-affected-graph_context-prompt-str" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        build_impact_report_user_prompt(added, removed, modified, affected, graph_context) -&gt; prompt: str
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#incremental-graph-rebuild-prompts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Incremental graph rebuild prompts
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Incremental graph rebuild prompts">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#build_incremental_graph_system_prompt-prompt-str" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        build_incremental_graph_system_prompt() -&gt; prompt: str
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#build_incremental_graph_user_promptexisting_edges-diff_added-diff_removed-diff_modified-added_endpoints-added_schemas-prompt-str" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        build_incremental_graph_user_prompt(existing_edges, diff_added, diff_removed, diff_modified, added_endpoints, added_schemas) -&gt; prompt: str
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#see-also" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        See also
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="swaxprompts"><code>swax/prompts</code></h1>
+<p>LLM prompt builders for the traceability graph construction (two-pass), the
+change-impact report (single-turn), and the incremental graph rebuild
+(single-turn) scenarios.</p>
+<p>Every routine returns a fully-formed prompt string ready for <code>LLMClient.ask</code> /
+<code>ask_multi_turn</code>. Prompts request structured JSON output; the consumer parses
+the response defensively. Prompts <strong>never embed filesystem paths, tokens, or
+secrets</strong> — only the data passed as arguments.</p>
+<h2 id="traceability-graph-prompts">Traceability graph prompts</h2>
+<h3 id="build_graph_system_prompt-prompt-str"><code>build_graph_system_prompt() -&gt; prompt: str</code></h3>
+<p>Builds the system prompt that instructs the LLM to act as an API dependency
+analyst.</p>
+<ul>
+<li><code>prompt</code>: the system message reused across both passes of <code>run_discover</code>.</li>
+</ul>
+<p>Requirements:</p>
+<ul>
+<li>Defines the LLM role: analyze API endpoints and propose dependency edges
+  between paths.</li>
+<li>Mandates the output contract: a JSON object mapping source path to a list of
+  dependent paths.</li>
+<li>Forbids prose around JSON — the response must be parseable as JSON.</li>
+<li>States explicitly that the graph operates on <strong>paths only</strong> — no HTTP
+  methods.</li>
+</ul>
+<p>Constraints:</p>
+<ul>
+<li><strong>No parameters</strong> — the system prompt is constant for the <code>discover</code>
+  use-case.</li>
+<li>No endpoint list, no schemas — those go into user prompts.</li>
+</ul>
+<h3 id="build_graph_user_promptendpoints-liststr-prompt-str"><code>build_graph_user_prompt(endpoints: list[str]) -&gt; prompt: str</code></h3>
+<p>Builds the first-pass user prompt: lists endpoints and asks for dependency
+hypotheses.</p>
+<ul>
+<li><code>endpoints</code>: API path templates collected by <code>extract_paths</code> across all
+  parsed specs.</li>
+<li><code>prompt</code>: the user message for the initial <code>LLMClient.ask</code> call.</li>
+</ul>
+<p>Algorithm:</p>
+<ol>
+<li>Render <code>endpoints</code> as a JSON array.</li>
+<li>Instruct the LLM to return a JSON object with two keys: <code>dependencies</code>
+   (mapping <code>source_path</code> to list of <code>dependent_paths</code>) and <code>uncertain</code> (list
+   of uncertain dependency pairs as <code>"/source -&gt; /target"</code> strings).</li>
+<li>The consumer routes uncertain pairs into the refine pass via
+   <code>build_refine_user_prompt</code>.</li>
+</ol>
+<p>Requirements:</p>
+<ul>
+<li>Output format matches what the consumer's first-pass JSON parser expects: a
+  dict with exactly two keys — <code>dependencies</code> (<code>dict[str, list[str]]</code>) and
+  <code>uncertain</code> (<code>list[str]</code>).</li>
+<li>Endpoint order in the prompt follows the sorted order from <code>extract_paths</code>
+  for determinism.</li>
+<li>The LLM flags uncertain pairs in the <code>uncertain</code> array so the consumer can
+  route them to the refine pass.</li>
+</ul>
+<p>Constraints:</p>
+<ul>
+<li><strong>Do not</strong> inline schemas here — they belong to the refine pass.</li>
+</ul>
+<h3 id="build_refine_user_promptambiguous_pairs-liststr-schemas-dict-prompt-str"><code>build_refine_user_prompt(ambiguous_pairs: list[str], schemas: dict) -&gt; prompt: str</code></h3>
+<p>Builds the refine-pass user prompt: provides schemas for ambiguous pairs and
+asks for final dependency decisions.</p>
+<ul>
+<li><code>ambiguous_pairs</code>: pairs flagged as uncertain in the first-pass response
+  (e.g. <code>"/users -&gt; /orders"</code>).</li>
+<li><code>schemas</code>: schema definitions from <code>extract_schemas</code>, attached as context.</li>
+<li><code>prompt</code>: the user message for the final turn of <code>LLMClient.ask_multi_turn</code>.</li>
+</ul>
+<p>Algorithm:</p>
+<ol>
+<li>Render <code>ambiguous_pairs</code> as a JSON array.</li>
+<li>Render <code>schemas</code> as a JSON object keyed by schema name.</li>
+<li>Instruct the LLM to return a consolidated JSON object covering all pairs,
+   without introducing paths outside the provided endpoint universe.</li>
+</ol>
+<p>Requirements:</p>
+<ul>
+<li>The full schema dict is passed; the LLM selects the schemas relevant to the
+  pairs.</li>
+<li>Output contract is <strong>identical</strong> to <code>build_graph_user_prompt</code> so the
+  consumer reuses the same parser.</li>
+</ul>
+<p>Constraints:</p>
+<ul>
+<li><strong>Do not</strong> re-list all endpoints — the multi-turn context already carries
+  them.</li>
+<li>Forbid introducing paths outside the provided endpoint universe.</li>
+</ul>
+<h2 id="impact-report-prompts">Impact report prompts</h2>
+<h3 id="build_impact_report_system_prompt-prompt-str"><code>build_impact_report_system_prompt() -&gt; prompt: str</code></h3>
+<p>Builds the system prompt that instructs the LLM to act as an API change impact
+analyst.</p>
+<ul>
+<li><code>prompt</code>: the system message for the single-turn <code>LLMClient.ask</code> call in
+  <code>run_plan</code>.</li>
+</ul>
+<p>Requirements:</p>
+<ul>
+<li>Defines the LLM role: assess the testing impact of API endpoint changes.</li>
+<li>Mandates the output contract: JSON with <code>summary</code>, <code>risk</code>, <code>modified</code>,
+  <code>affected</code>, <code>requirements</code>, <code>checklist</code>.</li>
+<li>Fixes allowed risk values to <code>HIGH</code>, <code>MEDIUM</code>, <code>LOW</code>.</li>
+<li>Forbids prose around JSON — the response must be parseable as JSON.</li>
+</ul>
+<p>Constraints:</p>
+<ul>
+<li><strong>No parameters</strong> — the system prompt is constant for the <code>plan</code> use-case.</li>
+<li>No endpoint data or graph — those go into the user prompt.</li>
+<li><strong>Never embed</strong> filesystem paths, tokens, or secrets.</li>
+</ul>
+<h3 id="build_impact_report_user_promptadded-removed-modified-affected-graph_context-prompt-str"><code>build_impact_report_user_prompt(added, removed, modified, affected, graph_context) -&gt; prompt: str</code></h3>
+<p>Builds the user prompt: structured change context plus affected endpoints and
+the relevant graph portion.</p>
+<ul>
+<li><code>added</code> / <code>removed</code>: endpoint path lists.</li>
+<li><code>modified</code>: path → change descriptions.</li>
+<li><code>affected</code>: transitively affected endpoints.</li>
+<li><code>graph_context</code>: relevant graph edges (path → dependencies), sliced from
+  the traceability graph for the affected paths.</li>
+<li><code>prompt</code>: the user message for <code>LLMClient.ask</code>.</li>
+</ul>
+<p>Algorithm:</p>
+<ol>
+<li>Render <code>added</code> / <code>removed</code> / <code>affected</code> as JSON arrays.</li>
+<li>Render <code>modified</code> / <code>graph_context</code> as JSON objects.</li>
+<li>Instruct the LLM to return the Impact Report JSON contract from the system
+   prompt.</li>
+</ol>
+<p>Requirements:</p>
+<ul>
+<li>Output format matches the parser in <code>run_plan</code>.</li>
+<li>Endpoint order follows the sorted order supplied by the caller.</li>
+</ul>
+<p>Constraints:</p>
+<ul>
+<li><strong>Do not</strong> truncate silently — the caller trims before calling if the
+  context is large.</li>
+<li><strong>Never embed</strong> filesystem paths, tokens, or secrets.</li>
+</ul>
+<h2 id="incremental-graph-rebuild-prompts">Incremental graph rebuild prompts</h2>
+<p>The <code>swax update</code> scenario: revise an existing dependency graph from the
+spec-file changes, in a single turn.</p>
+<h3 id="build_incremental_graph_system_prompt-prompt-str"><code>build_incremental_graph_system_prompt() -&gt; prompt: str</code></h3>
+<p>Constant system prompt for the incremental revision.</p>
+<p>Requirements:</p>
+<ul>
+<li>Role: "API dependency analyst revising an existing dependency graph."</li>
+<li>Output contract: a JSON object mapping source path to a list of dependent
+  paths — <strong>the full updated graph, not a delta</strong>.</li>
+<li>Universe rule: cover every endpoint of the updated universe provided in the
+  user prompt; no paths outside it.</li>
+<li>JSON-only rule: the response must be parseable as JSON — no prose, code
+  fences, or commentary.</li>
+<li>Paths-only rule: the graph operates on paths only, not HTTP methods — two
+  endpoints sharing a path are a single node.</li>
+</ul>
+<p>Constraints:</p>
+<ul>
+<li><strong>No parameters</strong>; no endpoint data — those go into the user prompt.</li>
+</ul>
+<h3 id="build_incremental_graph_user_promptexisting_edges-diff_added-diff_removed-diff_modified-added_endpoints-added_schemas-prompt-str"><code>build_incremental_graph_user_prompt(existing_edges, diff_added, diff_removed, diff_modified, added_endpoints, added_schemas) -&gt; prompt: str</code></h3>
+<p>Renders the revision input: the current graph, the endpoint-level change set,
+the new-specs content, and the computed endpoint universe.</p>
+<ul>
+<li><code>existing_edges</code>: the graph as loaded (<code>dict[str, list[str]]</code>, insertion
+  order preserved).</li>
+<li><code>diff_added</code> / <code>diff_removed</code>: endpoint path lists; <code>diff_modified</code>: path →
+  change descriptions.</li>
+<li><code>added_endpoints</code> / <code>added_schemas</code>: endpoints and schema definitions of
+  the newly added spec files.</li>
+</ul>
+<p>Algorithm:</p>
+<ol>
+<li>Render the graph, the change set (<code>added</code> / <code>removed</code> / <code>modified</code>), and
+   the new-specs payload (<code>endpoints</code> / <code>schemas</code>) as JSON.</li>
+<li>Compute the universe
+   <code>sorted((set(existing_edges) - set(diff_removed)) | set(diff_added) | set(added_endpoints))</code>
+   and render it as a JSON array.</li>
+<li>Instruct the LLM to return the complete updated dependency mapping
+   covering exactly every endpoint of the universe.</li>
+</ol>
+<p>Constraints:</p>
+<ul>
+<li>No truncation; the universe formula is identical to the consumer-side
+  filter in <code>run_update</code> — do not drift it.</li>
+<li><strong>Never embed</strong> filesystem paths, tokens, or secrets.</li>
+</ul>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="../llm/">Architecture / llm cell</a> — transports that consume the prompts.</li>
+<li><a href="../applications/#swaxapplicationsdiscover">Architecture / applications/discover cell</a> —
+  two-pass scenario.</li>
+<li><a href="../applications/#swaxapplicationsplan">Architecture / applications/plan cell</a> —
+  single-turn scenario.</li>
+<li><a href="../applications/#swaxapplicationsupdate">Architecture / applications/update cell</a> —
+  incremental rebuild scenario.</li>
+</ul>
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.tabs", "navigation.indexes", "search.suggest", "search.highlight", "content.code.copy"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

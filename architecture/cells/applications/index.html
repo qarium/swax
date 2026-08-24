@@ -1,0 +1,2383 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Application-layer facade re-exporting use-cases (init, discover, plan, update) and their sub-cells.">
+      
+      
+      
+        <link rel="canonical" href="https://qarium.github.io/swax/architecture/cells/applications/">
+      
+      
+        <link rel="prev" href="../commands/">
+      
+      
+        <link rel="next" href="../config/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>swax/applications - Swax</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  
+  <style>
+    /* Dark navbar — override palette in both themes */
+    [data-md-color-scheme=default][data-md-color-primary=custom],
+    [data-md-color-scheme=slate][data-md-color-primary=custom] {
+      --md-primary-fg-color: #0a0a13;
+      --md-primary-fg-color--light: #0a0a13cc;
+      --md-primary-bg-color: #ffffff;
+    }
+
+    .md-header__button.md-logo img,
+    .md-header__button.md-logo svg {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+    }
+
+    /* Search form — visible on dark header */
+    .md-search__overlay {
+      background-color: transparent !important;
+    }
+    [data-md-toggle=search]:checked~.md-header .md-search__overlay {
+      background-color: #0000008a !important;
+    }
+    .md-search__inner {
+      background-color: transparent !important;
+    }
+    .md-search__form {
+      background-color: #3a3a3a !important;
+      border-radius: 0.5rem;
+    }
+    .md-search__form:hover {
+      background-color: #4a4a4a !important;
+    }
+    .md-search__input {
+      color: #e0e0e0 !important;
+    }
+    .md-search__input::placeholder {
+      color: #999999 !important;
+    }
+    .md-search__icon {
+      color: #999999 !important;
+    }
+    .md-search__form:hover .md-search__icon,
+    .md-search__input:focus-visible ~ .md-search__icon {
+      color: #e0e0e0 !important;
+    }
+
+    /* Links in dark theme — readable on dark background */
+    [data-md-color-scheme=slate] .md-nav__link,
+    [data-md-color-scheme=slate] .md-toc__link,
+    [data-md-color-scheme=slate] article a {
+      color: #cbd5e0 !important;
+    }
+    [data-md-color-scheme=slate] .md-nav__link--passed,
+    [data-md-color-scheme=slate] .md-toc__link--passed {
+      color: #718096 !important;
+    }
+    [data-md-color-scheme=slate] .md-nav__link:hover,
+    [data-md-color-scheme=slate] .md-toc__link:hover,
+    [data-md-color-scheme=slate] article a:hover {
+      color: var(--md-accent-fg-color) !important;
+    }
+  </style>
+
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#swaxapplications" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="Swax" class="md-header__button md-logo" aria-label="Swax" data-md-component="logo">
+      
+  <img src="https://avatars.githubusercontent.com/u/262344922?s=200&v=4" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Swax
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              swax/applications
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/qarium/swax" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../getting-started/installation/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Getting started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guide/commands/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../../overview/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Architecture
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="Swax" class="md-nav__button md-logo" aria-label="Swax" data-md-component="logo">
+      
+  <img src="https://avatars.githubusercontent.com/u/262344922?s=200&v=4" alt="logo">
+
+    </a>
+    Swax
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/qarium/swax" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../getting-started/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../getting-started/configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../getting-started/quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guide/commands/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Commands
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guide/project-layout/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Project layout
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guide/traceability-graph/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Traceability graph
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guide/impact-report/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Impact Report
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_2" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cells
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4_2" id="__nav_4_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Cells
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    cli
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../commands/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    commands
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    applications
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    applications
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#re-exports" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Re-exports
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#swaxapplicationsinit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        swax/applications/init
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="swax/applications/init">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#run_initrepo_url-specs_location-download_path-project_root" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        run_init(repo_url, specs_location, download_path, project_root)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#imports" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Imports
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#swaxapplicationsdiscover" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        swax/applications/discover
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="swax/applications/discover">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#llm-response-parsing-provider-agnostic" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        LLM response parsing (provider-agnostic)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dependency-merging-across-the-two-passes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dependency merging across the two passes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#run_discoverproject_root-pathlibpath" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        run_discover(project_root: pathlib.Path)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#imports_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Imports
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#swaxapplicationsplan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        swax/applications/plan
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="swax/applications/plan">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#llm-response-parsing-provider-agnostic_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        LLM response parsing (provider-agnostic)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#run_planproject_root-pathlibpath-markdown-str" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        run_plan(project_root: pathlib.Path) -&gt; markdown: str
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#imports_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Imports
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#impactreportsummary-risk-modified-affected-requirements-checklist" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ImpactReport(summary, risk, modified, affected, requirements, checklist)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#render_impact_reportreport-impactreport-markdown-str" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        render_impact_report(report: ImpactReport) -&gt; markdown: str
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#swaxapplicationsupdate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        swax/applications/update
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="swax/applications/update">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#branch-priority" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Branch priority
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#run_updateproject_root-pathlibpath-output-str" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        run_update(project_root: pathlib.Path) -&gt; output: str
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#graphrebuildfailederror-reason-str" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GraphRebuildFailedError(*, reason: str)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cell-internal-helpers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cell-internal helpers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#imports_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Imports
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#see-also" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        See also
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    config
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    fs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../git/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    git
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../openapi/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    openapi
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../llm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    llm
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../prompts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    prompts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../traceability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    traceability
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#re-exports" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Re-exports
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#swaxapplicationsinit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        swax/applications/init
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="swax/applications/init">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#run_initrepo_url-specs_location-download_path-project_root" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        run_init(repo_url, specs_location, download_path, project_root)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#imports" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Imports
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#swaxapplicationsdiscover" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        swax/applications/discover
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="swax/applications/discover">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#llm-response-parsing-provider-agnostic" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        LLM response parsing (provider-agnostic)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dependency-merging-across-the-two-passes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dependency merging across the two passes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#run_discoverproject_root-pathlibpath" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        run_discover(project_root: pathlib.Path)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#imports_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Imports
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#swaxapplicationsplan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        swax/applications/plan
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="swax/applications/plan">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#llm-response-parsing-provider-agnostic_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        LLM response parsing (provider-agnostic)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#run_planproject_root-pathlibpath-markdown-str" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        run_plan(project_root: pathlib.Path) -&gt; markdown: str
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#imports_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Imports
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#impactreportsummary-risk-modified-affected-requirements-checklist" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ImpactReport(summary, risk, modified, affected, requirements, checklist)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#render_impact_reportreport-impactreport-markdown-str" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        render_impact_report(report: ImpactReport) -&gt; markdown: str
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#swaxapplicationsupdate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        swax/applications/update
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="swax/applications/update">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#branch-priority" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Branch priority
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#run_updateproject_root-pathlibpath-output-str" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        run_update(project_root: pathlib.Path) -&gt; output: str
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#graphrebuildfailederror-reason-str" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GraphRebuildFailedError(*, reason: str)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cell-internal-helpers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cell-internal helpers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#imports_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Imports
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#see-also" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        See also
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="swaxapplications"><code>swax/applications</code></h1>
+<p>Application layer of Swax. Single facade for the project's use-cases —
+consumers import types and cell-level practices (<code>init</code>, <code>discover</code>, <code>plan</code>,
+<code>update</code>) from here via <code>Imports</code>, not from the sub-cells. The facade
+re-exports <code>run_init_handler</code>, <code>run_discover_handler</code>, <code>run_plan_handler</code>,
+and <code>run_update_handler</code> (plus the <code>GraphRebuildFailedError</code> domain error)
+from their sub-cells.</p>
+<p>Use-cases are hexagonal orchestrators — <strong>no business logic, no SDK calls
+beyond delegated domain cells</strong>. Domain exceptions propagate uncaught; mapping
+to user-facing errors belongs to the command layer.</p>
+<h2 id="re-exports">Re-exports</h2>
+<table>
+<thead>
+<tr>
+<th>Symbol</th>
+<th>Source cell</th>
+<th>Alias</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>run_init</code></td>
+<td><code>swax/applications/init</code></td>
+<td><code>run_init_handler</code></td>
+</tr>
+<tr>
+<td><code>run_discover</code></td>
+<td><code>swax/applications/discover</code></td>
+<td><code>run_discover_handler</code></td>
+</tr>
+<tr>
+<td><code>run_plan</code></td>
+<td><code>swax/applications/plan</code></td>
+<td><code>run_plan_handler</code></td>
+</tr>
+<tr>
+<td><code>run_update</code></td>
+<td><code>swax/applications/update</code></td>
+<td><code>run_update_handler</code></td>
+</tr>
+<tr>
+<td><code>GraphRebuildFailedError</code></td>
+<td><code>swax/applications/update</code></td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="swaxapplicationsinit"><code>swax/applications/init</code></h2>
+<p>Application-layer use-case: orchestrates project initialization across three
+domain cells. Contains no business logic — it only sequences calls.
+<code>RepositoryCloneError</code> and <code>SpecsNotFoundError</code> propagate uncaught — the CLI
+handler maps them. Logs <code>INFO</code> at start and end with project metadata; never
+logs credentials.</p>
+<h3 id="run_initrepo_url-specs_location-download_path-project_root"><code>run_init(repo_url, specs_location, download_path, project_root)</code></h3>
+<p>Use-case "initialize project": persist configuration, clone the source
+repository, and copy specs into the local project path.</p>
+<ul>
+<li><code>repo_url</code>: clone URL of the source repository (collected by CLI prompts).</li>
+<li><code>specs_location</code>: subdirectory inside the repository holding the specs.</li>
+<li><code>download_path</code>: local destination for the copied specs (semantics of
+  <code>SpecsConfig.location</code>).</li>
+<li><code>project_root</code>: root of the Swax project — <code>.swax/</code> lives here.</li>
+</ul>
+<p>Algorithm:</p>
+<ol>
+<li>Assemble a <code>Config</code> from <code>GitConfig</code> and <code>SpecsConfig</code>.</li>
+<li>Ensure <code>.swax/</code> exists and persist the config there.</li>
+<li>Enter the <code>clone_specs</code> context to obtain the cloned specs path.</li>
+<li>Inside the context, <code>copy_specs</code> from the clone into the local download
+   path.</li>
+</ol>
+<p>Requirements:</p>
+<ul>
+<li>Configuration is written <strong>before</strong> cloning — on clone failure the user
+  still has <code>.swax/config.yml</code> to inspect.</li>
+<li>The <code>clone_specs</code> context guarantees temporary-directory cleanup on every
+  outcome.</li>
+</ul>
+<p>Constraints:</p>
+<ul>
+<li>Does <strong>not</strong> catch <code>RepositoryCloneError</code> / <code>SpecsNotFoundError</code>.</li>
+<li>Does <strong>not</strong> mutate <code>project_root</code> or <code>download_path</code>.</li>
+</ul>
+<h3 id="imports">Imports</h3>
+<ul>
+<li><code>Config</code>, <code>GitConfig</code>, <code>SpecsConfig</code>, <code>save_config</code> ← <code>swax/config</code>
+  (practice: <code>project-config</code>)</li>
+<li><code>clone_specs</code>, <code>RepositoryCloneError</code>, <code>SpecsNotFoundError</code> ← <code>swax/git</code>
+  (practice: <code>specs-repository</code>)</li>
+<li><code>ensure_swax_dir</code>, <code>copy_specs</code> ← <code>swax/fs</code> (practice: <code>project-layout</code>)</li>
+</ul>
+<hr />
+<h2 id="swaxapplicationsdiscover"><code>swax/applications/discover</code></h2>
+<p>Application-layer use-case: full rebuild of the traceability graph via a
+two-pass LLM analysis. The graph stores paths only and contains every endpoint
+discovered in the parsed specs as a node — including endpoints with no inferred
+dependencies. Edge deduplication is mandatory before saving.</p>
+<p><code>LLMCallError</code> and <code>LLMRateLimitedError</code> propagate uncaught — the CLI handler
+maps them. Logs <code>INFO</code> at start/end, <code>DEBUG</code> for intermediate steps;
+<code>SWAX_LLM_TOKEN</code> never in logs.</p>
+<h3 id="llm-response-parsing-provider-agnostic">LLM response parsing (provider-agnostic)</h3>
+<ul>
+<li>Any prose or code fences around the JSON payload are stripped before parsing.</li>
+<li><code>json.JSONDecodeError</code> is wrapped into <code>LLMResponseParseError</code> carrying a
+  raw payload excerpt (first 200 chars) for diagnostics.</li>
+<li>The refine pass additionally unwraps a single-key <code>dependencies</code> envelope
+  (<code>{"dependencies": {...}}</code>) — the model occasionally emits this form under
+  multi-turn context despite the prompt contract — before applying the shape
+  rule.</li>
+<li>The parsed shape is validated as <code>dict[str, list[str]]</code>; mismatched shapes
+  are rejected via <code>LLMResponseParseError</code>.</li>
+</ul>
+<h3 id="dependency-merging-across-the-two-passes">Dependency merging across the two passes</h3>
+<ul>
+<li>The <strong>first pass</strong> contributes confident edges; the <strong>refine pass</strong>
+  contributes resolved uncertain pairs. Both are merged into the final
+  dependency map.</li>
+<li>The refine pass <strong>overrides</strong> the first pass only when it yields a
+  <strong>non-empty</strong> adjacency list for a key; an empty refine list is treated as
+  "no new information" so confident edges survive.</li>
+<li>Every endpoint extracted from the parsed specs is guaranteed to appear as a
+  graph node (with an empty adjacency list when no dependency was inferred).</li>
+<li>Sources and targets <strong>outside the endpoint universe</strong> extracted from the
+  parsed specs are dropped, honoring the prompt contract.</li>
+</ul>
+<h3 id="run_discoverproject_root-pathlibpath"><code>run_discover(project_root: pathlib.Path)</code></h3>
+<p>Use-case "build traceability graph": full rebuild from scratch, ignoring any
+existing graph.</p>
+<ul>
+<li><code>project_root</code>: root of the Swax project — <code>.swax/config.yml</code> describes the
+  specs, <code>.swax/traceability.yml</code> is overwritten.</li>
+</ul>
+<p>Algorithm:</p>
+<ol>
+<li>Validate LLM credentials via <code>require_vars</code>.</li>
+<li>Read <code>Config</code> via <code>load_config</code> and locate the local specs root.</li>
+<li>Discover spec files and extract endpoints + schema context from each.</li>
+<li><strong>First LLM pass</strong>: build system + user prompts, ask for dependency
+   hypotheses across all endpoints.</li>
+<li><strong>Refine pass</strong>: build a refine prompt with schemas attached for ambiguous
+   pairs, re-ask in multi-turn mode.</li>
+<li>Merge confident edges with resolved uncertain pairs; guarantee every
+   extracted endpoint appears as a graph node; drop sources/targets outside
+   the endpoint universe.</li>
+<li>Build the <code>TraceabilityGraph</code> from the merged dependencies, deduplicate,
+   persist.</li>
+</ol>
+<p>Requirements:</p>
+<ul>
+<li>Always builds a <strong>fresh</strong> graph — existing <code>.swax/traceability.yml</code> is
+  ignored.</li>
+<li>Endpoint order is deterministic across runs (<code>discover_specs</code> returns sorted
+  output).</li>
+<li>LLM responses are parsed defensively per the rules above.</li>
+<li>The persisted graph contains every endpoint extracted from the parsed specs,
+  including endpoints with no inferred dependencies (persisted with an empty
+  adjacency list).</li>
+</ul>
+<p>Constraints:</p>
+<ul>
+<li>Does <strong>not</strong> catch <code>LLMCallError</code> / <code>LLMRateLimitedError</code>.</li>
+<li>Does <strong>not</strong> store schemas in the graph — paths only.</li>
+<li>Does <strong>not</strong> embed filesystem paths or credentials into prompts.</li>
+<li>Does <strong>not</strong> introduce paths outside the endpoint universe.</li>
+</ul>
+<h3 id="imports_1">Imports</h3>
+<ul>
+<li><code>load_config</code>, <code>require_vars</code>, <code>Config</code> ← <code>swax/config</code>
+  (practices: <code>project-config</code>, <code>environment</code>)</li>
+<li><code>discover_specs</code>, <code>parse_spec</code>, <code>extract_paths</code>, <code>extract_schemas</code> ←
+  <code>swax/openapi</code> (practices: <code>parsing</code>, <code>extraction</code>)</li>
+<li><code>LLMClient</code>, <code>build_llm_client</code>, <code>LLMCallError</code>, <code>LLMRateLimitedError</code>,
+  <code>LLMResponseParseError</code> ← <code>swax/llm</code> (practice: <code>llm-transport</code>)</li>
+<li><code>build_graph_system_prompt</code>, <code>build_graph_user_prompt</code>,
+  <code>build_refine_user_prompt</code> ← <code>swax/prompts</code>
+  (practice: <code>traceability-llm-prompts</code>)</li>
+<li><code>TraceabilityGraph</code>, <code>save_traceability</code> ← <code>swax/traceability</code>
+  (practice: <code>graph-lifecycle</code>)</li>
+</ul>
+<hr />
+<h2 id="swaxapplicationsplan"><code>swax/applications/plan</code></h2>
+<p>Application-layer use-case: generate an Impact Report by diffing baseline vs
+fresh specs, mapping changes onto the traceability graph, and asking the LLM
+once. The graph stores paths only; the diff sees methods/schemas for analysis
+but the report carries paths with change descriptions. Domain exceptions
+propagate uncaught — the CLI handler maps them.</p>
+<p><code>TraceabilityGraphMissingError</code> is raised when <code>.swax/traceability.yml</code> is
+absent (hint: run <code>discover</code>). Logs <code>INFO</code> at start/end, <code>DEBUG</code> for
+intermediate steps; <code>SWAX_LLM_TOKEN</code> never in logs.</p>
+<h3 id="llm-response-parsing-provider-agnostic_1">LLM response parsing (provider-agnostic)</h3>
+<ul>
+<li>Strip prose/code fences around the JSON payload before parsing.</li>
+<li><code>json.JSONDecodeError</code> is wrapped into <code>LLMResponseParseError</code> with a raw
+  payload excerpt.</li>
+<li>The parsed shape is validated against the Impact Report contract; mismatch →
+  <code>LLMResponseParseError</code>.</li>
+<li>The <code>risk</code> field is validated against <code>{HIGH, MEDIUM, LOW}</code>; an invalid
+  value falls back to <code>MEDIUM</code> (WARNING log).</li>
+</ul>
+<h3 id="run_planproject_root-pathlibpath-markdown-str"><code>run_plan(project_root: pathlib.Path) -&gt; markdown: str</code></h3>
+<p>Use-case "plan": analyze differences between baseline and fresh specifications
+and produce an Impact Report.</p>
+<ul>
+<li><code>project_root</code>: root of the Swax project — <code>.swax/config.yml</code> describes
+  specs/repo, <code>.swax/traceability.yml</code> is read.</li>
+<li><code>markdown</code>: the Impact Report rendered as Markdown for stdout.</li>
+</ul>
+<p>Algorithm:</p>
+<ol>
+<li>Validate LLM credentials via <code>require_vars</code>.</li>
+<li>Read <code>Config</code> via <code>load_config</code>.</li>
+<li>Load the traceability graph via <code>load_traceability</code>; if the file is absent,
+   raise <code>TraceabilityGraphMissingError</code>.</li>
+<li>Clone the repository via <code>clone_specs</code> (context manager) and parse the
+   fresh specs.</li>
+<li>Parse the baseline specs from the local root.</li>
+<li>For each matching spec file pair, compute <code>diff_specs</code> then
+   <code>classify_endpoint_changes</code>; merge into one <code>EndpointDiff</code>.</li>
+<li>If <code>EndpointDiff</code> reports <strong>no changes</strong>, build a no-change <code>ImpactReport</code>
+   (summary "No changes detected", risk <code>LOW</code>) and <strong>skip the LLM</strong>.</li>
+<li>Otherwise map the changed paths onto the graph via
+   <code>find_affected_endpoints</code> and extract the relevant graph context.
+   If the affected set or graph context exceeds a reasonable threshold, trim
+   to the most relevant entries (changed paths first, then nearest
+   dependents) and log a WARNING that the LLM context was truncated. Then
+   build the system + user prompts.</li>
+<li>Call <code>LLMClient</code> once to ask for the report, defensively parse JSON into
+   an <code>ImpactReport</code>, validate risk (fallback <code>MEDIUM</code>).</li>
+<li>Render via <code>render_impact_report</code> and return the Markdown.</li>
+</ol>
+<p>Requirements:</p>
+<ul>
+<li>The repository clone is cleaned up on every outcome.</li>
+<li>Baseline and fresh specs are matched by relative path.</li>
+<li>Risk is constrained to <code>{HIGH, MEDIUM, LOW}</code> with a <code>MEDIUM</code> fallback.</li>
+<li><code>SWAX_LLM_TOKEN</code> never appears in logs or the returned Markdown.</li>
+</ul>
+<p>Constraints:</p>
+<ul>
+<li>Does <strong>not</strong> catch <code>LLMCallError</code> / <code>LLMRateLimitedError</code> /
+  <code>LLMResponseParseError</code>.</li>
+<li>Does <strong>not</strong> store schemas or methods as separate report paths — paths with
+  change descriptions only.</li>
+<li>Does <strong>not</strong> print to stdout — return the Markdown; the CLI handler echoes
+  it.</li>
+</ul>
+<h3 id="imports_2">Imports</h3>
+<ul>
+<li><code>load_config</code>, <code>require_vars</code>, <code>Config</code> ← <code>swax/config</code>
+  (practices: <code>project-config</code>, <code>environment</code>)</li>
+<li><code>clone_specs</code>, <code>RepositoryCloneError</code>, <code>SpecsNotFoundError</code> ← <code>swax/git</code>
+  (practice: <code>specs-repository</code>)</li>
+<li><code>discover_specs</code>, <code>parse_spec</code>, <code>diff_specs</code>, <code>classify_endpoint_changes</code>,
+  <code>EndpointDiff</code> ← <code>swax/openapi</code> (practices: <code>parsing</code>, <code>diff</code>)</li>
+<li><code>load_traceability</code>, <code>TraceabilityGraph</code>, <code>find_affected_endpoints</code>,
+  <code>TraceabilityGraphMissingError</code> ← <code>swax/traceability</code>
+  (practices: <code>graph-lifecycle</code>, <code>affected-endpoints</code>)</li>
+<li><code>build_impact_report_system_prompt</code>, <code>build_impact_report_user_prompt</code> ←
+  <code>swax/prompts</code> (practice: <code>impact-report-prompts</code>)</li>
+<li><code>build_llm_client</code>, <code>LLMClient</code>, <code>LLMCallError</code>, <code>LLMRateLimitedError</code>,
+  <code>LLMResponseParseError</code> ← <code>swax/llm</code> (practice: <code>llm-transport</code>)</li>
+</ul>
+<h3 id="impactreportsummary-risk-modified-affected-requirements-checklist"><code>ImpactReport(summary, risk, modified, affected, requirements, checklist)</code></h3>
+<p>Structured LLM output for the Impact Report.</p>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>summary</code></td>
+<td><code>str</code></td>
+<td>One-line human-readable summary of the change impact.</td>
+</tr>
+<tr>
+<td><code>risk</code></td>
+<td><code>str</code></td>
+<td>Overall risk level — <code>HIGH</code>, <code>MEDIUM</code>, or <code>LOW</code> (validated by <code>run_plan</code>).</td>
+</tr>
+<tr>
+<td><code>modified</code></td>
+<td><code>list[str]</code></td>
+<td>Endpoint paths that changed.</td>
+</tr>
+<tr>
+<td><code>affected</code></td>
+<td><code>list[str]</code></td>
+<td>Endpoint paths transitively affected via the graph.</td>
+</tr>
+<tr>
+<td><code>requirements</code></td>
+<td><code>list[str]</code></td>
+<td>Testing requirements derived from the changes.</td>
+</tr>
+<tr>
+<td><code>checklist</code></td>
+<td><code>list[str]</code></td>
+<td>Actionable verification checklist items.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="render_impact_reportreport-impactreport-markdown-str"><code>render_impact_report(report: ImpactReport) -&gt; markdown: str</code></h3>
+<p>Renders an <code>ImpactReport</code> into the Markdown template for stdout.</p>
+<ul>
+<li>Follows the report template: Summary, Risk, Modified, Affected,
+  Requirements, Checklist.</li>
+<li>Renders the no-change report identically to any other report.</li>
+</ul>
+<p>Constraints:</p>
+<ul>
+<li>Pure transformation — <strong>no I/O, no LLM calls</strong>.</li>
+<li>Does <strong>not</strong> synthesize content not present in <code>report</code>.</li>
+</ul>
+<hr />
+<h2 id="swaxapplicationsupdate"><code>swax/applications/update</code></h2>
+<p>Application-layer use-case: mirror local specs to the remote state and rebuild
+the traceability graph conditionally, <strong>as one transaction</strong>. The remote clone
+is the source of truth — local spec edits are overwritten silently.</p>
+<p><code>staged_specs_swap</code> is the single rollback point: a failure of the rebuild
+block removes the swapped-in specs, restores the backup, and is wrapped into
+<code>GraphRebuildFailedError</code> (the specs have been restored at that point; a
+failed first build leaves no graph file behind). Failures before the swap
+propagate raw. Logs <code>INFO</code> at start/end, <code>DEBUG</code> for intermediate steps;
+<code>SWAX_LLM_TOKEN</code> never in logs or the returned output.</p>
+<h3 id="branch-priority">Branch priority</h3>
+<ol>
+<li><strong>Empty diff</strong> — <code>"Specs are up to date."</code>; nothing touched, no LLM.</li>
+<li><strong>Removals-only</strong> — deterministic prune (<code>remove_paths</code> → <code>deduplicate</code> →
+   atomic save) when a graph file exists, graph stays missing when it does
+   not; still no LLM.</li>
+<li><strong>Added/updated</strong> — <code>require_vars</code> <strong>before any mutation</strong>; incremental
+   single-turn LLM revision when the graph exists, delegated <code>run_discover</code>
+   first build when it does not.</li>
+</ol>
+<p>Removed endpoints are reconciled against the post-update tree — an endpoint
+still declared by any surviving, modified, or added spec stays live; only
+endpoints absent from the whole tree are pruned. LLM responses are parsed
+defensively (fence stripping, <code>JSONDecodeError</code> wrapped into
+<code>LLMResponseParseError</code>, <code>dict[str, list[str]]</code> shape validation) and
+filtered to the endpoint universe.</p>
+<h3 id="run_updateproject_root-pathlibpath-output-str"><code>run_update(project_root: pathlib.Path) -&gt; output: str</code></h3>
+<p>Use-case "update": mirror specs and rebuild the graph transactionally.</p>
+<ul>
+<li><code>project_root</code>: root of the Swax project — <code>.swax/config.yml</code> describes the
+  remote source and the local specs layout; <code>.swax/traceability.yml</code> is
+  updated according to the diff.</li>
+<li><code>output</code>: the terminal summary text (change groups plus the graph status
+  line).</li>
+</ul>
+<p>Algorithm:</p>
+<ol>
+<li>Load the config, guard the mirroring target
+   (<code>validate_specs_location</code>), clone the remote state, classify the file
+   diff (<code>compare_specs</code>).</li>
+<li>Empty diff → return the up-to-date message.</li>
+<li>Classify the spec-file changes; collect the prune endpoints (reconciled
+   against the endpoints still declared by the post-update tree).</li>
+<li>Validate LLM credentials when the diff has additions — <strong>before any
+   mutation</strong>; prepare the incremental input when a graph file exists.</li>
+<li>Assemble the staging directory (a stale staging leftover from a crashed
+   run is removed first) and swap it in (<code>staged_specs_swap</code>); the rebuild
+   inside the swap — deterministic prune, incremental LLM revision, or
+   delegated <code>run_discover</code> — is the single rollback point whose failures
+   are wrapped into <code>GraphRebuildFailedError</code>. The existing graph is loaded
+   inside the swap too, so a corrupt graph file rolls back like any rebuild
+   failure.</li>
+<li>Render the summary via <code>render_update_summary</code> and return it.</li>
+</ol>
+<p>Constraints:</p>
+<ul>
+<li>Domain exceptions outside the rebuild block propagate unwrapped.</li>
+<li>Writes only inside the specs directory, its transient staging/backup
+  siblings, and <code>.swax/traceability.yml</code>.</li>
+<li>Exact strings: <code>"Specs are up to date."</code>, <code>Traceability graph: rebuilt</code> /
+  <code>Traceability graph: built</code>.</li>
+</ul>
+<h3 id="graphrebuildfailederror-reason-str"><code>GraphRebuildFailedError(*, reason: str)</code></h3>
+<p>Domain error raised by <code>run_update</code> when the graph rebuild after applying
+specs fails — the specs have been restored from the backup at that point.
+Keyword-only constructor storing <code>self.reason</code>.</p>
+<h3 id="cell-internal-helpers">Cell-internal helpers</h3>
+<ul>
+<li><code>save_traceability_atomically(graph, path)</code> — serialize via
+  <code>save_traceability</code> into <code>path.with_name(f"{path.name}.tmp")</code>, then
+  <code>os.replace</code>; a failed write removes the tmp file and re-raises, leaving
+  the previous file untouched. Not exposed on the facade.</li>
+<li><code>render_update_summary(changes, graph_status)</code> — pure renderer: <code>Added:</code> /
+  <code>Updated:</code> / <code>Removed:</code> groups (empty groups omitted, input order
+  preserved) plus <code>Traceability graph: {graph_status}</code> when the status is not
+  <code>None</code>. Not exposed on the facade.</li>
+</ul>
+<h3 id="imports_3">Imports</h3>
+<ul>
+<li><code>load_config</code>, <code>require_vars</code> ← <code>swax/config</code> (practices: <code>project-config</code>,
+  <code>environment</code>)</li>
+<li><code>clone_specs</code> ← <code>swax/git</code> (practice: <code>specs-repository</code>)</li>
+<li><code>compare_specs</code>, <code>copy_specs</code>, <code>staged_specs_swap</code>,
+  <code>validate_specs_location</code>, <code>SpecsChanges</code> ← <code>swax/fs</code>
+  (practices: <code>project-layout</code>, <code>spec-mirroring</code>)</li>
+<li><code>discover_specs</code>, <code>parse_spec</code>, <code>extract_paths</code>, <code>extract_schemas</code>,
+  <code>diff_specs</code>, <code>classify_endpoint_changes</code>, <code>EndpointDiff</code>,
+  <code>SpecParseError</code> ← <code>swax/openapi</code> (practices: <code>parsing</code>, <code>diff</code>,
+  <code>extraction</code>)</li>
+<li><code>TraceabilityGraph</code>, <code>load_traceability</code> ← <code>swax/traceability</code>
+  (practice: <code>graph-lifecycle</code>)</li>
+<li><code>build_incremental_graph_system_prompt</code>,
+  <code>build_incremental_graph_user_prompt</code> ← <code>swax/prompts</code>
+  (practice: <code>incremental-graph-prompts</code>)</li>
+<li><code>build_llm_client</code>, <code>LLMClient</code>, <code>LLMCallError</code>, <code>LLMRateLimitedError</code>,
+  <code>LLMResponseParseError</code>, <code>UnsupportedLLMProtocolError</code> ← <code>swax/llm</code>
+  (practice: <code>llm-transport</code>)</li>
+<li><code>run_discover</code> ← <code>swax/applications/discover</code> (sibling import — never via
+  the <code>swax.applications</code> facade, which would create an import cycle)</li>
+</ul>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="../../../guide/traceability-graph/">Traceability graph</a> — graph model and format.</li>
+<li><a href="../../../guide/impact-report/">Impact Report</a> — report shape.</li>
+<li><a href="../commands/">Architecture / commands cell</a> — handlers that map use-case
+  exceptions.</li>
+</ul>
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.tabs", "navigation.indexes", "search.suggest", "search.highlight", "content.code.copy"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>
